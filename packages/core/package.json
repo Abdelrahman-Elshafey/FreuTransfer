@@ -1,0 +1,13 @@
+{
+  "name": "@swiss-transfer/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pure domain: Money, Rate, cost engine, fee strategies, ports. No I/O, no imports from other packages.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

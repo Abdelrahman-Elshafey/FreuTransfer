@@ -1,0 +1,24 @@
+# Local development database only. Production uses Neon (see Project Plan §5).
+services:
+  db:
+    image: postgres:18.6
+    environment:
+      POSTGRES_USER: swiss
+      POSTGRES_PASSWORD: swiss_dev_only
+      POSTGRES_DB: swiss_transfer
+      TZ: UTC
+    ports:
+      # Host port 5434, localhost only: 5432 is a native PostgreSQL service on this machine and
+      # 5433 is used by another project's container.
+      - "127.0.0.1:5434:5432"
+    volumes:
+      # Postgres 18 images keep data under /var/lib/postgresql/<major>/, so mount the parent.
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U swiss -d swiss_transfer"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
