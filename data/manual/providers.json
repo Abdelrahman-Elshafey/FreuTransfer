@@ -1,0 +1,17 @@
+[
+  {
+    "id": "postfinance",
+    "name": "PostFinance",
+    "kind": "bank",
+    "website": "https://www.postfinance.ch"
+  },
+  { "id": "ubs", "name": "UBS", "kind": "bank", "website": "https://www.ubs.com/ch" },
+  {
+    "id": "revolut",
+    "name": "Revolut",
+    "kind": "fintech",
+    "website": "https://www.revolut.com/en-CH/"
+  },
+  { "id": "yuh", "name": "Yuh", "kind": "fintech", "website": "https://www.yuh.com" },
+  { "id": "wise", "name": "Wise", "kind": "fintech", "website": "https://wise.com/ch/" }
+]

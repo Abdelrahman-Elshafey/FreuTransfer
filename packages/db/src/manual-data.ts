@@ -1,0 +1,125 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { z } from "zod";
+
+/**
+ * The reviewed data files in `data/manual/` (ADR 0003). Every entry is validated before anything
+ * touches the database, and money values stay strings (never JSON numbers).
+ */
+
+const decimal = z.string().regex(/^\d+(\.\d+)?$/, "must be a non-negative decimal string");
+const currency = z.string().regex(/^[A-Z]{3}$/, "must be an ISO 4217 code");
+const id = z.string().regex(/^[a-z0-9-]+$/i, "must be a slug");
+
+const providerSchema = z.object({
+  id,
+  name: z.string().min(1),
+  kind: z.enum(["bank", "fintech", "money_transfer_operator"]),
+  website: z.url(),
+});
+
+const corridorSchema = z.object({ id, sourceCurrency: currency, targetCurrency: currency });
+
+const midRateSchema = z.object({
+  base: currency,
+  quote: currency,
+  rate: decimal,
+  source: z.enum(["ecb", "cbe", "nbs"]),
+  asOf: z.iso.date(),
+  fetchedAt: z.iso.datetime(),
+  sourceUrl: z.url(),
+  note: z.string().optional(),
+});
+
+/** draft = researched by Claude; needs_input = a value only the owner can read; verified = checked by the owner. */
+const statusSchema = z.enum(["draft", "needs_input", "verified"]);
+
+const feeBase = {
+  providerId: id,
+  corridorId: id,
+  status: statusSchema,
+  feeMode: z.enum(["deducted", "on_top"]),
+  fixedFee: decimal,
+  percentFee: decimal,
+  minFee: decimal.optional(),
+  maxFee: decimal.optional(),
+  sourceUrl: z.url(),
+  checkedAt: z.iso.datetime(),
+  note: z.string().optional(),
+};
+
+const feeScheduleSchema = z
+  .discriminatedUnion("sourceKind", [
+    z.object({
+      ...feeBase,
+      sourceKind: z.literal("rule_based"),
+      fxMarkup: decimal,
+      /** Optional: fxMarkup applies up to `upTo` (source currency), `markupAbove` beyond it. */
+      markupTier: z.object({ upTo: decimal, markupAbove: decimal }).optional(),
+    }),
+    z.object({
+      ...feeBase,
+      sourceKind: z.literal("manual"),
+      providerRate: decimal.nullable(),
+      rateCapturedAt: z.iso.datetime().nullable(),
+    }),
+  ])
+  .superRefine((entry, ctx) => {
+    if (entry.sourceKind !== "manual") return;
+    const complete = entry.providerRate !== null && entry.rateCapturedAt !== null;
+    if (!complete && entry.status !== "needs_input") {
+      ctx.addIssue({
+        code: "custom",
+        message: "A manual entry without a rate and capture time must have status needs_input",
+      });
+    }
+  });
+
+export type FeeScheduleEntry = z.infer<typeof feeScheduleSchema>;
+
+const manualDataSchema = z
+  .object({
+    providers: z.array(providerSchema),
+    corridors: z.array(corridorSchema),
+    midRates: z.array(midRateSchema),
+    feeSchedules: z.array(feeScheduleSchema),
+  })
+  .superRefine((data, ctx) => {
+    const providers = new Set(data.providers.map((p) => p.id));
+    const corridors = new Set(data.corridors.map((c) => c.id));
+    data.feeSchedules.forEach((fs, i) => {
+      if (!providers.has(fs.providerId)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["feeSchedules", i, "providerId"],
+          message: `Unknown provider "${fs.providerId}"`,
+        });
+      }
+      if (!corridors.has(fs.corridorId)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["feeSchedules", i, "corridorId"],
+          message: `Unknown corridor "${fs.corridorId}"`,
+        });
+      }
+    });
+  });
+
+export type ManualData = z.infer<typeof manualDataSchema>;
+
+/** Validates already-parsed data (used by tests and by `loadManualData`). */
+export function parseManualData(raw: unknown): ManualData {
+  return manualDataSchema.parse(raw);
+}
+
+/** Reads and validates the four files in a `data/manual/` directory. */
+export async function loadManualData(dir: string): Promise<ManualData> {
+  const read = async (file: string): Promise<unknown> =>
+    JSON.parse(await readFile(join(dir, file), "utf8"));
+  return parseManualData({
+    providers: await read("providers.json"),
+    corridors: await read("corridors.json"),
+    midRates: await read("mid-rates.json"),
+    feeSchedules: await read("fee-schedules.json"),
+  });
+}

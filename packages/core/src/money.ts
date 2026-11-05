@@ -1,5 +1,11 @@
 import { assertCurrencyCode, type CurrencyCode, minorUnits } from "./currency.ts";
-import { Decimal, type DecimalInput, ROUNDING, type RoundingMode, toDecimal } from "./decimal.ts";
+import {
+  type Decimal,
+  type DecimalInput,
+  ROUNDING,
+  type RoundingMode,
+  toDecimal,
+} from "./decimal.ts";
 import { CurrencyMismatchError, MoneyError } from "./errors.ts";
 
 /**
@@ -22,10 +28,6 @@ export class Money {
   static of(amount: DecimalInput, currency: CurrencyCode): Money {
     assertCurrencyCode(currency);
     return new Money(toDecimal(amount, "Money amount"), currency);
-  }
-
-  static zero(currency: CurrencyCode): Money {
-    return Money.of(new Decimal(0), currency);
   }
 
   plus(other: Money): Money {

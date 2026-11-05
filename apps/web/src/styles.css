@@ -1,0 +1,42 @@
+/* v0.1: just enough to read the table. Real design in stage 6. */
+body {
+  margin: 0;
+  background: #f3f3f4;
+  color: #131314;
+  font-family: system-ui, sans-serif;
+}
+main {
+  max-width: 64rem;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+th,
+td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #dfe3e6;
+  text-align: left;
+  vertical-align: top;
+}
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.strong {
+  font-weight: 600;
+}
+.note {
+  color: #66646d;
+  font-size: 0.8rem;
+}
+.error {
+  color: #b91c1c;
+}
+input {
+  width: 8rem;
+}

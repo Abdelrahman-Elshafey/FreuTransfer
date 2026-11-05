@@ -21,7 +21,6 @@ export type Decimal = DecimalJs;
 export const ROUNDING = {
   halfEven: DecimalJs.ROUND_HALF_EVEN,
   halfUp: DecimalJs.ROUND_HALF_UP,
-  down: DecimalJs.ROUND_DOWN,
 } as const;
 export type RoundingMode = (typeof ROUNDING)[keyof typeof ROUNDING];
 

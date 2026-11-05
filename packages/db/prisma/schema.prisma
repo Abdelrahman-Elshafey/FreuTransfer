@@ -1,0 +1,111 @@
+// FreuTransfer v0.1 schema. Only what stage 3 needs; raw observations, stored quotes and
+// collector runs arrive with the pipeline in stage 4.
+//
+// Rules: money and rates are NUMERIC (never float); timestamps are timestamptz (UTC);
+// mid_market_rates and fee_schedules are append-only (enforced by triggers in the migration).
+
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "esm"
+  importFileExtension    = "ts"
+  generatedFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProviderKind {
+  bank
+  fintech
+  money_transfer_operator
+}
+
+/// How a fee schedule was obtained (ADR 0003).
+enum SourceKind {
+  /// Computed from the provider's published markup over mid-market.
+  rule_based
+  /// Read by hand from a rate sheet, price list or calculator.
+  manual
+}
+
+enum FeeMode {
+  deducted
+  on_top
+}
+
+model Provider {
+  /// Short stable slug, e.g. "postfinance".
+  id           String        @id
+  name         String
+  kind         ProviderKind
+  website      String
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  feeSchedules FeeSchedule[]
+
+  @@map("providers")
+}
+
+model Corridor {
+  /// e.g. "CHF-EUR"
+  id             String        @id
+  sourceCurrency String        @map("source_currency") @db.Char(3)
+  targetCurrency String        @map("target_currency") @db.Char(3)
+  feeSchedules   FeeSchedule[]
+
+  @@unique([sourceCurrency, targetCurrency])
+  @@map("corridors")
+}
+
+/// Official reference rates (ECB, CBE, NBS via Frankfurter). 1 base = rate × quote.
+model MidMarketRate {
+  id        BigInt   @id @default(autoincrement())
+  base      String   @db.Char(3)
+  quote     String   @db.Char(3)
+  rate      Decimal  @db.Decimal(20, 10)
+  /// "ecb", "cbe" or "nbs"
+  source    String
+  /// The publication date of the reference rate.
+  asOf      DateTime @map("as_of") @db.Date
+  fetchedAt DateTime @map("fetched_at") @db.Timestamptz(3)
+
+  @@unique([base, quote, source, asOf])
+  @@index([base, quote, asOf(sort: Desc)])
+  @@map("mid_market_rates")
+}
+
+/// A provider's pricing for one corridor, as checked on `checkedAt`. Corrections are new rows;
+/// the newest row per provider × corridor is the current one.
+model FeeSchedule {
+  id               BigInt     @id @default(autoincrement())
+  providerId       String     @map("provider_id")
+  corridorId       String     @map("corridor_id")
+  sourceKind       SourceKind @map("source_kind")
+  feeMode          FeeMode    @map("fee_mode")
+  /// Fee amounts are in the corridor's source currency; percentages are fractions (0.005 = 0.5%).
+  fixedFee         Decimal    @default(0) @map("fixed_fee") @db.Decimal(20, 10)
+  percentFee       Decimal    @default(0) @map("percent_fee") @db.Decimal(20, 10)
+  minFee           Decimal?   @map("min_fee") @db.Decimal(20, 10)
+  maxFee           Decimal?   @map("max_fee") @db.Decimal(20, 10)
+  /// rule_based only: markup over mid as a fraction.
+  fxMarkup         Decimal?   @map("fx_markup") @db.Decimal(20, 10)
+  /// rule_based only, optional: fxMarkup applies to the converted amount up to this limit
+  /// (source currency), fxMarkupAbove to the part above it (e.g. a monthly allowance).
+  fxMarkupTierUpTo Decimal?   @map("fx_markup_tier_up_to") @db.Decimal(20, 10)
+  fxMarkupAbove    Decimal?   @map("fx_markup_above") @db.Decimal(20, 10)
+  /// manual only: the provider's own rate as read, 1 source = rate × target.
+  providerRate     Decimal?   @map("provider_rate") @db.Decimal(20, 10)
+  /// manual only: when that rate was read.
+  rateCapturedAt   DateTime?  @map("rate_captured_at") @db.Timestamptz(3)
+  sourceUrl        String     @map("source_url")
+  checkedAt        DateTime   @map("checked_at") @db.Timestamptz(3)
+  note             String?
+  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  provider Provider @relation(fields: [providerId], references: [id])
+  corridor Corridor @relation(fields: [corridorId], references: [id])
+
+  @@index([corridorId, providerId, checkedAt(sort: Desc)])
+  @@map("fee_schedules")
+}

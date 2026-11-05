@@ -4,8 +4,15 @@
  * Rules (see CLAUDE.md): no I/O, no imports from other workspace packages,
  * money only through the Money/Rate value objects.
  */
-export const CORE_VERSION = "0.1.0";
-
+export {
+  type Comparison,
+  type ComparisonRow,
+  compareProviders,
+  NoMidRateError,
+  RECHECK_DAYS,
+  rankOffers,
+  zurichDay,
+} from "./compare.ts";
 export { type CostBreakdown, computeCost } from "./cost.ts";
 export {
   assertCurrencyCode,
@@ -25,5 +32,13 @@ export {
   splitPayment,
 } from "./fees.ts";
 export { Money } from "./money.ts";
+export type {
+  MidRateObservation,
+  Pricing,
+  ProviderKind,
+  ProviderOffer,
+  SourceKind,
+} from "./offer.ts";
+export type { MidRateRepository, OfferRepository } from "./ports.ts";
 export { type QuoteAmounts, quoteFromRule } from "./quote.ts";
 export { Rate } from "./rate.ts";

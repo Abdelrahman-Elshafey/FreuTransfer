@@ -12,8 +12,9 @@ Requirements: Node.js 26.13 LTS, pnpm 12, Docker Desktop.
 
 ```sh
 pnpm install
-pnpm check        # lint + typecheck + tests
+pnpm check        # Prisma generate + lint + typecheck + tests (Docker must run: DB tests use Testcontainers)
 pnpm db:up        # Postgres 18.6 on localhost:5434
+pnpm db:migrate   # apply migrations to it
 pnpm dev:api      # http://localhost:3000/health
 pnpm dev:web      # http://localhost:5173
 ```
@@ -26,7 +27,8 @@ Roadmap status, updated after every stage: [`docs/progress.md`](docs/progress.md
 
 | Path | Purpose |
 |---|---|
-| `packages/core` | Pure domain: money, rates, cost engine (no I/O) |
+| `packages/core` | Pure domain: money, rates, cost engine, ports (no I/O) |
+| `packages/db` | Prisma schema, migrations, repositories (return core types) |
 | `apps/api` | Express 5 HTTP API |
 | `apps/web` | React + Vite frontend |
 | `docs/adr` | Architecture Decision Records |

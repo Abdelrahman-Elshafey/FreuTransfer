@@ -22,3 +22,6 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+
+# generated Prisma client (run `pnpm --filter @freu-transfer/db generate`)
+packages/db/src/generated/

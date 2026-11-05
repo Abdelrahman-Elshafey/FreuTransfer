@@ -11,13 +11,16 @@ import { Rate } from "./rate.ts";
 // floating-point number ever touches a money value, even in tests.
 const fraction = (value: bigint, scale: string) => new Decimal(value.toString()).dividedBy(scale);
 
-/** 1.00 to 100,000.00 CHF */
+/**
+ * 10.00 to 100,000.00 CHF. Not lower: at 1.00 CHF a 0.99 fixed fee plus a percentage rounds
+ * to the whole amount, which splitPayment rightly rejects (fast-check found this case).
+ */
 const amountArb = fc
-  .bigInt({ min: 100n, max: 10_000_000n })
+  .bigInt({ min: 1_000n, max: 10_000_000n })
   .map((cents) => Money.of(fraction(cents, "100"), "CHF"));
 /** 0% to 3% as a fraction */
 const percentArb = fc.bigInt({ min: 0n, max: 300n }).map((bp) => fraction(bp, "10000"));
-/** fixed fee 0.00 to 0.99 CHF, so it never exceeds the smallest amount */
+/** fixed fee 0.00 to 0.99 CHF; with ≤ 3% the fee always stays below the smallest amount */
 const fixedArb = fc.bigInt({ min: 0n, max: 99n }).map((cents) => fraction(cents, "100"));
 /** mid rate 0.5000 to 2.0000 */
 const midArb = fc

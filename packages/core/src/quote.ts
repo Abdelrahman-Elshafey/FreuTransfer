@@ -21,20 +21,27 @@ export type QuoteAmounts = {
  * amount paid, then convert the rest at its rate. For rule-based providers the rate is
  * usually `mid.withMarkup(publishedMarkup)`.
  *
+ * `providerRate` can also be a function of the converted amount, for rates that depend on it
+ * (a markup tier); it receives the amount after the fee.
+ *
  * `received` is rounded to the recipient currency's minor unit, because that's what is
  * actually paid out. Some providers round differently; pass `rounding` to match them.
  */
 export function quoteFromRule(params: {
   readonly totalPaid: Money;
   readonly fees: FeeModel;
-  readonly providerRate: Rate;
+  readonly providerRate: Rate | ((converted: Money) => Rate);
   readonly rounding?: RoundingMode;
 }): QuoteAmounts {
   const rounding = params.rounding ?? ROUNDING.halfEven;
   const split = splitPayment(params.totalPaid, params.fees, rounding);
+  const rate =
+    typeof params.providerRate === "function"
+      ? params.providerRate(split.converted)
+      : params.providerRate;
   return {
     totalPaid: params.totalPaid,
     visibleFee: split.fee,
-    received: params.providerRate.convert(split.converted).round(rounding),
+    received: rate.convert(split.converted).round(rounding),
   };
 }

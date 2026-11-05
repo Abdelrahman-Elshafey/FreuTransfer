@@ -7,13 +7,52 @@ Source of truth for scope and roadmap: `Project Plan.md`. Market and data-source
 ## Working agreement
 - Build **one roadmap step at a time**, in order (Project Plan §7). Before a step: explain the plan
   and why. After it: walk the user through the code until they can explain it.
-- Write tests together with the code. After every change run `pnpm check` (lint + typecheck + test).
+- Write tests together with the code. After every change run `pnpm check`
+  (Prisma generate + lint + knip + typecheck + test).
 - One commit per roadmap step (ask before committing or pushing).
 - Before adding or upgrading any dependency, check the **latest stable** version in the npm
   registry (`npm view <pkg> dist-tags`). Skip RC/alpha releases, and check engines and peer dependencies.
   pnpm's `minimumReleaseAge` supply-chain gate refuses very fresh releases. **Don't add
   `minimumReleaseAgeExclude` entries**; pick the newest version old enough to pass the gate.
 - Record significant decisions as ADRs in `docs/adr/` (`NNNN-short-title.md`).
+
+## Definition of done (every change, before saying "done")
+Written after the 2026-11-05 code review, which found 5 bugs and 5 pieces of unneeded code.
+Each rule names the mistake it prevents.
+
+**Against bugs**
+1. **Rules first, then code.** Before a use case, list the Project Plan rules and edge cases it must
+   satisfy, and write one test per rule, with data that can catch a violation (e.g. two different rate
+   dates, not one). *Prevents: building for the simple case and testing what was built, not what's required.*
+2. **Ask the five edge-case questions** of every function: what if the input is *repeated*, *changed*,
+   *missing*, *old*, or runs on *Windows*? *Prevents: e.g. a seed that silently skipped edited data.*
+3. **Expected test values are worked out step by step in a comment**, never from memory, and include
+   every rounding step. *Prevents: wrong expectations that hide or invent bugs.*
+4. **Errors are never swallowed.** Catch only specific error types; every error the code throws has a test.
+5. **One source for every value or setting** (URLs, ports, limits). When changing how one entry point
+   behaves, search for the others. *Prevents: three copies of the DB URL drifting apart.*
+6. **When a decision changes** (new ADR, a choice by the owner), search the whole repo for the old
+   assumption and update it in the same change. *Prevents: `localhost` surviving the 127.0.0.1 decision.*
+7. **Facts from outside** (versions, fees, rates, API shapes) are checked at the source with link and
+   date, never taken from memory.
+8. **Run the real thing** once per sub-step (the CLI, the API with curl), not only the tests.
+
+**Against unneeded code**
+9. **No code without a caller.** A function, option, export or dependency is added only when something
+   uses it in the same change. No "a money class usually has this". knip enforces part of this.
+10. **Remove scaffolding** as soon as real code replaces it (e.g. step-1 placeholders).
+11. **Extract at the second copy.** The second time the same setup code is written, make it a helper.
+12. **Prefer deleting over adding:** if a simpler version passes the same tests, use it.
+13. **Every exception to a tool or rule has a written reason** (e.g. knip ignores `@prisma/client`
+    because only the git-ignored generated client imports it).
+
+**Process**
+14. **Read before changing:** read the existing code and its callers first; keep changes inside the
+    current step and say so when fixing something outside it.
+15. **Self-review before reporting.** Re-read the diff against rules 1–14, then report "tests pass" and
+    "self-reviewed" as two separate facts, plus anything not done.
+16. **Small deliveries:** stop after each sub-step (e.g. 3a, 3b) with a short summary, so mistakes are
+    caught early.
 
 ## Money rules (non-negotiable)
 - **Never** represent money or rates as JS `number`. Use the `Money`/`Rate` value objects in
@@ -46,7 +85,7 @@ Source of truth for scope and roadmap: `Project Plan.md`. Market and data-source
 - Node **26.13.0 LTS** (`.node-version`), pnpm **12.16.1** (`packageManager`), TypeScript 7.
 - TypeScript runs natively in Node (type stripping): use only erasable syntax (no `enum`,
   `namespace` or parameter properties) and import local files **with the `.ts` extension**.
-- Commands: `pnpm install` · `pnpm check` · `pnpm lint:fix` · `pnpm db:up` / `pnpm db:down`
+- Commands: `pnpm install` · `pnpm check` (generates the Prisma client first; DB tests need Docker running) · `pnpm knip` (unused files, exports, dependencies) · `pnpm lint:fix` · `pnpm db:up` / `pnpm db:down` · `pnpm db:migrate` · `pnpm db:generate`
   · `pnpm dev:api` (http://localhost:3000) · `pnpm dev:web` (http://localhost:5173).
 - Windows host: the repo forces LF line endings (`.gitattributes`).
 - Local DB = Docker container on **127.0.0.1:5434**. Port 5432 is the owner's native PostgreSQL

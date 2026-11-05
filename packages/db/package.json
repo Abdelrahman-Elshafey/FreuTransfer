@@ -1,0 +1,27 @@
+{
+  "name": "@freu-transfer/db",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Persistence: Prisma schema, migrations and repositories. Repositories return core types, never Prisma models.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate": "prisma generate",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "typecheck": "tsc -p tsconfig.json",
+    "seed": "node src/seed-cli.ts"
+  },
+  "dependencies": {
+    "@freu-transfer/core": "workspace:*",
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@testcontainers/postgresql": "^12.2.1",
+    "prisma": "7.10.1"
+  }
+}

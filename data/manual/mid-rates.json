@@ -1,0 +1,12 @@
+[
+  {
+    "base": "CHF",
+    "quote": "EUR",
+    "rate": "1.0893",
+    "source": "ecb",
+    "asOf": "2026-11-05",
+    "fetchedAt": "2026-11-05T17:29:37Z",
+    "sourceUrl": "https://api.frankfurter.dev/v2/rates?base=CHF&quotes=EUR&providers=ECB",
+    "note": "Read once by hand for v0.1. Stage 4 replaces this with the daily Frankfurter collector."
+  }
+]
