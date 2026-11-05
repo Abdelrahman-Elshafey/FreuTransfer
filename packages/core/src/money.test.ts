@@ -1,0 +1,53 @@
+import { describe, expect, it } from "vitest";
+import { Decimal, ROUNDING } from "./decimal.ts";
+import { CurrencyMismatchError, MoneyError } from "./errors.ts";
+import { Money } from "./money.ts";
+
+describe("Money", () => {
+  it("adds decimals exactly (no float error)", () => {
+    const sum = Money.of("0.1", "CHF").plus(Money.of("0.2", "CHF"));
+    expect(sum.amount.toString()).toBe("0.3");
+  });
+
+  it("refuses to mix currencies", () => {
+    expect(() => Money.of("1", "CHF").plus(Money.of("1", "EUR"))).toThrow(CurrencyMismatchError);
+    expect(() => Money.of("1", "CHF").compareTo(Money.of("1", "EUR"))).toThrow(
+      CurrencyMismatchError,
+    );
+  });
+
+  it("rejects JS numbers, invalid strings, infinity and unknown currencies", () => {
+    expect(() => Money.of(0.1 as unknown as string, "CHF")).toThrow(/string or Decimal/);
+    expect(() => Money.of("abc", "CHF")).toThrow(MoneyError);
+    expect(() => Money.of("Infinity", "CHF")).toThrow(/finite/);
+    expect(() => Money.of("1", "XYZ" as "CHF")).toThrow(/Unsupported currency/);
+  });
+
+  it("rounds half-even to the currency's minor unit by default", () => {
+    expect(Money.of("0.125", "CHF").round().toFixed()).toBe("0.12");
+    expect(Money.of("0.135", "CHF").round().toFixed()).toBe("0.14");
+    expect(Money.of("0.125", "CHF").round(ROUNDING.halfUp).toFixed()).toBe("0.13");
+  });
+
+  it("uses 0 decimals for JPY", () => {
+    expect(Money.of("1234.5", "JPY").toFixed()).toBe("1234");
+    expect(Money.of("1235.5", "JPY").toFixed()).toBe("1236");
+  });
+
+  it("serialises amounts as strings for the API", () => {
+    expect(JSON.stringify(Money.of("1044.7", "EUR"))).toBe('{"amount":"1044.70","currency":"EUR"}');
+  });
+
+  it("is immutable", () => {
+    const m = Money.of("10", "CHF");
+    m.plus(Money.of("5", "CHF"));
+    expect(m.toFixed()).toBe("10.00");
+    expect(Object.isFrozen(m)).toBe(true);
+  });
+
+  it("multiplies and divides by plain factors, never by zero", () => {
+    expect(Money.of("200", "CHF").times("0.005").toFixed()).toBe("1.00");
+    expect(Money.of("10", "CHF").dividedBy("4").toFixed()).toBe("2.50");
+    expect(() => Money.of("10", "CHF").dividedBy(new Decimal(0))).toThrow(/zero/);
+  });
+});
