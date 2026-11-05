@@ -1,5 +1,5 @@
 {
-  "name": "@swiss-transfer/api",
+  "name": "@freu-transfer/api",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@swiss-transfer/core": "workspace:*",
+    "@freu-transfer/core": "workspace:*",
     "express": "^5.3.0"
   },
   "devDependencies": {

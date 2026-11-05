@@ -1,4 +1,4 @@
-# Swiss Transfer — Cost Comparer
+# FreuTransfer — Cost Comparer
 
 What **actually arrives** when you send money between **Switzerland and Europe** (CHF ⇄ EUR, plus a
 few remittance corridors), and how much of the cost is hidden in the exchange rate.
@@ -17,6 +17,10 @@ pnpm db:up        # Postgres 18.6 on localhost:5434
 pnpm dev:api      # http://localhost:3000/health
 pnpm dev:web      # http://localhost:5173
 ```
+
+## Progress
+
+Roadmap status, updated after every stage: [`docs/progress.md`](docs/progress.md).
 
 ## Repository layout
 

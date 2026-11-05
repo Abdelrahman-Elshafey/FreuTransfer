@@ -1,5 +1,5 @@
 /**
- * @swiss-transfer/core — the pure domain package.
+ * @freu-transfer/core — the pure domain package.
  *
  * Rules (see CLAUDE.md): no I/O, no imports from other workspace packages,
  * money only through the Money/Rate value objects (added in roadmap step 2).

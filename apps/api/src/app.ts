@@ -1,4 +1,4 @@
-import { CORE_VERSION } from "@swiss-transfer/core";
+import { CORE_VERSION } from "@freu-transfer/core";
 import express, { type Express } from "express";
 
 /**

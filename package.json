@@ -1,5 +1,5 @@
 {
-  "name": "swiss-transfer",
+  "name": "freu-transfer",
   "version": "0.0.0",
   "private": true,
   "description": "Money transfer cost comparer for Switzerland ⇄ Europe: what actually arrives, and where the hidden FX cost is.",
@@ -18,8 +18,8 @@
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "db:up": "docker compose up -d --wait db",
     "db:down": "docker compose down",
-    "dev:api": "pnpm --filter @swiss-transfer/api dev",
-    "dev:web": "pnpm --filter @swiss-transfer/web dev"
+    "dev:api": "pnpm --filter @freu-transfer/api dev",
+    "dev:web": "pnpm --filter @freu-transfer/web dev"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",

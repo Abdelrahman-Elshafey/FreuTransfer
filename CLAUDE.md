@@ -1,11 +1,11 @@
-# CLAUDE.md — project rules for Swiss Transfer
+# CLAUDE.md — project rules for FreuTransfer
 
 Portfolio project: a money-transfer cost comparer for **Switzerland ⇄ Europe** (plus CHF→EGP/RSD).
 Source of truth for scope and roadmap: `Project Plan.md`. Market and data-source research:
 `Research - Swiss & European Transfer Landscape.md`.
 
 ## Working agreement
-- Build **one roadmap step at a time**, in order (Project Plan §11). Before a step: explain the plan
+- Build **one roadmap step at a time**, in order (Project Plan §7). Before a step: explain the plan
   and why. After it: walk the user through the code until they can explain it.
 - Write tests together with the code. After every change run `pnpm check` (lint + typecheck + test).
 - One commit per roadmap step (ask before committing or pushing).
@@ -19,7 +19,7 @@ Source of truth for scope and roadmap: `Project Plan.md`. Market and data-source
 - **Never** represent money or rates as JS `number`. Use the `Money`/`Rate` value objects in
   `packages/core` (backed by decimal.js). Values cross the API as **strings**.
 - Round only at the end, to the currency's ISO 4217 minor unit, with the documented rounding mode.
-- Universal cost formula (Project Plan §2):
+- Universal cost formula (Project Plan §3):
   `total_cost = total_paid − received / mid_rate`, `fx_markup = total_cost − visible_fee`,
   `total_cost_% = total_cost / total_paid`.
 - Every quote carries `capturedAt`, `source`, sender/recipient country, and the mid rate it was
@@ -32,11 +32,15 @@ Source of truth for scope and roadmap: `Project Plan.md`. Market and data-source
   - `packages/collectors` (step 4): one adapter per source, implementing core ports; raw responses are stored before parsing.
   - `apps/api`: Express 5. Handlers validate (Zod) and call core use cases, with no business logic. `app.ts` builds the app; `main.ts` is the composition root.
   - `apps/web`: React + Vite.
+- Production: the owner's OVH VPS + domain, Docker Compose with Postgres not exposed publicly,
+  collectors on a systemd timer (ADR 0002). No Vercel/Neon.
 - Append-only data: never update or delete observations, rates or quotes.
 - SQL: Prisma TypedSQL or tagged `$queryRaw` only, **never `$queryRawUnsafe`**.
 - Data sourcing: respect ToS and robots.txt. No automated access to sources that disallow it
-  (e.g. Revolut `/api/`); use rule-based or manual adapters instead. Wise comparison data only
-  as permitted by Wise (see Project Plan §7).
+  (e.g. Revolut `/api/`); use rule-based or manual adapters instead.
+- v1 data sources (ADR 0003): **Frankfurter** is the only automated source (mid-market). Provider
+  prices are rule-based or manual (Claude researches, the owner verifies). **No Wise API or
+  comparison data** (`api.wise.com`).
 
 ## Tooling
 - Node **26.13.0 LTS** (`.node-version`), pnpm **12.16.1** (`packageManager`), TypeScript 7.

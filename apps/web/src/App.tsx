@@ -18,7 +18,7 @@ export function App() {
 
   return (
     <main style={{ fontFamily: "system-ui, sans-serif", maxWidth: 640, margin: "3rem auto" }}>
-      <h1>Swiss Transfer — Cost Comparer</h1>
+      <h1>FreuTransfer — Cost Comparer</h1>
       <p>What actually arrives when you send money between Switzerland and Europe.</p>
       <p>
         API status:{" "}

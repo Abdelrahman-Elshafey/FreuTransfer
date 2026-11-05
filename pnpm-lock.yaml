@@ -181,7 +181,7 @@ importers:
 
   apps/api:
     dependencies:
-      '@swiss-transfer/core':
+      '@freu-transfer/core':
         specifier: workspace:*
         version: link:../../packages/core
       express:
