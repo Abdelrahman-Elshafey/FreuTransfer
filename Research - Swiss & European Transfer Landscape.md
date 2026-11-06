@@ -179,9 +179,9 @@ Send amount 1,000. Reference = Wise's mid-market rate at capture time. Total cos
 | **MoneyGram** | ✅ CH site exists | – | ◐ |
 | **Paysend** | ✅ CH site exists | 0.5–2% (2024 guide) | ◐ |
 | **Ria** | CH site exists (403 to our test) | – | ◐ |
-| **Remitly**, **WorldRemit**, **TransferGo** | Listed by aggregators for CH; Remitly confirmed only for **Liechtenstein** | – | ❓ |
+| **Remitly**, **WorldRemit**, **TransferGo** | Owner checked 2026-11-06: Remitly doesn't send from Switzerland; WorldRemit and TransferGo not usable for these corridors | – | ❌ dropped |
 | **Taptap Send** | Not in its sending-country list | – | ❓ (probably not) |
-| **XE**, **OFX** | OFX in Wise data for EUR→CHF; CH-resident sending unclear | – | ❓ |
+| **XE**, **OFX** | Owner checked 2026-11-06: XE shows prices only after sign-up (dropped). OFX: in Wise data for EUR→CHF; CH-resident sending still unchecked | – | XE ❌ · OFX ❓ |
 | CurrencyFair (Zai) | Still listed by aggregators | €3-style fixed fee (old) | ❓ |
 
 ### 5.6 Wallets and P2P
@@ -256,7 +256,7 @@ Send amount 1,000. Reference = Wise's mid-market rate at capture time. Total cos
 - Written permission from **Wise** (comparison data) and possibly from 1–2 cantonal banks.
 - ToS and robots.txt check for each bank rate page we automate.
 - Current **UBS** and **Raiffeisen** transfer price lists (PDFs) for manual schedules.
-- Whether **Remitly, WorldRemit, TransferGo, XE and OFX** accept **Swiss-resident senders** (check in each app).
+- ~~Whether Remitly, WorldRemit, TransferGo, XE and OFX accept Swiss-resident senders~~ — checked 2026-11-06, all dropped except **OFX** (still unchecked).
 - Verified **N26 / bunq** EUR→CHF pricing.
 - A legal reading of 924/2009 scope for transfers to CH, and PSR article numbers once it's published in the Official Journal.
 - World Bank RPW: download the Excel file and filter for Switzerland-origin corridors (the site blocked our automated fetch).
@@ -293,3 +293,21 @@ Send amount 1,000. Reference = Wise's mid-market rate at capture time. Total cos
 - UWG 5c: https://mll-legal.com/wp-content/uploads/2023/11/Data-Scraping-Torino-Reinhard-Oertli.pdf · https://francoischarlet.ch/2014/le-screen-scraping-ne-constitue-pas-un-comportement-deloyal/
 - Cross-border commuter accounts: https://www.creditmutuel.fr/fr/frontaliers/suisse/comptes-virements.html · https://hellosafe.ch/banque/banque-du-leman
 - Wise ToS summary (unverified): https://conductatlas.com/platform/wise/wise-us-customer-agreement/provision/CA-P-036076/prohibition-on-automated-scraping-without-permission/
+
+## Addendum 2026-11-05: owner-verified screenshots (21:18–21:35 CET)
+
+| Source | What it showed | What it proves |
+|---|---|---|
+| Wise calculator, 1,000 CHF→EUR | fee 3.50 CHF, receives 1,087.88 EUR | Fee is **on top**: 1.21 + 0.23% of the converted amount (deducted would be 3.51). Golden test 1. |
+| Wise compare, 1,000 EUR→CHF | Wise 0.9164 / 5.97 EUR / 910.88 CHF; WU 0.9055 / 15.76 / 901.91; PayPal 0.8782 / 43.57 / 876.42 | Shown rates are rounded (910.88 needs 0.916351, shown 0.9164), so the received amount is the truth. |
+| Wise comparison, 1,000 CHF→EUR | Migros Bank 1,072.85; Western Union 1,063.88; PayPal 1,039.19 EUR | Against Wise's implied mid (~1.0917): 1.73% / 2.55% / 4.81%. **Not used as data (ADR 0003)**, only as a cross-check. |
+| Wise method ([disclaimer](https://wise.com/gb/compare/disclaimer)) | Bloomberg mid; other providers' markup recorded once, re-applied to today's mid; between thresholds the higher threshold's price is used | Their figures for others are estimates, possibly flattering. Same "received / mid" idea as ours. |
+| Yuh pricing | SEPA in EUR free; other currencies in SEPA 4 CHF; intermediary fees CHF 10–50 possible | Transfer fee verified; 0.95% FX fee still to verify. |
+| Revolut (UK page), 1,000 CHF→EUR | rate 1.09086, no fee, receives 1,090.85 | 1,000 × 1.09086 = 1,090.86 exactly, so the shown rate is rounded up: not usable as a golden test. |
+| Revolut (UK page), 1,000 EUR→CHF | rate 0.91390, fee 1.20 EUR, receives 912.79 | Same: 998.80 × 0.9139 = 912.80. EUR bank transfers cost 1.20 EUR there. |
+| UBS Pay Worldwide (valid 19.10.2026) | max fee on the external provider's rate: PWW1 (incl. **EGP, RSD**) 3.60% up to 25k CHF; PWW2 4.00% | Needed for the CHF→EGP/RSD corridors (stage 5). Not EUR. |
+| PostFinance currency overview | EUR buy 0.9068 / **sell 0.9288** CHF per EUR (electronic payments, up to 50k CHF) | CHF→EUR at 1/0.9288 = 1.07666: **1.16%** vs the ECB rate of the day. |
+
+**Timing lesson (Project Plan §4):** Revolut's 21:28 quote gives *more* than the 14:10 ECB rate allows
+(-1.42 CHF "cost"). Evening quotes can't be compared with the ECB fix; that's why rule-based providers
+are computed from the mid, and manual quotes are labelled "approximate".

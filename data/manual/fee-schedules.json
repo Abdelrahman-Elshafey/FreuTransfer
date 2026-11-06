@@ -2,28 +2,28 @@
   {
     "providerId": "wise",
     "corridorId": "CHF-EUR",
-    "status": "draft",
+    "status": "verified",
     "sourceKind": "rule_based",
-    "feeMode": "deducted",
+    "feeMode": "on_top",
     "fixedFee": "1.21",
     "percentFee": "0.0023",
     "fxMarkup": "0",
-    "sourceUrl": "https://wise.com/ch/pricing/send-money",
-    "checkedAt": "2026-11-05T17:30:00Z",
-    "note": "Wise converts at the mid-market rate; fee = 1.21 CHF + 0.23% (bank transfer pay-in). TO VERIFY: fee on the pricing page / calculator for 1,000 CHF → EUR."
+    "sourceUrl": "https://wise.com/gb/send-money/?sourceCurrency=CHF&targetCurrency=EUR&sourceAmount=1000",
+    "checkedAt": "2026-11-05T20:18:00Z",
+    "note": "Converts at the mid-market rate. Fee 1.21 CHF + 0.23% of the converted amount (fee on top). Owner screenshot 2026-11-05 21:18: 1,000 CHF → fee 3.50 CHF, 1,087.88 EUR; only the on-top model reproduces 3.50 (deducted would give 3.51)."
   },
   {
     "providerId": "yuh",
     "corridorId": "CHF-EUR",
-    "status": "draft",
+    "status": "verified",
     "sourceKind": "rule_based",
     "feeMode": "deducted",
     "fixedFee": "0",
     "percentFee": "0",
     "fxMarkup": "0.0095",
     "sourceUrl": "https://www.yuh.com/en/pricing/",
-    "checkedAt": "2026-11-05T17:30:00Z",
-    "note": "0.95% exchange fee on the mid-market rate; EUR SEPA transfers free. TO VERIFY: both on the pricing page."
+    "checkedAt": "2026-11-06T17:46:00Z",
+    "note": "Pricing page (owner's link, 2026-11-06 18:46): SEPA transfers in EUR free; 'Currency exchange fee 0.95%' (Debit Mastercard section), FAQ: 'interbank (mid-market) rate plus 0.95%, charged only when a currency is exchanged'. Intermediary banks may charge CHF 10–50 when the currency differs from the beneficiary's."
   },
   {
     "providerId": "revolut",
@@ -36,8 +36,8 @@
     "fxMarkup": "0",
     "markupTier": { "upTo": "1250", "markupAbove": "0.01" },
     "sourceUrl": "https://www.revolut.com/en-CH/legal/paid-plans-ch/",
-    "checkedAt": "2026-11-05T19:00:00Z",
-    "note": "Standard plan: 0% within the monthly exchange allowance (CHF 1,250 per research 2026-11-04), 1% fair-usage fee on the part above. Assumes nothing else exchanged this month and a weekday (weekends +1%, not modelled). TO VERIFY: allowance, SEPA transfer fee for Standard."
+    "checkedAt": "2026-11-05T20:28:00Z",
+    "note": "Owner verified 2026-11-05 21:28 (revolut.com/money-transfer): CHF→EUR bank transfer 'No fees', 1,000 CHF → 1,090.85 EUR at a shown rate of 1.09086. Standard plan: 0% within the monthly allowance, 1% above, weekends +1% (not modelled). TO VERIFY: the CHF 1,250 allowance for Swiss residents (the page shown was the UK one)."
   },
   {
     "providerId": "ubs",
@@ -50,20 +50,34 @@
     "fxMarkup": "0.017",
     "sourceUrl": "https://www.ubs.com/content/dam/assets/rc/static/noindex/contract-terms/services-prices-en.pdf",
     "checkedAt": "2026-11-05T17:30:00Z",
-    "note": "'Up to 1.70%' foreign-currency surcharge (price list valid from 24 June 2026); SEPA single payment in digital banking free or CHF 0.30 depending on package. TO VERIFY: newer list (23 Sept 2026), exact surcharge for EUR from a CHF account, and whether it applies to UBS's own rate rather than mid."
+    "note": "'Up to 1.70%' foreign-currency surcharge (price list valid from 24 June 2026). TO VERIFY: the EUR surcharge from a CHF account, in the current 'Services and prices for private clients' PDF. Not shown by: the 'UBS Pay Worldwide' sheet (exotic currencies only; EGP/RSD up to 3.60%) or the key4 FX calculator (it only recommends a subscription: Basic CHF 2/month = 30% lower FX fee, Standard CHF 5 = at least 50%, Premium CHF 10 = at least 75%; max CHF 25,000 a month)."
   },
   {
     "providerId": "postfinance",
     "corridorId": "CHF-EUR",
-    "status": "needs_input",
+    "status": "verified",
     "sourceKind": "manual",
     "feeMode": "deducted",
     "fixedFee": "0",
     "percentFee": "0",
-    "providerRate": null,
-    "rateCapturedAt": null,
-    "sourceUrl": "https://www.postfinance.ch/en/private/paying-saving/international-payments/international-payment.html",
-    "checkedAt": "2026-11-05T17:30:00Z",
-    "note": "SEPA in EUR via e-finance/app: free. NEEDS OWNER: PostFinance's CHF→EUR 'Devisen' (FX, not banknote) rate for ~1,000 CHF and the exact time it was read."
+    "providerRate": "1.0766580534",
+    "rateCapturedAt": "2026-11-05T20:35:00Z",
+    "sourceUrl": "https://www.postfinance.ch/en/private/paying-saving/convert-currency-foreign-exchange/currency-overview.html",
+    "checkedAt": "2026-11-05T20:35:00Z",
+    "note": "Owner read 2026-11-05 21:35, filter 'Rate Electronic payments; limit up to 50,000 CHF': EUR sell 0.9288 CHF per EUR (buy 0.9068). Stored as 1 / 0.9288 = 1.0766580534 EUR per CHF. SEPA in EUR via e-finance/app is free (PostFinance international payments page)."
+  },
+  {
+    "providerId": "postfinance",
+    "corridorId": "CHF-EUR",
+    "status": "verified",
+    "sourceKind": "manual",
+    "feeMode": "deducted",
+    "fixedFee": "0",
+    "percentFee": "0",
+    "providerRate": "1.0803802939",
+    "rateCapturedAt": "2026-11-06T17:58:00Z",
+    "sourceUrl": "https://www.postfinance.ch/en/support/services/tools-calculator/currency-converter.html",
+    "checkedAt": "2026-11-06T17:58:00Z",
+    "note": "Owner screenshot of the PostFinance currency converter, 2026-11-06 18:58 ('latest update 06.11.2026', rate for electronic payments): CHF 1 = EUR 1.08038 / EUR 1 = CHF 0.9256. Stored as 1 / 0.9256 = 1.0803802939 (the converter uses exactly this inverse)."
   }
 ]
