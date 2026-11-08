@@ -3,34 +3,13 @@
  *
  * Rules (see CLAUDE.md): no I/O, no imports from other workspace packages,
  * money only through the Money/Rate value objects.
+ *
+ * Only what other packages use is exported (knip checks this with `includeEntryExports`).
  */
-export {
-  type Comparison,
-  type ComparisonRow,
-  compareProviders,
-  NoMidRateError,
-  RECHECK_DAYS,
-  rankOffers,
-  zurichDay,
-} from "./compare.ts";
-export { type CostBreakdown, computeCost } from "./cost.ts";
-export {
-  assertCurrencyCode,
-  type CurrencyCode,
-  isCurrencyCode,
-  minorUnits,
-} from "./currency.ts";
-export { Decimal, type DecimalInput, ROUNDING, type RoundingMode } from "./decimal.ts";
-export { CurrencyMismatchError, MoneyError } from "./errors.ts";
-export {
-  type FeeModel,
-  type FeeRule,
-  type FeeTier,
-  feeRule,
-  type PaymentSplit,
-  type SimpleFeeModel,
-  splitPayment,
-} from "./fees.ts";
+export { type ComparisonRow, compareProviders, NoMidRateError, RECHECK_DAYS } from "./compare.ts";
+export { assertCurrencyCode, type CurrencyCode, isCurrencyCode } from "./currency.ts";
+export { Decimal } from "./decimal.ts";
+export { type FeeModel, feeRule } from "./fees.ts";
 export { Money } from "./money.ts";
 export type {
   MidRateObservation,
@@ -40,5 +19,4 @@ export type {
   SourceKind,
 } from "./offer.ts";
 export type { MidRateRepository, OfferRepository } from "./ports.ts";
-export { type QuoteAmounts, quoteFromRule } from "./quote.ts";
 export { Rate } from "./rate.ts";

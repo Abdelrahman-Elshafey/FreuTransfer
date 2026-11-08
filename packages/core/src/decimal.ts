@@ -7,7 +7,7 @@ import { MoneyError } from "./errors.ts";
  * Our own configured copy of decimal.js, so no other code can change our settings.
  * - 40 significant digits: far more than any amount or rate needs, so intermediate
  *   results are exact for our purposes.
- * - Banker's rounding (half-even) is the default; see `ROUNDING` below.
+ * - Banker's rounding (half-even) is the default; see `ROUND_HALF_EVEN` below.
  */
 export const Decimal = DecimalJs.clone({
   precision: 40,
@@ -17,12 +17,8 @@ export const Decimal = DecimalJs.clone({
 });
 export type Decimal = DecimalJs;
 
-/** Rounding modes we allow. Half-even is our documented default (Project Plan §3). */
-export const ROUNDING = {
-  halfEven: DecimalJs.ROUND_HALF_EVEN,
-  halfUp: DecimalJs.ROUND_HALF_UP,
-} as const;
-export type RoundingMode = (typeof ROUNDING)[keyof typeof ROUNDING];
+/** Our one rounding mode: half-even (banker's rounding), as documented in Project Plan §3. */
+export const ROUND_HALF_EVEN = DecimalJs.ROUND_HALF_EVEN;
 
 /** Values we accept for money and rates. JS `number` is deliberately not allowed. */
 export type DecimalInput = string | Decimal;

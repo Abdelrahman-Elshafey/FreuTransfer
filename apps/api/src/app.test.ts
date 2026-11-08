@@ -75,6 +75,41 @@ describe("GET /v1/compare", () => {
     expect(typeof row.received.amount).toBe("string");
   });
 
+  it("gives every row the reference rate it was compared with, and a manual rate's capture time", async () => {
+    // A manual rate read on 4 Nov is compared with the 4 Nov reference rate, not the newest (5 Nov).
+    const nov4: MidRateObservation = {
+      ...mid,
+      rate: Rate.of("CHF", "EUR", "1.0712"),
+      asOf: "2026-11-04",
+    };
+    const manual: ProviderOffer = {
+      ...yuh,
+      providerId: "postfinance",
+      providerName: "PostFinance",
+      sourceKind: "manual",
+      pricing: {
+        kind: "rate",
+        rate: Rate.of("CHF", "EUR", "1.0512"),
+        capturedAt: new Date("2026-11-04T09:30:00Z"),
+      },
+    };
+    const app = createApp(
+      deps({
+        offers: { latestOffers: async () => [yuh, manual] },
+        midRates: { latest: async (_b, _q, day) => (day === "2026-11-04" ? nov4 : mid) },
+      }),
+    );
+    const res = await request(app).get("/v1/compare?from=CHF&to=EUR&amount=1000");
+    const byId = Object.fromEntries(
+      res.body.results.map((r: { providerId: string }) => [r.providerId, r]),
+    );
+    expect(byId.yuh.midRate).toEqual({ rate: "1.0893", source: "ecb", asOf: "2026-11-05" });
+    expect(byId.yuh.rateCapturedAt).toBeNull();
+    expect(byId.postfinance.midRate).toEqual({ rate: "1.0712", source: "ecb", asOf: "2026-11-04" });
+    expect(byId.postfinance.rateCapturedAt).toBe("2026-11-04T09:30:00.000Z");
+    expect(res.body.recheckDays).toBe(30);
+  });
+
   it.each([
     ["missing amount", "/v1/compare?from=CHF&to=EUR"],
     ["zero amount", "/v1/compare?from=CHF&to=EUR&amount=0"],

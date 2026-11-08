@@ -1,5 +1,5 @@
 import type { CurrencyCode } from "./currency.ts";
-import { Decimal, type DecimalInput, ROUNDING, type RoundingMode, toDecimal } from "./decimal.ts";
+import { Decimal, type DecimalInput, toDecimal } from "./decimal.ts";
 import { CurrencyMismatchError, MoneyError } from "./errors.ts";
 import { Money, maxMoney, minMoney } from "./money.ts";
 
@@ -15,20 +15,20 @@ export type FeeRule = {
 };
 
 /** The three ways providers charge (Strategy pattern as data: one `kind` per strategy). */
-export type SimpleFeeModel =
+type SimpleFeeModel =
   /** The fee is taken out of what you pay: converted = total − fee. */
   | { readonly kind: "deducted"; readonly rule: FeeRule }
   /** The fee is added on top of what's converted: total = converted + fee(converted). */
   | { readonly kind: "on_top"; readonly rule: FeeRule };
 
 /** Different fee models by amount. A tier applies while total paid ≤ `upTo` (null = no limit). */
-export type FeeTier = { readonly upTo: Money | null; readonly model: SimpleFeeModel };
+type FeeTier = { readonly upTo: Money | null; readonly model: SimpleFeeModel };
 export type FeeModel =
   | SimpleFeeModel
   | { readonly kind: "tiered"; readonly tiers: readonly FeeTier[] };
 
 /** What happens to the money you pay: part is the fee, the rest gets converted. */
-export type PaymentSplit = {
+type PaymentSplit = {
   readonly totalPaid: Money;
   readonly fee: Money;
   readonly converted: Money;
@@ -65,11 +65,7 @@ export function feeRule(currency: CurrencyCode, input: FeeRuleInput): FeeRule {
  * charged (you can't be charged 4.9831 CHF). `converted` is then exactly total − fee,
  * so fee + converted always equals what you paid.
  */
-export function splitPayment(
-  totalPaid: Money,
-  model: FeeModel,
-  rounding: RoundingMode = ROUNDING.halfEven,
-): PaymentSplit {
+export function splitPayment(totalPaid: Money, model: FeeModel): PaymentSplit {
   if (!totalPaid.amount.gt(0)) throw new MoneyError("Total paid must be positive");
   const simple = model.kind === "tiered" ? pickTier(totalPaid, model.tiers) : model;
   assertRuleCurrency(simple.rule, totalPaid);
@@ -78,7 +74,7 @@ export function splitPayment(
     simple.kind === "deducted"
       ? deductedFee(totalPaid, simple.rule)
       : onTopFee(totalPaid, simple.rule);
-  const fee = clamp(rawFee, simple.rule).round(rounding);
+  const fee = clamp(rawFee, simple.rule).round();
 
   if (fee.compareTo(totalPaid) >= 0) {
     throw new MoneyError(

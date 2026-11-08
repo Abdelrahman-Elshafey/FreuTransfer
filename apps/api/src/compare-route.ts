@@ -3,10 +3,12 @@ import {
   type CurrencyCode,
   compareProviders,
   isCurrencyCode,
+  type MidRateObservation,
   type MidRateRepository,
   Money,
   NoMidRateError,
   type OfferRepository,
+  RECHECK_DAYS,
 } from "@freu-transfer/core";
 import { type RequestHandler, Router } from "express";
 import { z } from "zod";
@@ -66,11 +68,9 @@ export function compareRouter(deps: CompareDeps): Router {
         from,
         to,
         amount: result.amount.toJSON(),
-        midRate: {
-          rate: result.mid.rate.value.toString(),
-          source: result.mid.source,
-          asOf: result.mid.asOf,
-        },
+        midRate: toMidDto(result.mid),
+        /** Data older than this many days is in `stale`, not ranked. */
+        recheckDays: RECHECK_DAYS,
         results: result.ranked.map((row, i) => ({ rank: i + 1, ...toDto(row) })),
         stale: result.stale.map(toDto),
         unavailable: result.unavailable.map(({ offer, reason }) => ({
@@ -93,9 +93,14 @@ export function compareRouter(deps: CompareDeps): Router {
   return router;
 }
 
+function toMidDto(mid: MidRateObservation) {
+  return { rate: mid.rate.value.toString(), source: mid.source, asOf: mid.asOf };
+}
+
 /** Money and percentages as strings, never JSON numbers. */
 function toDto(row: ComparisonRow) {
   const { offer, quote, cost } = row;
+  const { pricing } = offer;
   return {
     providerId: offer.providerId,
     providerName: offer.providerName,
@@ -108,6 +113,10 @@ function toDto(row: ComparisonRow) {
     // Percent with 2 decimals ("0.95" = 0.95%), computed in decimals so clients do no maths.
     totalCostPercent: cost.totalCostPct.times(100).toFixed(2),
     approximate: row.approximate,
+    /** The reference rate this row was compared with (a manual rate's own day, not always today's). */
+    midRate: toMidDto(row.mid),
+    /** Manual rates only: when the provider's rate was read. */
+    rateCapturedAt: pricing.kind === "rate" ? pricing.capturedAt.toISOString() : null,
     checkedAt: offer.checkedAt.toISOString(),
     sourceUrl: offer.sourceUrl,
     note: offer.note,

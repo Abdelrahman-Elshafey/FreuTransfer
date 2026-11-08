@@ -1,4 +1,4 @@
-import { type Decimal, ROUNDING } from "./decimal.ts";
+import { type Decimal, ROUND_HALF_EVEN } from "./decimal.ts";
 import { CurrencyMismatchError, MoneyError } from "./errors.ts";
 import type { Money } from "./money.ts";
 import type { QuoteAmounts } from "./quote.ts";
@@ -64,6 +64,6 @@ export function computeCost(quote: QuoteAmounts, mid: Rate): CostBreakdown {
     fxMarkup: totalCost.minus(roundedFee),
     totalCostPct: exactTotalCost.amount
       .dividedBy(totalPaid.amount)
-      .toDecimalPlaces(PCT_DECIMALS, ROUNDING.halfEven),
+      .toDecimalPlaces(PCT_DECIMALS, ROUND_HALF_EVEN),
   };
 }

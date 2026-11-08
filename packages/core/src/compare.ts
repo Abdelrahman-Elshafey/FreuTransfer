@@ -39,7 +39,7 @@ export class NoMidRateError extends Error {
 }
 
 /** The calendar day in Zurich ("YYYY-MM-DD"): ECB rates are dated in Central European time. */
-export function zurichDay(instant: Date): string {
+function zurichDay(instant: Date): string {
   return instant.toLocaleDateString("sv-SE", { timeZone: "Europe/Zurich" });
 }
 
