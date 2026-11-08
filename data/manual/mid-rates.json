@@ -8,5 +8,15 @@
     "fetchedAt": "2026-11-05T17:29:37Z",
     "sourceUrl": "https://api.frankfurter.dev/v2/rates?base=CHF&quotes=EUR&providers=ECB",
     "note": "Read once by hand for v0.1. Stage 4 replaces this with the daily Frankfurter collector."
+  },
+  {
+    "base": "CHF",
+    "quote": "EUR",
+    "rate": "1.0937",
+    "source": "ecb",
+    "asOf": "2026-11-06",
+    "fetchedAt": "2026-11-06T17:00:18Z",
+    "sourceUrl": "https://api.frankfurter.dev/v2/rates?base=CHF&quotes=EUR&providers=ECB",
+    "note": "Read by hand for v0.1 (needed for PostFinance's 06.11 reading). Stage 4 automates this."
   }
 ]

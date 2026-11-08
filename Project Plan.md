@@ -22,8 +22,10 @@ best first, and splits the cost into the **visible fee** and the **hidden cost i
 - **Corridors:** CHF→EUR, EUR→CHF (main), CHF→GBP, CHF→EGP, CHF→RSD. Bank transfer → bank account only.
 - **Providers (~8):**
   - **rule-based** from published pricing: Revolut, Yuh, Alpian, Wise (public pricing page only)
-  - **manual**: Swiss banks (UBS or ZKB, PostFinance, Raiffeisen, 1–2 cantonal banks), Western Union,
+  - **manual**: Swiss banks (UBS, PostFinance, Raiffeisen, 1–2 cantonal banks), Western Union,
     a few EU banks for EUR→CHF. Claude researches the published fees/rates with links; the owner verifies.
+  - **dropped** (owner, 2026-11-06): ZKB (UBS is the big bank); Remitly (doesn't send from Switzerland);
+    WorldRemit and TransferGo (not usable for these corridors); XE (prices only after sign-up).
 - **Only automated source:** Frankfurter (mid-market rate). See ADR 0003.
 
 ## 3. The money maths
@@ -91,8 +93,12 @@ computed, not stored, so a fix to the method applies to all history.
 Disclaimer (estimates, not financial advice); respect ToS and robots.txt; provider names used factually,
 no logos; no affiliate links; a privacy policy (revFADP) before collecting any email.
 
-## 9. Open decisions
-- Re-check period before manual data is stale (proposal: 30 days).
-- UBS or ZKB as the big bank; final provider and corridor list (stage 0).
-- Sanity-guard threshold (start at 10%).
+## 9. Decisions
+Decided by the owner (2026-11-06):
+- Re-check period before manual data counts as stale: **30 days** (`RECHECK_DAYS` in core).
+- No extra Swiss/EU banks for now: v1 providers are those in §2.
+
+Still open:
+- Whether OFX accepts Swiss senders.
+- Sanity-guard threshold (proposal: 10%; explained to the owner 2026-11-06).
 - Whether to automate any bank rate page later.

@@ -89,8 +89,45 @@ describe("computeCost", () => {
       CurrencyMismatchError,
     );
   });
+});
 
-  it.todo("golden test 1: a real provider calculator result, reproduced to the cent");
-  it.todo("golden test 2: a real provider calculator result, reproduced to the cent");
-  it.todo("golden test 3: a real provider calculator result, reproduced to the cent");
+/**
+ * Golden tests: real provider calculator results, reproduced to the cent.
+ * Each one cites the screenshot the owner took (date, time, page).
+ */
+describe("golden tests (real calculator results)", () => {
+  it("Wise, 1,000 CHF → EUR, wise.com calculator, 2026-11-05 21:18: fee 3.50, receives 1,087.88", () => {
+    // Fee 1.21 CHF + 0.23% of the converted amount (on top):
+    //   converted = (1000 − 1.21) / 1.0023 = 996.4980…; fee = 1000 − 996.4980… = 3.5019… → 3.50
+    //   converted = 1000 − 3.50 = 996.50
+    // The screenshot doesn't show Wise's rate; 1,087.88 / 996.50 puts it between 1.091696 and
+    // 1.091706, so 1.0917 (4 decimals, inside that range) is used:
+    //   996.50 × 1.0917 = 1087.87905 → 1087.88 EUR
+    const quote = quoteFromRule({
+      totalPaid: Money.of("1000", "CHF"),
+      fees: { kind: "on_top", rule: feeRule("CHF", { fixed: "1.21", percent: "0.0023" }) },
+      providerRate: Rate.of("CHF", "EUR", "1.0917"),
+    });
+    expect(quote.visibleFee.toString()).toBe("3.50 CHF");
+    expect(quote.received.toString()).toBe("1087.88 EUR");
+  });
+
+  it("PostFinance currency converter, 2026-11-06 18:58: CHF 1 = EUR 1.08038 / EUR 1 = CHF 0.9256", () => {
+    // The converter shows both directions; they are each other's inverse, which is how we store
+    // PostFinance's CHF→EUR rate (1 / sell rate):
+    //   1 / 0.9256 = 1.0803802939… → shown with 5 decimals: 1.08038
+    //   1.00 CHF × 1.0803802939 = 1.08038… → 1.08 EUR (the converter's result for 1.00)
+    const chfEur = Rate.of("EUR", "CHF", "0.9256").invert();
+    expect(chfEur.value.toFixed(5)).toBe("1.08038");
+    const quote = quoteFromRule({
+      totalPaid: Money.of("1.00", "CHF"),
+      fees: { kind: "deducted", rule: feeRule("CHF", {}) },
+      providerRate: chfEur,
+    });
+    expect(quote.received.toString()).toBe("1.08 EUR");
+  });
+
+  it.todo(
+    "golden test 3: a calculator showing its exact rate and the amount received for ~1,000 CHF",
+  );
 });
