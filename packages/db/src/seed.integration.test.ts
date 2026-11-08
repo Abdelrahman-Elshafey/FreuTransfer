@@ -95,6 +95,18 @@ describe("seedManualData", () => {
     await expect(seedManualData(db, edited)).rejects.toThrow(/Stored rates can't be changed/);
   });
 
+  it("stores nothing when it stops on a conflict (the tables are append-only, so no clean-up is possible)", async () => {
+    // A new day's rate (would be inserted) comes before a conflicting fee schedule (stops the seed).
+    const newRate = { ...data.midRates[0], asOf: "2026-11-06", rate: "1.0937" };
+    const edited = parseManualData({
+      ...data,
+      midRates: [...data.midRates, newRate],
+      feeSchedules: [entry("yuh", "verified", "0.0090")],
+    });
+    await expect(seedManualData(db, edited)).rejects.toThrow(/different fxMarkup/);
+    expect(await db.midMarketRate.count({ where: { asOf: new Date("2026-11-06") } })).toBe(0);
+  });
+
   it("adds drafts only when asked (local preview), never needs_input", async () => {
     const result = await seedManualData(db, data, { includeDrafts: true });
     expect(result.feeSchedules).toBe(1);

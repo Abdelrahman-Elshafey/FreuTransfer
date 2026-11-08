@@ -49,6 +49,11 @@ function ResultsTable({
                 {sourceLabel(r)}
               </a>
               <div className="note">checked {r.checkedAt.slice(0, 10)}</div>
+              {r.approximate && (
+                <div className="note">
+                  vs mid {r.midRate.rate} ({r.midRate.source.toUpperCase()}, {r.midRate.asOf})
+                </div>
+              )}
             </td>
           </tr>
         ))}
@@ -65,8 +70,11 @@ export function App() {
   async function compare(event: FormEvent) {
     event.preventDefault();
     setLoading(true);
-    setOutcome(await fetchComparison(amount.trim()));
-    setLoading(false);
+    try {
+      setOutcome(await fetchComparison(amount.trim()));
+    } finally {
+      setLoading(false); // also after an unexpected error, so the button never stays disabled
+    }
   }
 
   const data = outcome?.ok ? outcome.data : null;
@@ -100,7 +108,8 @@ export function App() {
         <>
           <p className="note">
             Compared with the mid-market rate 1 CHF = {data.midRate.rate} EUR (
-            {data.midRate.source.toUpperCase()}, {data.midRate.asOf}).
+            {data.midRate.source.toUpperCase()}, {data.midRate.asOf}); manual rates with the rate of
+            the day they were read.
           </p>
           {data.results.length > 0 ? (
             <ResultsTable rows={data.results} ranked />
@@ -109,7 +118,7 @@ export function App() {
           )}
           {data.stale.length > 0 && (
             <>
-              <h2>Not re-checked for over 30 days</h2>
+              <h2>Not re-checked for over {data.recheckDays} days</h2>
               <ResultsTable rows={data.stale} ranked={false} />
             </>
           )}

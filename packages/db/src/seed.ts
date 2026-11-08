@@ -1,5 +1,5 @@
 import { Decimal } from "@freu-transfer/core";
-import type { PrismaClient } from "./generated/prisma/client.ts";
+import type { Prisma, PrismaClient } from "./generated/prisma/client.ts";
 import type { FeeScheduleEntry, ManualData } from "./manual-data.ts";
 
 export type SeedResult = {
@@ -25,11 +25,23 @@ class SeedConflictError extends Error {
  *
  * Only `verified` fee schedules are loaded, unless `includeDrafts` is set for a local preview
  * (never in production). `needs_input` entries are never loaded.
+ *
+ * All or nothing: everything runs in one transaction, so a conflict or a rejected row leaves the
+ * database unchanged. Without it, rows inserted before the error would stay forever (the tables
+ * are append-only, so they can't be deleted).
  */
-export async function seedManualData(
+export function seedManualData(
   db: PrismaClient,
   data: ManualData,
   options: { readonly includeDrafts?: boolean } = {},
+): Promise<SeedResult> {
+  return db.$transaction((tx) => seedInTransaction(tx, data, options));
+}
+
+async function seedInTransaction(
+  db: Prisma.TransactionClient,
+  data: ManualData,
+  options: { readonly includeDrafts?: boolean },
 ): Promise<SeedResult> {
   // Reference data (not history): insert new ones, update names and websites of existing ones.
   const knownProviders = new Set(

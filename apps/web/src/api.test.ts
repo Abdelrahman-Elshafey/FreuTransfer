@@ -46,5 +46,18 @@ describe("fetchComparison", () => {
       throw new TypeError("fetch failed");
     }) as typeof fetch;
     expect((await fetchComparison("1", down)).ok).toBe(false);
+
+    expect(await fetchComparison("1", respond(500, null))).toEqual({
+      ok: false,
+      message: "The API answered with HTTP 500.",
+    });
+  });
+
+  it("explains a 200 that isn't JSON (e.g. a proxy serving index.html) instead of throwing", async () => {
+    const page = (async () => new Response("<!doctype html>", { status: 200 })) as typeof fetch;
+    expect(await fetchComparison("1", page)).toEqual({
+      ok: false,
+      message: "The API answered with something that isn't JSON (HTTP 200).",
+    });
   });
 });

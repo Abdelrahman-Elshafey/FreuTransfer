@@ -2,7 +2,7 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stage 3 in progress: 3a database ✅, 3b manual data ✅ (waiting for owner verification), 3c API ✅, 3d page ✅, 3e deploy next (needs VPS details). Stage 2 waits only for 3 real calculator results. Stage 0 continues alongside.
+**Now:** stage 3 in progress: 3a database ✅, 3b manual data ✅ (Revolut + UBS still drafts, waiting for owner verification), 3c API ✅, 3d page ✅, review 2026-11-08 ✅, 3e deploy next (needs VPS details). Stage 2 waits only for 3 real calculator results. Stage 0 continues alongside.
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
@@ -52,3 +52,14 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
 - **2026-11-06:** Yuh verified (0.95% from its pricing page) and a second PostFinance reading (0.9256, 06.11)
   with the 06.11 ECB rate; golden test 2 (PostFinance converter: the two shown rates are exact inverses).
   Owner dropped ZKB, Remitly, WorldRemit, TransferGo and XE. UBS key4 FX calculator shows no rates.
+- **2026-11-08:** Owner created a `dev` branch: step branches now merge into `dev`, and `dev` into `main`
+  only for a release (CLAUDE.md, README; CI also runs on pushes to `dev`). Code review of stage 3. Fixed:
+  `pnpm db:seed` now runs in one transaction (a seed that stopped on a conflict left the rows inserted
+  before it, and append-only tables can never remove them; a test caught it); every `/v1/compare` row
+  now carries the reference rate it was compared with and a manual rate's capture time (CLAUDE.md money
+  rule; the page showed only the newest rate); the page no longer hangs on "Comparing…" when the API
+  answers 200 with non-JSON; the 30-day re-check limit comes from the API (`recheckDays`) instead of a
+  second copy in the page; the Vite proxy and README use `127.0.0.1`. Removed unused code: knip now also
+  checks package entry exports (`includeEntryExports`) and found 23 unused core exports; the unused
+  rounding-mode option, `Money.isZero` and `USD`. 84 tests pass; API and page verified against a real
+  Postgres (curl + headless Chromium).

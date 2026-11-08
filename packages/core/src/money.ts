@@ -1,11 +1,5 @@
 import { assertCurrencyCode, type CurrencyCode, minorUnits } from "./currency.ts";
-import {
-  type Decimal,
-  type DecimalInput,
-  ROUNDING,
-  type RoundingMode,
-  toDecimal,
-} from "./decimal.ts";
+import { type Decimal, type DecimalInput, ROUND_HALF_EVEN, toDecimal } from "./decimal.ts";
 import { CurrencyMismatchError, MoneyError } from "./errors.ts";
 
 /**
@@ -61,22 +55,21 @@ export class Money {
     return this.currency === other.currency && this.amount.equals(other.amount);
   }
 
-  isZero(): boolean {
-    return this.amount.isZero();
-  }
-
   isNegative(): boolean {
     return this.amount.isNegative() && !this.amount.isZero();
   }
 
-  /** Round to the currency's minor unit (CHF → 2 decimals, JPY → 0). Half-even by default. */
-  round(mode: RoundingMode = ROUNDING.halfEven): Money {
-    return new Money(this.amount.toDecimalPlaces(minorUnits(this.currency), mode), this.currency);
+  /** Round half-even to the currency's minor unit (CHF → 2 decimals, JPY → 0). */
+  round(): Money {
+    return new Money(
+      this.amount.toDecimalPlaces(minorUnits(this.currency), ROUND_HALF_EVEN),
+      this.currency,
+    );
   }
 
   /** The amount rounded to the minor unit, as a fixed string: "1044.75". */
-  toFixed(mode: RoundingMode = ROUNDING.halfEven): string {
-    return this.amount.toFixed(minorUnits(this.currency), mode);
+  toFixed(): string {
+    return this.amount.toFixed(minorUnits(this.currency), ROUND_HALF_EVEN);
   }
 
   /** "1044.75 EUR" (rounded, for logs and messages). */

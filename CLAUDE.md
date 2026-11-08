@@ -9,9 +9,11 @@ Source of truth for scope and roadmap: `Project Plan.md`. Market and data-source
   and why. After it: walk the user through the code until they can explain it.
 - Write tests together with the code. After every change run `pnpm check`
   (Prisma generate + lint + knip + typecheck + test).
-- **Git workflow (GitHub Flow, from 2026-11-05):** never commit to `main` directly. Each roadmap step
-  or sub-step gets a short-lived branch (`step-<n>/<short-name>`, e.g. `step-3/deploy`), pushed and
-  merged through a pull request once CI passes; then the branch is deleted. **Tell the owner before
+- **Git workflow (from 2026-11-08):** two long-lived branches. `dev` collects finished work; `main`
+  is production and only receives `dev` through a pull request when a version is ready to release.
+  Never commit to `main` or `dev` directly. Each roadmap step or sub-step gets a short-lived branch
+  from `dev` (`step-<n>/<short-name>`, e.g. `step-3/deploy`), pushed and merged **into `dev`**
+  through a pull request once CI passes; then the branch is deleted. **Tell the owner before
   creating a commit and before pushing** (branch name + commit message), and wait for the OK.
   Commits are authored as A.Elshafey only, with no AI attribution lines.
 - Before adding or upgrading any dependency, check the **latest stable** version in the npm

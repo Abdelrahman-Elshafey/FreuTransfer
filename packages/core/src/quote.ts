@@ -1,4 +1,3 @@
-import { ROUNDING, type RoundingMode } from "./decimal.ts";
 import { type FeeModel, splitPayment } from "./fees.ts";
 import type { Money } from "./money.ts";
 import type { Rate } from "./rate.ts";
@@ -24,17 +23,15 @@ export type QuoteAmounts = {
  * `providerRate` can also be a function of the converted amount, for rates that depend on it
  * (a markup tier); it receives the amount after the fee.
  *
- * `received` is rounded to the recipient currency's minor unit, because that's what is
- * actually paid out. Some providers round differently; pass `rounding` to match them.
+ * `received` is rounded (half-even) to the recipient currency's minor unit, because that's
+ * what is actually paid out.
  */
 export function quoteFromRule(params: {
   readonly totalPaid: Money;
   readonly fees: FeeModel;
   readonly providerRate: Rate | ((converted: Money) => Rate);
-  readonly rounding?: RoundingMode;
 }): QuoteAmounts {
-  const rounding = params.rounding ?? ROUNDING.halfEven;
-  const split = splitPayment(params.totalPaid, params.fees, rounding);
+  const split = splitPayment(params.totalPaid, params.fees);
   const rate =
     typeof params.providerRate === "function"
       ? params.providerRate(split.converted)
@@ -42,6 +39,6 @@ export function quoteFromRule(params: {
   return {
     totalPaid: params.totalPaid,
     visibleFee: split.fee,
-    received: rate.convert(split.converted).round(rounding),
+    received: rate.convert(split.converted).round(),
   };
 }

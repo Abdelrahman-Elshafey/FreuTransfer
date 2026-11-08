@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Decimal, ROUNDING } from "./decimal.ts";
+import { Decimal } from "./decimal.ts";
 import { CurrencyMismatchError, MoneyError } from "./errors.ts";
 import { Money } from "./money.ts";
 
@@ -26,7 +26,6 @@ describe("Money", () => {
   it("rounds half-even to the currency's minor unit by default", () => {
     expect(Money.of("0.125", "CHF").round().toFixed()).toBe("0.12");
     expect(Money.of("0.135", "CHF").round().toFixed()).toBe("0.14");
-    expect(Money.of("0.125", "CHF").round(ROUNDING.halfUp).toFixed()).toBe("0.13");
   });
 
   it("uses 0 decimals for JPY", () => {
