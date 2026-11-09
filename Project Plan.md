@@ -97,8 +97,10 @@ no logos; no affiliate links; a privacy policy (revFADP) before collecting any e
 Decided by the owner (2026-11-06):
 - Re-check period before manual data counts as stale: **30 days** (`RECHECK_DAYS` in core).
 - No extra Swiss/EU banks for now: v1 providers are those in §2.
+- Sanity guard (stage 5): a total cost **above 10%** or **below 0%** is treated as a data error: the
+  offer isn't ranked but listed for checking. Can be raised per corridor (e.g. EGP/RSD) if needed.
 
 Still open:
 - Whether OFX accepts Swiss senders.
-- Sanity-guard threshold (proposal: 10%; explained to the owner 2026-11-06).
+- Production domain (subdomain of `aelshafey.com`?), to discuss before stage 3e.
 - Whether to automate any bank rate page later.
