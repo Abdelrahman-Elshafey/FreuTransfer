@@ -19,5 +19,5 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # Same command as locally: Prisma generate, lint, typecheck, tests (incl. Testcontainers DB tests).
+      # Same command as locally: Prisma generate, lint, knip, typecheck, tests (incl. Testcontainers DB tests).
       - run: pnpm check

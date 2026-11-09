@@ -95,6 +95,15 @@ describe("seedManualData", () => {
     await expect(seedManualData(db, edited)).rejects.toThrow(/Stored rates can't be changed/);
   });
 
+  it("refuses a stored corridor whose currencies changed, instead of silently skipping it", async () => {
+    const edited = parseManualData({
+      ...data,
+      corridors: [{ id: "CHF-EUR", sourceCurrency: "CHF", targetCurrency: "GBP" }],
+      feeSchedules: [],
+    });
+    await expect(seedManualData(db, edited)).rejects.toThrow(/Corridor CHF-EUR is CHF→EUR/);
+  });
+
   it("stores nothing when it stops on a conflict (the tables are append-only, so no clean-up is possible)", async () => {
     // A new day's rate (would be inserted) comes before a conflicting fee schedule (stops the seed).
     const newRate = { ...data.midRates[0], asOf: "2026-11-06", rate: "1.0937" };

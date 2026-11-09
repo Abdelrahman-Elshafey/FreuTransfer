@@ -1,6 +1,6 @@
 # ADR 0002: Host production on the owner's OVH VPS
 
-- **Status:** accepted
+- **Status:** accepted (public entry point superseded by ADR 0004: Cloudflare Tunnel)
 - **Date:** 2026-11-04
 - **Supersedes:** the hosting parts of ADR 0001 (Vercel / Render, Neon, GitHub Actions cron)
 
@@ -15,7 +15,8 @@ Run everything on the VPS with **Docker Compose**:
 - **Postgres 18.6** in a container with a named volume. It is **not** published to the internet; only
   the API and the collectors reach it over the internal Compose network.
 - **API** (Express 5, run on Node 26 as a normal long-lived server, exactly as in development).
-- **Reverse proxy** with automatic Let's Encrypt HTTPS on the owner's domain. It serves the built
+- **Reverse proxy** with automatic Let's Encrypt HTTPS on the owner's domain (replaced by a
+  Cloudflare Tunnel, ADR 0004; the routing below still applies). It serves the built
   React files and forwards `/v1/*`, `/health` and `/docs` to the API.
 - **Collectors** run as a one-off container started by a **systemd timer**, whose `OnCalendar` accepts
   `Europe/Zurich`, so the daily ECB-aligned snapshot is DST-safe.

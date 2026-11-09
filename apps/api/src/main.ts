@@ -22,7 +22,9 @@ const app = createApp({
   now: () => new Date(),
 });
 
-const server = app.listen(port, () => {
+// Express 5 also calls this callback when listening fails (e.g. the port is taken), with the error.
+const server = app.listen(port, (error) => {
+  if (error) throw error;
   console.log(`API listening on http://localhost:${port}`);
 });
 

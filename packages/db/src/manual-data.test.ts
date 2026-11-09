@@ -41,6 +41,12 @@ describe("manual data files", () => {
     expect(() => parseManualData(data)).toThrow();
   });
 
+  it("rejects a currency the core engine doesn't support", () => {
+    const data = valid();
+    data.corridors[0] = { id: "CHF-USD", sourceCurrency: "CHF", targetCurrency: "USD" };
+    expect(() => parseManualData(data)).toThrow(/unsupported currency/);
+  });
+
   it("rejects a fee schedule for an unknown provider", () => {
     const data = valid();
     (data.feeSchedules[0] as Record<string, unknown>).providerId = "nobody";

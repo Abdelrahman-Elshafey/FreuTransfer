@@ -78,7 +78,8 @@ Each rule names the mistake it prevents.
   - `apps/api`: Express 5. Handlers validate (Zod) and call core use cases, with no business logic. `app.ts` builds the app; `main.ts` is the composition root.
   - `apps/web`: React + Vite.
 - Production: the owner's OVH VPS + domain, Docker Compose with Postgres not exposed publicly,
-  collectors on a systemd timer (ADR 0002). No Vercel/Neon.
+  collectors on a systemd timer (ADR 0002), public access through a Cloudflare Tunnel with no open
+  ports (ADR 0004; UrConnections' Caddy owns 80/443 on that server). No Vercel/Neon.
 - Append-only data: never update or delete observations, rates or quotes.
 - SQL: Prisma TypedSQL or tagged `$queryRaw` only, **never `$queryRawUnsafe`**.
 - Data sourcing: respect ToS and robots.txt. No automated access to sources that disallow it

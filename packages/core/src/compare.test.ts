@@ -102,11 +102,12 @@ describe("markup tier (Revolut-style allowance: 0% up to 1,250 CHF, 1% above)", 
   it("rule 2: only the part above the allowance pays the markup", () => {
     // 2,500 CHF: 1,250 at 0% + 1,250 at 1% = 12.50 CHF → blended 0.5%.
     // received = 2500 × 1.0893 × (1 − 0.005) = 2709.63375 → 2709.63 EUR
-    // worth 2709.63 / 1.0893 = 2487.4965… CHF → total cost 12.5034… → 12.50 CHF (0.5001%)
+    // worth 2709.63 / 1.0893 = 2487.4965574… CHF → total cost 12.5034425… → 12.50 CHF
+    // exact fraction 12.5034425… / 2500 = 0.0050013770… (0.50%)
     const cost = costFor("2500");
     expect(cost?.received.toString()).toBe("2709.63 EUR");
     expect(cost?.totalCost.toString()).toBe("12.50 CHF");
-    expect(cost?.totalCostPct.toString()).toBe("0.005001");
+    expect(cost?.totalCostPct.toFixed(10)).toBe("0.0050013770");
   });
 
   it("rule 3: the allowance counts the converted amount, after the fee", () => {

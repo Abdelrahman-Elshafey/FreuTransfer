@@ -57,7 +57,7 @@ rates stored as `NUMERIC(20,10)`; timestamps in UTC.
 - **Freshness:** every number shows its source and date; stale data is listed separately, not ranked.
 - **Validation:** 3 real calculator results reproduced to the cent; compare with World Bank data.
 
-## 5. Architecture (ADR 0001, hosting ADR 0002)
+## 5. Architecture (ADR 0001, hosting ADRs 0002 and 0004)
 Modular monolith with ports & adapters:
 - `packages/core`: pure domain (Money, Rate, fee strategies, `computeCost`, ports). No I/O.
 - `packages/db`: Prisma, repositories return core types.

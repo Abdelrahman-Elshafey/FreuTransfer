@@ -2,7 +2,7 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stage 3 in progress: 3a database ✅, 3b manual data ✅ (Revolut + UBS still drafts, waiting for owner verification), 3c API ✅, 3d page ✅, review 2026-11-08 ✅, 3e deploy next (needs VPS details). Stage 2 waits only for 3 real calculator results. Stage 0 continues alongside.
+**Now:** stage 3 in progress: 3a database ✅, 3b manual data ✅ (Revolut + UBS still drafts, waiting for owner verification), 3c API ✅, 3d page ✅, reviews 2026-11-08 and 2026-11-09 ✅, 3e deploy next (Cloudflare Tunnel, ADR 0004; needs the subdomain). Stage 2 waits only for a third real calculator result. Stage 0 continues alongside.
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
@@ -63,3 +63,17 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   checks package entry exports (`includeEntryExports`) and found 23 unused core exports; the unused
   rounding-mode option, `Money.isZero` and `USD`. 84 tests pass; API and page verified against a real
   Postgres (curl + headless Chromium).
+- **2026-11-09:** Owner decided the sanity guard (Project Plan §9: total cost above 10% or below 0% is a
+  data error, listed for checking, not ranked; built in stage 5). Full review of code and docs. Fixed:
+  the API printed "listening" and exited with code 0 when its port was taken (Express 5 passes the
+  error to the `listen` callback); the cost percentage was rounded twice (6 decimals, then 2), so an
+  exact 0.95499% showed as 0.96%: core now keeps it exact and the API rounds once; the page called
+  `/api/v1/...` while production forwards `/v1/*`: it now uses `/v1/...` in both (Vite proxy without a
+  rewrite); `pnpm db:seed` silently skipped a corridor whose currencies changed: it now stops with a
+  conflict; data files accepted any 3-letter currency: now only the ones core supports. The
+  2026-11-08 hosting decision is recorded as ADR 0004 (Cloudflare Tunnel; UrConnections' Caddy owns
+  80/443), and ADR 0002, CLAUDE.md and the plan point to it. `.env.example` no longer repeats the local
+  DB URL. 87 tests pass; API and Vite proxy verified against the local Postgres.
+  Prisma agent skills trimmed (owner's choice): only `prisma-cli` and `prisma-client-api` stay, in
+  `packages/db/.claude/skills`; the `.agents` and `.windsurf` copies and the 8 skills for other setups
+  (Prisma 8, Prisma Compute, Prisma Postgres, MongoDB, v7 upgrade, adapter writing) were removed.

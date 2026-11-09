@@ -38,7 +38,8 @@ export type CompareOutcome = { ok: true; data: Comparison } | { ok: false; messa
 /**
  * Calls the API. Network and server failures become a message the page can show; only
  * unexpected errors (bugs) are thrown.
- * In development Vite forwards /api/* to the API (vite.config.ts); production does the same.
+ * /v1/* goes to the API: through Vite's proxy in development (vite.config.ts), through the
+ * Cloudflare Tunnel in production (docs/adr/0004).
  */
 export async function fetchComparison(
   amount: string,
@@ -47,7 +48,7 @@ export async function fetchComparison(
   const query = new URLSearchParams({ from: "CHF", to: "EUR", amount });
   let res: Response;
   try {
-    res = await fetchFn(`/api/v1/compare?${query}`);
+    res = await fetchFn(`/v1/compare?${query}`);
   } catch (error) {
     // fetch rejects with a TypeError when the network or the server can't be reached.
     if (!(error instanceof TypeError)) throw error;

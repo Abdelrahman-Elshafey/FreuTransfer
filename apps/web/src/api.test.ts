@@ -12,7 +12,7 @@ describe("fetchComparison", () => {
       return new Response(JSON.stringify({ results: [] }), { status: 200 });
     }) as typeof fetch;
     await fetchComparison("1000.50", spy);
-    expect(url).toBe("/api/v1/compare?from=CHF&to=EUR&amount=1000.50");
+    expect(url).toBe("/v1/compare?from=CHF&to=EUR&amount=1000.50");
   });
 
   it("returns the data on success", async () => {

@@ -110,6 +110,30 @@ describe("GET /v1/compare", () => {
     expect(res.body.recheckDays).toBe(30);
   });
 
+  it("rounds the cost percentage once, from the exact value (no double rounding)", async () => {
+    // Manual rate 1.0, mid 1.009642, pay 1,000 CHF, no fee:
+    //   received = 1000.00 EUR, worth 1000 / 1.009642 = 990.45008032… CHF at mid
+    //   exact cost = 9.54991967… CHF = 0.954991967…% → "0.95"
+    // Rounding the fraction to 6 decimals first (0.009550) and then to 2 would give "0.96".
+    const manual: ProviderOffer = {
+      ...yuh,
+      sourceKind: "manual",
+      pricing: { kind: "rate", rate: Rate.of("CHF", "EUR", "1"), capturedAt: now },
+    };
+    const app = createApp(
+      deps({
+        offers: { latestOffers: async () => [manual] },
+        midRates: { latest: async () => ({ ...mid, rate: Rate.of("CHF", "EUR", "1.009642") }) },
+      }),
+    );
+    const res = await request(app).get("/v1/compare?from=CHF&to=EUR&amount=1000");
+    expect(res.body.results[0]).toMatchObject({
+      received: { amount: "1000.00", currency: "EUR" },
+      totalCost: { amount: "9.55", currency: "CHF" },
+      totalCostPercent: "0.95",
+    });
+  });
+
   it.each([
     ["missing amount", "/v1/compare?from=CHF&to=EUR"],
     ["zero amount", "/v1/compare?from=CHF&to=EUR&amount=0"],
