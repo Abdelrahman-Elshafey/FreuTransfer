@@ -6,9 +6,15 @@
  *
  * Only what other packages use is exported (knip checks this with `includeEntryExports`).
  */
-export { type ComparisonRow, compareProviders, NoMidRateError, RECHECK_DAYS } from "./compare.ts";
+export {
+  type ComparisonRow,
+  compareProviders,
+  NoMidRateError,
+  RECHECK_DAYS,
+  type UnavailableReason,
+} from "./compare.ts";
 export { assertCurrencyCode, type CurrencyCode, isCurrencyCode } from "./currency.ts";
-export { Decimal } from "./decimal.ts";
+export { Decimal, toFixedString } from "./decimal.ts";
 export { type FeeModel, feeRule } from "./fees.ts";
 export { Money } from "./money.ts";
 export type {

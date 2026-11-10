@@ -1,6 +1,6 @@
 # FreuTransfer — Project Plan
 
-> v3, 2026-11-05: shortened. Decisions live in `docs/adr/`, versions in `package.json`, status in
+> v3, 2026-11-05: shortened. 2026-11-09: four languages (§2, §5a, ADR 0005). Decisions live in `docs/adr/`, versions in `package.json`, status in
 > `docs/progress.md`, market research in `Research - Swiss & European Transfer Landscape.md`.
 
 ## 1. What and why
@@ -27,6 +27,7 @@ best first, and splits the cost into the **visible fee** and the **hidden cost i
   - **dropped** (owner, 2026-11-06): ZKB (UBS is the big bank); Remitly (doesn't send from Switzerland);
     WorldRemit and TransferGo (not usable for these corridors); XE (prices only after sign-up).
 - **Only automated source:** Frankfurter (mid-market rate). See ADR 0003.
+- **Languages:** English, German, French, Italian, from v1 (owner, 2026-11-09). See §5a and ADR 0005.
 
 ## 3. The money maths
 ```
@@ -68,6 +69,21 @@ Modular monolith with ports & adapters:
 Data is **append-only** (raw observations → parsed quotes → `latest_quotes` view). Cost breakdowns are
 computed, not stored, so a fix to the method applies to all history.
 
+## 5a. Languages (ADR 0005)
+EN / DE / FR / IT. Rules for every stage from now on, so no language work piles up for the end:
+- **Language lives only in `apps/web`.** Core, db and API are language-neutral: the API sends codes,
+  money and dates (error *types*, reason codes), never sentences for the reader.
+- **One catalog per language** in `apps/web/src/i18n/` (`en.ts` is the source; the others are typed
+  against it, so a missing text fails `pnpm typecheck`). A new visible text is added in all four
+  languages in the same change. No i18n library.
+- **Numbers and dates via `Intl`** from the API's strings (never floats, never re-rounded), Swiss
+  formatting in every language (CHF 1'000.50), dates as the Zurich day. Amount input accepts
+  `1000,50`, `1'000.50` and `1 000,50`.
+- **Content:** provider names are not translated; research notes stay English (evidence, not page
+  text); reader-facing caveats become codes with translated text (stage 6); disclaimer, privacy
+  policy and methodology exist in all four languages before launch (stage 7).
+- Translations are drafted by Claude and checked by a native speaker before launch.
+
 ## 6. Testing
 | Layer | What |
 |---|---|
@@ -75,6 +91,7 @@ computed, not stored, so a fix to the method applies to all history.
 | collectors | adapters parse saved real responses, no network |
 | db | migrations and queries on real Postgres (Testcontainers) |
 | api | `/v1/compare` end to end (supertest) |
+| web | API client, amount parsing, formatting per locale, catalogs (no empty texts, Swiss German spelling) |
 
 ## 7. Roadmap (status: `docs/progress.md`)
 | # | Stage | Done when |
@@ -82,21 +99,22 @@ computed, not stored, so a fix to the method applies to all history.
 | 0 | Feasibility (in parallel): app checks, `docs/feasibility.md` | every provider has a confirmed source before stage 5 |
 | 1 | Setup | CI green |
 | 2 | Core engine: Money/Rate, fee strategies, `computeCost`, rounding, tests | 3 real calculator results reproduced to the cent |
-| 3 | v0.1: DB schema, first manual data, `/v1/compare`, results table, first VPS deploy | live on your domain with manual data |
+| 3 | v0.1: DB schema, first manual data, `/v1/compare`, results table, i18n foundation (EN/DE/FR/IT), first VPS deploy | live on your domain with manual data, in four languages |
 | 4 | Frankfurter adapter, raw → parse pipeline, daily timer | a week of daily rates stored |
 | 5 | Provider data: researched by Claude, verified by the owner | all v1 providers present, labelled, no negative hidden costs |
-| 6 | Frontend: breakdown, charts, "my bank vs best" | usable on mobile, every number shows its source |
-| 7 | Polish: README, methodology | a reviewer understands it in 5 minutes |
+| 6 | Frontend: breakdown, charts, "my bank vs best", translated caveat codes | usable on mobile, every number shows its source, every text in four languages |
+| 7 | Polish: README, methodology and legal texts in four languages, OpenAPI from the Zod schemas (ADR 0001), language URLs/SEO decision | a reviewer understands it in 5 minutes; translations checked by native speakers |
 | 8 | Later: intraday rates, receive mode, more corridors, bank page automation | — |
 
 ## 8. Legal and trust
-Disclaimer (estimates, not financial advice); respect ToS and robots.txt; provider names used factually,
+Disclaimer (estimates, not financial advice), in all four languages; respect ToS and robots.txt; provider names used factually,
 no logos; no affiliate links; a privacy policy (revFADP) before collecting any email.
 
 ## 9. Decisions
 Decided by the owner (2026-11-06):
 - Re-check period before manual data counts as stale: **30 days** (`RECHECK_DAYS` in core).
 - No extra Swiss/EU banks for now: v1 providers are those in §2.
+- Languages (2026-11-09): English, German, French and Italian from v1; Swiss number formatting in all.
 - Sanity guard (stage 5): a total cost **above 10%** or **below 0%** is treated as a data error: the
   offer isn't ranked but listed for checking. Can be raised per corridor (e.g. EGP/RSD) if needed.
 
@@ -104,3 +122,5 @@ Still open:
 - Whether OFX accepts Swiss senders.
 - Production domain (subdomain of `aelshafey.com`?), to discuss before stage 3e.
 - Whether to automate any bank rate page later.
+- Who checks the German, French and Italian texts (native speakers), before launch.
+- Language-specific URLs (`/de/…`) for search engines, or one URL with a switcher (stage 7).

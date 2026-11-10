@@ -24,7 +24,11 @@ export type Pricing =
     }
   | { readonly kind: "rate"; readonly rate: Rate; readonly capturedAt: Date };
 
-/** A provider's current pricing for one corridor, with where it came from and when it was checked. */
+/**
+ * A provider's current pricing for one corridor, with where it came from and when it was checked.
+ * The data files' research `note` is not part of it: it is English evidence for the owner and
+ * reviewers (kept in git and the database), not text for the page (docs/adr/0005).
+ */
 export type ProviderOffer = {
   readonly providerId: string;
   readonly providerName: string;
@@ -36,7 +40,6 @@ export type ProviderOffer = {
   readonly pricing: Pricing;
   readonly sourceUrl: string;
   readonly checkedAt: Date;
-  readonly note: string | null;
 };
 
 /** A dated official reference rate (e.g. the ECB rate of 2026-11-05). */

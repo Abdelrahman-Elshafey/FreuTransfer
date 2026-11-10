@@ -8,7 +8,7 @@ import {
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { type AppDeps, createApp } from "./app.ts";
-import { PROBLEM_TYPES } from "./problem.ts";
+import { PROBLEM_TYPES } from "./contract.ts";
 
 const now = new Date("2026-11-05T18:00:00Z");
 const mid: MidRateObservation = {
@@ -29,7 +29,6 @@ const yuh: ProviderOffer = {
   pricing: { kind: "markup", markup: new Decimal("0.0095") },
   sourceUrl: "https://www.yuh.com/en/pricing/",
   checkedAt: now,
-  note: null,
 };
 
 /** In-memory fakes for the core ports: the API is tested without a database. */
@@ -133,6 +132,43 @@ describe("GET /v1/compare", () => {
       totalCost: { amount: "9.55", currency: "CHF" },
       totalCostPercent: "0.95",
     });
+  });
+
+  it('sends a cost that rounds to zero as "0.00", never "-0.00"', async () => {
+    // Found on the real page (2026-11-09): mid 1.0937, no fee, no markup, pay 1,000.50 CHF:
+    //   received = 1000.50 × 1.0937 = 1094.24685 → 1094.25 EUR (payout rounding)
+    //   worth 1094.25 / 1.0937 = 1000.50288… CHF → exact cost −0.00288… CHF = −0.000288…%
+    //   rounded to 2 decimals that is zero, and must not keep the minus sign.
+    const zeroMarkup: ProviderOffer = {
+      ...yuh,
+      pricing: { kind: "markup", markup: new Decimal("0") },
+    };
+    const app = createApp(
+      deps({
+        offers: { latestOffers: async () => [zeroMarkup] },
+        midRates: { latest: async () => ({ ...mid, rate: Rate.of("CHF", "EUR", "1.0937") }) },
+      }),
+    );
+    const res = await request(app).get("/v1/compare?from=CHF&to=EUR&amount=1000.50");
+    expect(res.body.results[0]).toMatchObject({
+      received: { amount: "1094.25", currency: "EUR" },
+      totalCost: { amount: "0.00", currency: "CHF" },
+      totalCostPercent: "0.00",
+    });
+  });
+
+  it("lists providers that can't serve the amount with a reason code, not English text", async () => {
+    const pricey: ProviderOffer = {
+      ...yuh,
+      providerId: "pricey",
+      providerName: "Pricey",
+      fees: { kind: "deducted", rule: feeRule("CHF", { fixed: "15" }) },
+    };
+    const app = createApp(deps({ offers: { latestOffers: async () => [pricey] } }));
+    const res = await request(app).get("/v1/compare?from=CHF&to=EUR&amount=10");
+    expect(res.body.unavailable).toEqual([
+      { providerId: "pricey", providerName: "Pricey", reason: "amount_not_supported" },
+    ]);
   });
 
   it.each([

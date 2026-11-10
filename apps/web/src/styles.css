@@ -40,3 +40,6 @@ td {
 input {
   width: 8rem;
 }
+.language {
+  float: right;
+}

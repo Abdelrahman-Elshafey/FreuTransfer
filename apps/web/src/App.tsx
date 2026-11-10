@@ -1,57 +1,89 @@
+import type { ComparisonDto, ResultRowDto } from "@freu-transfer/api/contract";
 import { type FormEvent, useState } from "react";
-import { type CompareOutcome, fetchComparison, type MoneyDto, type ResultRow } from "./api.ts";
+import { type CompareError, fetchComparison } from "./api.ts";
+import { useI18n } from "./i18n/context.tsx";
+import type { Messages } from "./i18n/en.ts";
+import { parseAmount } from "./i18n/format.ts";
+import { LOCALE_CODES, type Locale, localeInfo } from "./i18n/locales.ts";
 
 // v0.1 page: deliberately plain. The real design comes in stage 6 (docs/design-inspiration.md).
+// Every visible word comes from the catalogs in ./i18n (docs/adr/0005).
 
-const money = (m: MoneyDto) => `${m.amount} ${m.currency}`;
+/** Errors are kept as codes, so switching the language also translates a message already shown. */
+type PageError = CompareError | { readonly kind: "invalidAmount" };
 
-function sourceLabel(row: ResultRow): string {
-  if (row.sourceKind === "rule_based") return "Rule-based";
-  return row.approximate ? "Manual · approximate" : "Manual";
+function errorText(t: Messages, error: PageError, example: string): string {
+  switch (error.kind) {
+    case "invalidAmount":
+      return t.form.invalidAmount(example);
+    case "unreachable":
+      return t.errors.unreachable;
+    case "notJson":
+      return t.errors.notJson(error.status);
+    case "http":
+      return t.errors.http(error.status);
+    case "invalidQuery":
+      return t.errors.invalidQuery;
+    case "corridorNotAvailable":
+      return t.errors.corridorNotAvailable;
+  }
+}
+
+/** The publisher's name in the reader's language; an unknown source shows as its code. */
+function bankName(t: Messages, source: string): string {
+  return Object.hasOwn(t.rateSources, source)
+    ? t.rateSources[source as keyof Messages["rateSources"]]
+    : source.toUpperCase();
 }
 
 function ResultsTable({
   rows,
   ranked,
 }: {
-  rows: (ResultRow & { rank?: number })[];
+  rows: readonly (ResultRowDto & { rank?: number })[];
   ranked: boolean;
 }) {
+  const { t, f } = useI18n();
   return (
     <table>
       <thead>
         <tr>
-          {ranked && <th>#</th>}
-          <th>Provider</th>
-          <th className="num">Arrives</th>
-          <th className="num">Fee</th>
-          <th className="num">Hidden in rate</th>
-          <th className="num">Total cost</th>
-          <th>Source</th>
+          {ranked && <th>{t.table.rank}</th>}
+          <th>{t.table.provider}</th>
+          <th className="num">{t.table.arrives}</th>
+          <th className="num">{t.table.fee}</th>
+          <th className="num">{t.table.hidden}</th>
+          <th className="num">{t.table.totalCost}</th>
+          <th>{t.table.source}</th>
         </tr>
       </thead>
       <tbody>
         {rows.map((r) => (
           <tr key={r.providerId}>
             {ranked && <td>{r.rank}</td>}
-            <td>
-              {r.providerName}
-              {r.note && <div className="note">{r.note}</div>}
-            </td>
-            <td className="num strong">{money(r.received)}</td>
-            <td className="num">{money(r.visibleFee)}</td>
-            <td className="num">{money(r.fxMarkup)}</td>
+            <td>{r.providerName}</td>
+            <td className="num strong">{f.money(r.received)}</td>
+            <td className="num">{f.money(r.visibleFee)}</td>
+            <td className="num">{f.money(r.fxMarkup)}</td>
             <td className="num">
-              {money(r.totalCost)} ({r.totalCostPercent}%)
+              {f.money(r.totalCost)} ({f.percent(r.totalCostPercent)})
             </td>
             <td>
               <a href={r.sourceUrl} target="_blank" rel="noreferrer">
-                {sourceLabel(r)}
+                {r.sourceKind === "rule_based"
+                  ? t.source.ruleBased
+                  : r.approximate
+                    ? t.source.manualApproximate
+                    : t.source.manual}
               </a>
-              <div className="note">checked {r.checkedAt.slice(0, 10)}</div>
+              <div className="note">{t.source.checked(f.instant(r.checkedAt))}</div>
               {r.approximate && (
                 <div className="note">
-                  vs mid {r.midRate.rate} ({r.midRate.source.toUpperCase()}, {r.midRate.asOf})
+                  {t.source.comparedWith(
+                    f.decimal(r.midRate.rate),
+                    bankName(t, r.midRate.source),
+                    f.day(r.midRate.asOf),
+                  )}
                 </div>
               )}
             </td>
@@ -62,82 +94,114 @@ function ResultsTable({
   );
 }
 
+function Results({ data }: { data: ComparisonDto }) {
+  const { t, f } = useI18n();
+  return (
+    <>
+      <p className="note">
+        {t.results.midRate({
+          from: data.from,
+          to: data.to,
+          rate: f.decimal(data.midRate.rate),
+          bank: bankName(t, data.midRate.source),
+          day: f.day(data.midRate.asOf),
+        })}
+      </p>
+      {data.results.length > 0 ? (
+        <ResultsTable rows={data.results} ranked />
+      ) : (
+        <p>{t.results.none}</p>
+      )}
+      {data.stale.length > 0 && (
+        <>
+          <h2>{t.results.staleHeading(data.recheckDays)}</h2>
+          <ResultsTable rows={data.stale} ranked={false} />
+        </>
+      )}
+      {data.unavailable.length > 0 && (
+        <>
+          <h2>{t.results.unavailableHeading}</h2>
+          <ul>
+            {data.unavailable.map((u) => (
+              <li key={u.providerId}>
+                {u.providerName}: {t.unavailable[u.reason]}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </>
+  );
+}
+
+function LanguageSwitcher() {
+  const { locale, setLocale, t } = useI18n();
+  return (
+    <label className="language">
+      {t.language}{" "}
+      <select value={locale} onChange={(e) => setLocale(e.target.value as Locale)}>
+        {LOCALE_CODES.map((code) => (
+          // The language's own name, so readers find theirs whatever is selected now.
+          <option key={code} value={code} lang={code}>
+            {localeInfo(code).name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 export function App() {
+  const { t, f } = useI18n();
   const [amount, setAmount] = useState("1000");
-  const [outcome, setOutcome] = useState<CompareOutcome | null>(null);
+  const [data, setData] = useState<ComparisonDto | null>(null);
+  const [error, setError] = useState<PageError | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function compare(event: FormEvent) {
     event.preventDefault();
+    const parsed = parseAmount(amount);
+    if (parsed === null) {
+      setData(null);
+      setError({ kind: "invalidAmount" });
+      return;
+    }
     setLoading(true);
     try {
-      setOutcome(await fetchComparison(amount.trim()));
+      const outcome = await fetchComparison(parsed);
+      setData(outcome.ok ? outcome.data : null);
+      setError(outcome.ok ? null : outcome.error);
     } finally {
       setLoading(false); // also after an unexpected error, so the button never stays disabled
     }
   }
 
-  const data = outcome?.ok ? outcome.data : null;
-
   return (
     <main>
+      <LanguageSwitcher />
       <h1>FreuTransfer</h1>
-      <p>
-        You send francs. Find out what really arrives, and how much is hidden in the exchange rate.
-      </p>
+      <p>{t.intro}</p>
 
       <form onSubmit={compare}>
         <label>
-          I pay{" "}
+          {t.form.iPay}{" "}
           <input
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             inputMode="decimal"
-            aria-label="Amount in CHF"
+            aria-label={t.form.amountLabel("CHF")}
           />{" "}
           CHF → EUR
         </label>{" "}
         <button type="submit" disabled={loading}>
-          {loading ? "Comparing…" : "Compare"}
+          {loading ? t.form.comparing : t.form.compare}
         </button>
       </form>
 
-      {outcome && !outcome.ok && <p className="error">{outcome.message}</p>}
+      {error && <p className="error">{errorText(t, error, f.decimal("1000.50"))}</p>}
+      {data && <Results data={data} />}
 
-      {data && (
-        <>
-          <p className="note">
-            Compared with the mid-market rate 1 CHF = {data.midRate.rate} EUR (
-            {data.midRate.source.toUpperCase()}, {data.midRate.asOf}); manual rates with the rate of
-            the day they were read.
-          </p>
-          {data.results.length > 0 ? (
-            <ResultsTable rows={data.results} ranked />
-          ) : (
-            <p>No verified provider data yet.</p>
-          )}
-          {data.stale.length > 0 && (
-            <>
-              <h2>Not re-checked for over {data.recheckDays} days</h2>
-              <ResultsTable rows={data.stale} ranked={false} />
-            </>
-          )}
-          {data.unavailable.length > 0 && (
-            <>
-              <h2>Not available for this amount</h2>
-              <ul>
-                {data.unavailable.map((u) => (
-                  <li key={u.providerId}>
-                    {u.providerName}: {u.reason}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </>
-      )}
-
-      <p className="note">Estimates for information only, not financial advice.</p>
+      <p className="note">{t.disclaimer}</p>
     </main>
   );
 }

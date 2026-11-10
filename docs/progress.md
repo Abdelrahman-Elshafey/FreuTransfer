@@ -2,19 +2,19 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stage 3 in progress: 3a database ✅, 3b manual data ✅ (Revolut + UBS still drafts, waiting for owner verification), 3c API ✅, 3d page ✅, reviews 2026-11-08 and 2026-11-09 ✅, 3e deploy next (Cloudflare Tunnel, ADR 0004; needs the subdomain). Stage 2 waits only for a third real calculator result. Stage 0 continues alongside.
+**Now:** stage 3 in progress: 3a database ✅, 3b manual data ✅ (Revolut + UBS still drafts, waiting for owner verification), 3c API ✅, 3d page ✅, reviews 2026-11-08 and 2026-11-09 (×2) ✅, 3f languages EN/DE/FR/IT ✅ (translations wait for a native-speaker check), 3e deploy next (Cloudflare Tunnel, ADR 0004; needs the subdomain). Stage 2 waits only for a third real calculator result. Stage 0 continues alongside.
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
 | 0 | Feasibility | 🟡 In progress (in parallel) | Research doc ✅ · Wise removed as a source (ADR 0003) ✅ · app checks ✅ (Remitly, WorldRemit, TransferGo, XE, ZKB dropped; OFX ⬜) · `docs/feasibility.md` ⬜ | Every v1 provider has a confirmed data source **before stage 5** |
 | 1 | Setup | ✅ Done (`d555741`) | Monorepo, Biome, TypeScript, Docker Postgres, CI, `CLAUDE.md`, ADR 0001; renamed to FreuTransfer + OVH hosting (ADR 0002) | CI green on GitHub ✅ |
 | 2 | Core engine | 🟡 **In progress**: code + tests ✅, golden tests 2 of 3 ✅ | `Money`/`Rate` value objects, fee strategies, `computeCost`, rounding, golden + property tests | 3 real calculator results reproduced to the cent |
-| 3 | v0.1 end-to-end | 🟡 **In progress**: 3a DB ✅ · 3b data ✅ (3 of 5 verified) · 3c API ✅ · 3d page ✅ · 3e deploy ⬜ | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, **first deploy to the OVH VPS** | Comparison with manual data live on your domain |
+| 3 | v0.1 end-to-end | 🟡 **In progress**: 3a DB ✅ · 3b data ✅ (3 of 5 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ⬜ | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
 | 4 | Mid-market + pipeline | ⬜ Not started | Frankfurter adapter, raw → parse pipeline, `collector_runs`, daily timer on the VPS | A week of daily snapshots stored |
 | 5 | Provider data | ⬜ Not started | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
-| 6 | Frontend | ⬜ Not started | Breakdown table, cost %, freshness labels, charts, "my bank vs best" | Usable on mobile; every number shows its source |
-| 7 | Polish | ⬜ Not started | README, `methodology.md`, World Bank comparison, ADRs | A reviewer understands the project in 5 minutes |
-| 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts, DE/FR | — |
+| 6 | Frontend | ⬜ Not started | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
+| 7 | Polish | ⬜ Not started | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes; translations checked by native speakers |
+| 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts | — |
 
 Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
 
@@ -77,3 +77,20 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   Prisma agent skills trimmed (owner's choice): only `prisma-cli` and `prisma-client-api` stay, in
   `packages/db/.claude/skills`; the `.agents` and `.windsurf` copies and the 8 skills for other setups
   (Prisma 8, Prisma Compute, Prisma Postgres, MongoDB, v7 upgrade, adapter writing) were removed.
+- **2026-11-09 (2):** Second full review of code, docs and packages, and the language groundwork
+  (owner: English, German, French, Italian). Fixed: a provider whose data was broken (e.g. a fee
+  rule in the wrong currency) was listed as "not available for this amount" instead of failing:
+  only the new `AmountNotSupportedError` is caught now; the API and data files accepted `JPY`, a
+  currency kept only for a rounding test; the API sent `"-0.00"` as the cost percentage when payout
+  rounding put a quote a fraction of a cent above mid (found on the real page; new
+  `toFixedString`); the two custom errors used `about:blank` with their own titles, which RFC 9457
+  §4.2.1 reserves for the plain status phrase: they now have problem types; the page showed a
+  rate's check date in UTC, not Zurich; the research doc still recommended Wise data in §8/§9.
+  Patch updates (Biome 2.6.6, knip 6.44.2, supertest 7.3.2, Vite 8.3.6); the duplicate `format`
+  script removed. Languages (ADR 0005, plan §5a, CLAUDE.md): no library; typed catalogs in
+  `apps/web/src/i18n/` (a missing text fails typecheck), `Intl` formatting from the API's strings,
+  Swiss formats, amount input `1'000,50`; the API sends codes instead of English (reason codes,
+  problem types) and no longer sends the English research `note`; the response shape is shared in
+  `apps/api/src/contract.ts`. 127 tests pass; API checked with curl; production build checked in
+  headless Edge in all four languages.
+  **For the owner:** have a native speaker check `de.ts`, `fr.ts`, `it.ts` (drafts by Claude).

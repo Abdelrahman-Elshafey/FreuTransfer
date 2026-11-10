@@ -1,5 +1,11 @@
 import { assertCurrencyCode, type CurrencyCode, minorUnits } from "./currency.ts";
-import { type Decimal, type DecimalInput, ROUND_HALF_EVEN, toDecimal } from "./decimal.ts";
+import {
+  type Decimal,
+  type DecimalInput,
+  ROUND_HALF_EVEN,
+  toDecimal,
+  toFixedString,
+} from "./decimal.ts";
 import { CurrencyMismatchError, MoneyError } from "./errors.ts";
 
 /**
@@ -69,7 +75,7 @@ export class Money {
 
   /** The amount rounded to the minor unit, as a fixed string: "1044.75". */
   toFixed(): string {
-    return this.amount.toFixed(minorUnits(this.currency), ROUND_HALF_EVEN);
+    return toFixedString(this.amount, minorUnits(this.currency));
   }
 
   /** "1044.75 EUR" (rounded, for logs and messages). */

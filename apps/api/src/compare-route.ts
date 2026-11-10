@@ -9,10 +9,12 @@ import {
   NoMidRateError,
   type OfferRepository,
   RECHECK_DAYS,
+  toFixedString,
 } from "@freu-transfer/core";
 import { type RequestHandler, Router } from "express";
 import { z } from "zod";
-import { PROBLEM_TYPES, sendProblem } from "./problem.ts";
+import { type ComparisonDto, isAmount, PROBLEM_TYPES, type ResultRowDto } from "./contract.ts";
+import { sendProblem } from "./problem.ts";
 
 const currency = z.string().transform((s, ctx): CurrencyCode => {
   const code = s.toUpperCase();
@@ -26,14 +28,10 @@ const querySchema = z
   .object({
     from: currency,
     to: currency,
+    // Checked on the digits, not with parseFloat: money never becomes a JS number.
     amount: z
       .string()
-      .regex(
-        /^\d{1,7}(\.\d{1,2})?$/,
-        "a positive amount with at most 2 decimals, e.g. 1000 or 1000.50",
-      )
-      // Checked on the digits, not with parseFloat: money never becomes a JS number.
-      .refine((a) => /[1-9]/.test(a), "must be greater than 0"),
+      .refine(isAmount, "a positive amount with at most 2 decimals, e.g. 1000 or 1000.50"),
   })
   .refine((q) => q.from !== q.to, { message: "from and to must differ", path: ["to"] });
 
@@ -64,12 +62,11 @@ export function compareRouter(deps: CompareDeps): Router {
         target: to,
         now: deps.now(),
       });
-      res.json({
+      const body: ComparisonDto = {
         from,
         to,
         amount: result.amount.toJSON(),
         midRate: toMidDto(result.mid),
-        /** Data older than this many days is in `stale`, not ranked. */
         recheckDays: RECHECK_DAYS,
         results: result.ranked.map((row, i) => ({ rank: i + 1, ...toDto(row) })),
         stale: result.stale.map(toDto),
@@ -78,7 +75,8 @@ export function compareRouter(deps: CompareDeps): Router {
           providerName: offer.providerName,
           reason,
         })),
-      });
+      };
+      res.json(body);
     } catch (error) {
       if (!(error instanceof NoMidRateError)) throw error;
       sendProblem(res, {
@@ -93,12 +91,12 @@ export function compareRouter(deps: CompareDeps): Router {
   return router;
 }
 
-function toMidDto(mid: MidRateObservation) {
+function toMidDto(mid: MidRateObservation): ResultRowDto["midRate"] {
   return { rate: mid.rate.value.toString(), source: mid.source, asOf: mid.asOf };
 }
 
 /** Money and percentages as strings, never JSON numbers. */
-function toDto(row: ComparisonRow) {
+function toDto(row: ComparisonRow): ResultRowDto {
   const { offer, quote, cost } = row;
   const { pricing } = offer;
   return {
@@ -110,15 +108,12 @@ function toDto(row: ComparisonRow) {
     visibleFee: cost.visibleFee.toJSON(),
     fxMarkup: cost.fxMarkup.toJSON(),
     totalCost: cost.totalCost.toJSON(),
-    // Percent with 2 decimals ("0.95" = 0.95%), computed in decimals so clients do no maths.
-    totalCostPercent: cost.totalCostPct.times(100).toFixed(2),
+    // Percent with 2 decimals ("0.95" = 0.95%), rounded once, so clients do no maths.
+    totalCostPercent: toFixedString(cost.totalCostPct.times(100), 2),
     approximate: row.approximate,
-    /** The reference rate this row was compared with (a manual rate's own day, not always today's). */
     midRate: toMidDto(row.mid),
-    /** Manual rates only: when the provider's rate was read. */
     rateCapturedAt: pricing.kind === "rate" ? pricing.capturedAt.toISOString() : null,
     checkedAt: offer.checkedAt.toISOString(),
     sourceUrl: offer.sourceUrl,
-    note: offer.note,
   };
 }

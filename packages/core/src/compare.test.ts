@@ -32,7 +32,6 @@ function offer(
     pricing,
     sourceUrl: `https://example.test/${id}`,
     checkedAt,
-    note: null,
   };
 }
 
@@ -82,7 +81,9 @@ describe("rankOffers", () => {
       now,
     );
     expect(result.ranked).toEqual([]);
-    expect(result.unavailable[0]?.offer.providerId).toBe("pricey");
+    expect(result.unavailable).toEqual([
+      { offer: expect.objectContaining({ providerId: "pricey" }), reason: "amount_not_supported" },
+    ]);
   });
 
   it("fails on broken data instead of hiding it as 'unavailable'", () => {
@@ -197,7 +198,7 @@ describe("compareProviders", () => {
       capturedAt: new Date("2026-01-02T10:00:00Z"),
     });
     const result = rankOffers([manual], mid, Money.of("1000", "CHF"), now, () => null);
-    expect(result.unavailable[0]?.reason).toMatch(/2026-01-02/);
+    expect(result.unavailable[0]?.reason).toBe("no_reference_rate");
   });
 
   it("fails clearly when no reference rate is stored", async () => {

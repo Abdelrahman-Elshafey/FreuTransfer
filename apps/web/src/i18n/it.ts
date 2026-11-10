@@ -1,0 +1,56 @@
+import type { Messages } from "./en.ts";
+
+/** Italian (Switzerland), formal "Lei" like the German "Sie". */
+export const it: Messages = {
+  title: "FreuTransfer — Confronto dei costi",
+  language: "Lingua",
+  intro: "Invia franchi? Scopra quanto arriva davvero e quanto è nascosto nel tasso di cambio.",
+  form: {
+    iPay: "Pago",
+    amountLabel: (currency) => `Importo in ${currency}`,
+    compare: "Confronta",
+    comparing: "Confronto in corso…",
+    invalidAmount: (example) => `Inserisca un importo maggiore di 0, ad esempio ${example}.`,
+  },
+  table: {
+    rank: "#",
+    provider: "Fornitore",
+    arrives: "Arriva",
+    fee: "Commissione",
+    hidden: "Nascosto nel tasso",
+    totalCost: "Costo totale",
+    source: "Fonte",
+  },
+  source: {
+    ruleBased: "Secondo le tariffe pubblicate",
+    manual: "Manuale",
+    manualApproximate: "Manuale · approssimativo",
+    checked: (date) => `verificato il ${date}`,
+    comparedWith: (rate, bank, day) => `vs tasso medio ${rate} (${bank}, ${day})`,
+  },
+  rateSources: {
+    ecb: "BCE",
+    cbe: "Banca centrale d’Egitto",
+    nbs: "Banca nazionale di Serbia",
+  },
+  results: {
+    midRate: (p) =>
+      `Confrontato con il tasso medio di mercato 1 ${p.from} = ${p.rate} ${p.to} (${p.bank}, ${p.day}); i tassi manuali con quello del giorno in cui sono stati letti.`,
+    none: "Ancora nessun dato verificato.",
+    staleHeading: (days) => `Non ricontrollati da oltre ${days} giorni`,
+    unavailableHeading: "Non disponibile per questo importo",
+  },
+  unavailable: {
+    no_reference_rate: "nessun tasso di riferimento per il giorno in cui è stato letto il tasso",
+    amount_not_supported:
+      "le commissioni superano questo importo, oppure è fuori dai limiti del fornitore",
+  },
+  errors: {
+    unreachable: "L’API non è raggiungibile. È avviata?",
+    notJson: (status) => `L’API ha risposto con qualcosa che non è JSON (HTTP ${status}).`,
+    http: (status) => `L’API ha risposto con HTTP ${status}.`,
+    invalidQuery: "La richiesta è stata rifiutata. Controlli l’importo.",
+    corridorNotAvailable: "Non c’è ancora un tasso di riferimento per queste valute.",
+  },
+  disclaimer: "Stime a solo scopo informativo, non consulenza finanziaria.",
+};

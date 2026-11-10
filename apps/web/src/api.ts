@@ -1,43 +1,20 @@
-/** The response of `GET /v1/compare` (apps/api). Money and percentages arrive as strings. */
-export type MoneyDto = { amount: string; currency: string };
-type MidRateDto = { rate: string; source: string; asOf: string };
+import { type ComparisonDto, PROBLEM_TYPES, type ProblemDto } from "@freu-transfer/api/contract";
 
-export type ResultRow = {
-  providerId: string;
-  providerName: string;
-  providerKind: string;
-  sourceKind: "rule_based" | "manual";
-  received: MoneyDto;
-  visibleFee: MoneyDto;
-  fxMarkup: MoneyDto;
-  totalCost: MoneyDto;
-  /** "0.95" means 0.95% */
-  totalCostPercent: string;
-  approximate: boolean;
-  /** The reference rate this row was compared with. */
-  midRate: MidRateDto;
-  checkedAt: string;
-  sourceUrl: string;
-  note: string | null;
-};
+/** What went wrong, as a code: the page turns it into a sentence in the reader's language. */
+export type CompareError =
+  | { readonly kind: "unreachable" }
+  | { readonly kind: "notJson"; readonly status: number }
+  | { readonly kind: "http"; readonly status: number }
+  | { readonly kind: "invalidQuery" }
+  | { readonly kind: "corridorNotAvailable" };
 
-type Comparison = {
-  amount: MoneyDto;
-  midRate: MidRateDto;
-  /** Data older than this many days is in `stale`, not ranked. */
-  recheckDays: number;
-  results: (ResultRow & { rank: number })[];
-  stale: ResultRow[];
-  unavailable: { providerId: string; providerName: string; reason: string }[];
-};
-
-type Problem = { title: string; detail?: string; errors?: { field: string; message: string }[] };
-
-export type CompareOutcome = { ok: true; data: Comparison } | { ok: false; message: string };
+export type CompareOutcome =
+  | { readonly ok: true; readonly data: ComparisonDto }
+  | { readonly ok: false; readonly error: CompareError };
 
 /**
- * Calls the API. Network and server failures become a message the page can show; only
- * unexpected errors (bugs) are thrown.
+ * Calls `GET /v1/compare`. Network and server failures become a `CompareError`; only unexpected
+ * errors (bugs) are thrown. `amount` is already in the API's form ("1000.50", see parseAmount).
  * /v1/* goes to the API: through Vite's proxy in development (vite.config.ts), through the
  * Cloudflare Tunnel in production (docs/adr/0004).
  */
@@ -52,27 +29,23 @@ export async function fetchComparison(
   } catch (error) {
     // fetch rejects with a TypeError when the network or the server can't be reached.
     if (!(error instanceof TypeError)) throw error;
-    return { ok: false, message: "The API can't be reached. Is it running?" };
+    return failed({ kind: "unreachable" });
   }
   const body = await readJson(res);
   if (body === NOT_JSON) {
-    return {
-      ok: false,
-      message: res.ok
-        ? `The API answered with something that isn't JSON (HTTP ${res.status}).`
-        : `The API answered with HTTP ${res.status}.`,
-    };
+    return failed(
+      res.ok ? { kind: "notJson", status: res.status } : { kind: "http", status: res.status },
+    );
   }
-  if (res.ok) return { ok: true, data: body as Comparison };
+  if (res.ok) return { ok: true, data: body as ComparisonDto };
 
-  const problem = body as Problem | null;
-  if (!problem) return { ok: false, message: `The API answered with HTTP ${res.status}.` };
-  const details = problem.errors?.map((e) => `${e.field}: ${e.message}`).join("; ");
-  return {
-    ok: false,
-    message: [problem.title, problem.detail, details].filter(Boolean).join(". "),
-  };
+  const type = (body as Partial<ProblemDto> | null)?.type;
+  if (type === PROBLEM_TYPES.invalidQuery) return failed({ kind: "invalidQuery" });
+  if (type === PROBLEM_TYPES.corridorNotAvailable) return failed({ kind: "corridorNotAvailable" });
+  return failed({ kind: "http", status: res.status });
 }
+
+const failed = (error: CompareError): CompareOutcome => ({ ok: false, error });
 
 const NOT_JSON = Symbol("not JSON");
 
