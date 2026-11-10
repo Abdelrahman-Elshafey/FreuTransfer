@@ -1,11 +1,8 @@
-import { type Decimal, ROUND_HALF_EVEN } from "./decimal.ts";
+import type { Decimal } from "./decimal.ts";
 import { CurrencyMismatchError, MoneyError } from "./errors.ts";
 import type { Money } from "./money.ts";
 import type { QuoteAmounts } from "./quote.ts";
 import type { Rate } from "./rate.ts";
-
-/** Digits kept for cost percentages as fractions: 0.023598 = 2.3598%. */
-const PCT_DECIMALS = 6;
 
 /** The result shown to users. All money is in the sender's currency except `received`/`idealReceived`. */
 export type CostBreakdown = {
@@ -20,7 +17,10 @@ export type CostBreakdown = {
   readonly visibleFee: Money;
   /** The hidden cost inside the exchange rate. */
   readonly fxMarkup: Money;
-  /** totalCost / totalPaid as a fraction (0.0236 = 2.36%). */
+  /**
+   * totalCost / totalPaid as an exact fraction (0.0236 = 2.36%), not rounded: whoever shows it
+   * rounds it once, so it is never rounded twice.
+   */
   readonly totalCostPct: Decimal;
 };
 
@@ -34,7 +34,7 @@ export type CostBreakdown = {
  * Everything is computed at full precision and rounded only here, at the end. The markup is
  * derived from the *rounded* total and fee, so fee + markup = total holds to the cent in what
  * users see. A negative total cost means the quote beats the reference rate (e.g. stale data);
- * it is returned as is, and the sanity guards in the collectors decide what to do with it.
+ * it is returned as is. The sanity guard (Project Plan §9, stage 5) decides what to do with it.
  */
 export function computeCost(quote: QuoteAmounts, mid: Rate): CostBreakdown {
   const { totalPaid, visibleFee, received } = quote;
@@ -62,8 +62,6 @@ export function computeCost(quote: QuoteAmounts, mid: Rate): CostBreakdown {
     totalCost,
     visibleFee: roundedFee,
     fxMarkup: totalCost.minus(roundedFee),
-    totalCostPct: exactTotalCost.amount
-      .dividedBy(totalPaid.amount)
-      .toDecimalPlaces(PCT_DECIMALS, ROUND_HALF_EVEN),
+    totalCostPct: exactTotalCost.amount.dividedBy(totalPaid.amount),
   };
 }

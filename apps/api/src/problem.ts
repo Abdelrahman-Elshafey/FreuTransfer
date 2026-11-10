@@ -1,15 +1,8 @@
 import type { ErrorRequestHandler, Response } from "express";
+import type { ProblemDto } from "./contract.ts";
 
-/** RFC 9457 "Problem Details": one standard JSON shape for every API error. */
-export type Problem = {
-  readonly type: string;
-  readonly title: string;
-  readonly status: number;
-  readonly detail?: string;
-  readonly errors?: readonly { readonly field: string; readonly message: string }[];
-};
-
-export function sendProblem(res: Response, problem: Problem): void {
+/** Sends an RFC 9457 problem with its media type. */
+export function sendProblem(res: Response, problem: ProblemDto): void {
   res.status(problem.status).type("application/problem+json").json(problem);
 }
 

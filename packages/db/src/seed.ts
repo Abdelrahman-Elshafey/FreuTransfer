@@ -19,9 +19,10 @@ class SeedConflictError extends Error {
  * Loads reviewed manual data into the database. Safe to run repeatedly: rows already stored
  * are left alone, only missing ones are inserted.
  *
- * Rates and fee schedules are append-only history. If a file entry has the same key as a stored
- * row but different values, seeding stops with SeedConflictError instead of silently ignoring the
- * change: a correction must be a new entry with a new `checkedAt` (or `asOf`).
+ * Rates and fee schedules are append-only history, and corridors are referenced by them. If a file
+ * entry has the same key as a stored row but different values, seeding stops with SeedConflictError
+ * instead of silently ignoring the change: a correction must be a new entry with a new `checkedAt`
+ * (or `asOf`).
  *
  * Only `verified` fee schedules are loaded, unless `includeDrafts` is set for a local preview
  * (never in production). `needs_input` entries are never loaded.
@@ -50,7 +51,26 @@ async function seedInTransaction(
   for (const p of data.providers) {
     await db.provider.upsert({ where: { id: p.id }, create: p, update: p });
   }
-  const corridors = await db.corridor.createMany({ data: data.corridors, skipDuplicates: true });
+  // Corridors are referenced by fee schedules, so a stored corridor can't change its currencies.
+  let corridors = 0;
+  for (const c of data.corridors) {
+    const existing = await db.corridor.findUnique({ where: { id: c.id } });
+    if (existing) {
+      if (
+        existing.sourceCurrency !== c.sourceCurrency ||
+        existing.targetCurrency !== c.targetCurrency
+      ) {
+        throw new SeedConflictError(
+          `Corridor ${c.id} is ${existing.sourceCurrency}→${existing.targetCurrency} in the ` +
+            `database but ${c.sourceCurrency}→${c.targetCurrency} in corridors.json. Fee ` +
+            "schedules refer to it, so it can't change: add a new corridor instead.",
+        );
+      }
+      continue;
+    }
+    await db.corridor.create({ data: c });
+    corridors++;
+  }
 
   let midRates = 0;
   for (const r of data.midRates) {
@@ -101,7 +121,7 @@ async function seedInTransaction(
 
   return {
     providers: data.providers.filter((p) => !knownProviders.has(p.id)).length,
-    corridors: corridors.count,
+    corridors,
     midRates,
     feeSchedules,
     skippedNotVerified: data.feeSchedules.length - loadable.length,

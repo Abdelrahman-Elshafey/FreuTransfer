@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { isCurrencyCode } from "@freu-transfer/core";
 import { z } from "zod";
 
 /**
@@ -8,7 +9,9 @@ import { z } from "zod";
  */
 
 const decimal = z.string().regex(/^\d+(\.\d+)?$/, "must be a non-negative decimal string");
-const currency = z.string().regex(/^[A-Z]{3}$/, "must be an ISO 4217 code");
+// Only currencies the core engine knows (with their minor units); anything else would be stored
+// and then fail when compared.
+const currency = z.string().refine(isCurrencyCode, "unsupported currency");
 const id = z.string().regex(/^[a-z0-9-]+$/i, "must be a slug");
 
 const providerSchema = z.object({

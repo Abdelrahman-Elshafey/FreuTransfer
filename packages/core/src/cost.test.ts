@@ -24,7 +24,8 @@ describe("computeCost", () => {
     expect(cost.totalCost.toString()).toBe("23.60 CHF");
     expect(cost.visibleFee.toString()).toBe("5.00 CHF");
     expect(cost.fxMarkup.toString()).toBe("18.60 CHF");
-    expect(cost.totalCostPct.toString()).toBe("0.023598"); // 2.36%
+    // Exact, not rounded: 23.5981308411… / 1000 = 0.0235981308… (2.36%)
+    expect(cost.totalCostPct.toFixed(10)).toBe("0.0235981308");
   });
 
   it("handles a fee on top plus a published markup (rule-based provider)", () => {
@@ -126,8 +127,4 @@ describe("golden tests (real calculator results)", () => {
     });
     expect(quote.received.toString()).toBe("1.08 EUR");
   });
-
-  it.todo(
-    "golden test 3: a calculator showing its exact rate and the amount received for ~1,000 CHF",
-  );
 });

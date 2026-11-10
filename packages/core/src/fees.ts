@@ -1,6 +1,6 @@
 import type { CurrencyCode } from "./currency.ts";
 import { Decimal, type DecimalInput, toDecimal } from "./decimal.ts";
-import { CurrencyMismatchError, MoneyError } from "./errors.ts";
+import { AmountNotSupportedError, CurrencyMismatchError, MoneyError } from "./errors.ts";
 import { Money, maxMoney, minMoney } from "./money.ts";
 
 /**
@@ -29,7 +29,6 @@ export type FeeModel =
 
 /** What happens to the money you pay: part is the fee, the rest gets converted. */
 type PaymentSplit = {
-  readonly totalPaid: Money;
   readonly fee: Money;
   readonly converted: Money;
 };
@@ -77,11 +76,11 @@ export function splitPayment(totalPaid: Money, model: FeeModel): PaymentSplit {
   const fee = clamp(rawFee, simple.rule).round();
 
   if (fee.compareTo(totalPaid) >= 0) {
-    throw new MoneyError(
+    throw new AmountNotSupportedError(
       `Fee ${fee.toString()} is not less than the amount ${totalPaid.toString()}`,
     );
   }
-  return { totalPaid, fee, converted: totalPaid.minus(fee) };
+  return { fee, converted: totalPaid.minus(fee) };
 }
 
 /** Deducted: the fee is computed on the total you pay. */
@@ -111,7 +110,7 @@ function pickTier(totalPaid: Money, tiers: readonly FeeTier[]): SimpleFeeModel {
   for (const tier of tiers) {
     if (tier.upTo === null || totalPaid.compareTo(tier.upTo) <= 0) return tier.model;
   }
-  throw new MoneyError(`No fee tier covers ${totalPaid.toString()}`);
+  throw new AmountNotSupportedError(`No fee tier covers ${totalPaid.toString()}`);
 }
 
 function assertRuleCurrency(rule: FeeRule, totalPaid: Money): void {

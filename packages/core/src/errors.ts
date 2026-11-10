@@ -7,3 +7,11 @@ export class MoneyError extends Error {
 export class CurrencyMismatchError extends MoneyError {
   override name = "CurrencyMismatchError";
 }
+
+/**
+ * The provider can't serve this amount (its fee would eat it all, or no fee tier covers it).
+ * Not a bug: the comparison lists the provider as unavailable. Every other MoneyError is a bug.
+ */
+export class AmountNotSupportedError extends MoneyError {
+  override name = "AmountNotSupportedError";
+}

@@ -30,8 +30,9 @@ Each rule names the mistake it prevents.
 1. **Rules first, then code.** Before a use case, list the Project Plan rules and edge cases it must
    satisfy, and write one test per rule, with data that can catch a violation (e.g. two different rate
    dates, not one). *Prevents: building for the simple case and testing what was built, not what's required.*
-2. **Ask the five edge-case questions** of every function: what if the input is *repeated*, *changed*,
-   *missing*, *old*, or runs on *Windows*? *Prevents: e.g. a seed that silently skipped edited data.*
+2. **Ask the six edge-case questions** of every function: what if the input is *repeated*, *changed*,
+   *missing*, *old*, runs on *Windows*, or is read or typed in *another language* (German "1'000,50",
+   a French reader)? *Prevents: e.g. a seed that silently skipped edited data.*
 3. **Expected test values are worked out step by step in a comment**, never from memory, and include
    every rounding step. *Prevents: wrong expectations that hide or invent bugs.*
 4. **Errors are never swallowed.** Catch only specific error types; every error the code throws has a test.
@@ -77,8 +78,14 @@ Each rule names the mistake it prevents.
   - `packages/collectors` (step 4): one adapter per source, implementing core ports; raw responses are stored before parsing.
   - `apps/api`: Express 5. Handlers validate (Zod) and call core use cases, with no business logic. `app.ts` builds the app; `main.ts` is the composition root.
   - `apps/web`: React + Vite.
+- Languages (ADR 0005, Project Plan §5a): **EN, DE, FR, IT**. Language lives only in `apps/web`:
+  core, db and API send codes, money and dates, never reader-facing sentences. Every visible text
+  comes from `apps/web/src/i18n/` and is added in all four languages in the same change (Swiss
+  German: `ss`, never `ß`). Numbers and dates only through the `Intl` formatter, from the API's
+  strings. The API's response shape lives in `apps/api/src/contract.ts`, shared with the page.
 - Production: the owner's OVH VPS + domain, Docker Compose with Postgres not exposed publicly,
-  collectors on a systemd timer (ADR 0002). No Vercel/Neon.
+  collectors on a systemd timer (ADR 0002), public access through a Cloudflare Tunnel with no open
+  ports (ADR 0004; UrConnections' Caddy owns 80/443 on that server). No Vercel/Neon.
 - Append-only data: never update or delete observations, rates or quotes.
 - SQL: Prisma TypedSQL or tagged `$queryRaw` only, **never `$queryRawUnsafe`**.
 - Data sourcing: respect ToS and robots.txt. No automated access to sources that disallow it

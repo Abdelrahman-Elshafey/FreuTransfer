@@ -28,9 +28,11 @@ describe("Money", () => {
     expect(Money.of("0.135", "CHF").round().toFixed()).toBe("0.14");
   });
 
-  it("uses 0 decimals for JPY", () => {
-    expect(Money.of("1234.5", "JPY").toFixed()).toBe("1234");
-    expect(Money.of("1235.5", "JPY").toFixed()).toBe("1236");
+  it("never prints a negative zero", () => {
+    // -0.0029 rounds to 0.00; decimal.js's own toFixed(2) would print "-0.00".
+    expect(Money.of("-0.0029", "CHF").toFixed()).toBe("0.00");
+    expect(Money.of("-0.005", "CHF").toFixed()).toBe("0.00"); // half-even: -0.005 → -0.00 → 0.00
+    expect(Money.of("-0.0051", "CHF").toFixed()).toBe("-0.01");
   });
 
   it("serialises amounts as strings for the API", () => {

@@ -8,6 +8,7 @@ import {
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { type AppDeps, createApp } from "./app.ts";
+import { PROBLEM_TYPES } from "./contract.ts";
 
 const now = new Date("2026-11-05T18:00:00Z");
 const mid: MidRateObservation = {
@@ -28,7 +29,6 @@ const yuh: ProviderOffer = {
   pricing: { kind: "markup", markup: new Decimal("0.0095") },
   sourceUrl: "https://www.yuh.com/en/pricing/",
   checkedAt: now,
-  note: null,
 };
 
 /** In-memory fakes for the core ports: the API is tested without a database. */
@@ -110,17 +110,81 @@ describe("GET /v1/compare", () => {
     expect(res.body.recheckDays).toBe(30);
   });
 
+  it("rounds the cost percentage once, from the exact value (no double rounding)", async () => {
+    // Manual rate 1.0, mid 1.009642, pay 1,000 CHF, no fee:
+    //   received = 1000.00 EUR, worth 1000 / 1.009642 = 990.45008032… CHF at mid
+    //   exact cost = 9.54991967… CHF = 0.954991967…% → "0.95"
+    // Rounding the fraction to 6 decimals first (0.009550) and then to 2 would give "0.96".
+    const manual: ProviderOffer = {
+      ...yuh,
+      sourceKind: "manual",
+      pricing: { kind: "rate", rate: Rate.of("CHF", "EUR", "1"), capturedAt: now },
+    };
+    const app = createApp(
+      deps({
+        offers: { latestOffers: async () => [manual] },
+        midRates: { latest: async () => ({ ...mid, rate: Rate.of("CHF", "EUR", "1.009642") }) },
+      }),
+    );
+    const res = await request(app).get("/v1/compare?from=CHF&to=EUR&amount=1000");
+    expect(res.body.results[0]).toMatchObject({
+      received: { amount: "1000.00", currency: "EUR" },
+      totalCost: { amount: "9.55", currency: "CHF" },
+      totalCostPercent: "0.95",
+    });
+  });
+
+  it('sends a cost that rounds to zero as "0.00", never "-0.00"', async () => {
+    // Found on the real page (2026-11-09): mid 1.0937, no fee, no markup, pay 1,000.50 CHF:
+    //   received = 1000.50 × 1.0937 = 1094.24685 → 1094.25 EUR (payout rounding)
+    //   worth 1094.25 / 1.0937 = 1000.50288… CHF → exact cost −0.00288… CHF = −0.000288…%
+    //   rounded to 2 decimals that is zero, and must not keep the minus sign.
+    const zeroMarkup: ProviderOffer = {
+      ...yuh,
+      pricing: { kind: "markup", markup: new Decimal("0") },
+    };
+    const app = createApp(
+      deps({
+        offers: { latestOffers: async () => [zeroMarkup] },
+        midRates: { latest: async () => ({ ...mid, rate: Rate.of("CHF", "EUR", "1.0937") }) },
+      }),
+    );
+    const res = await request(app).get("/v1/compare?from=CHF&to=EUR&amount=1000.50");
+    expect(res.body.results[0]).toMatchObject({
+      received: { amount: "1094.25", currency: "EUR" },
+      totalCost: { amount: "0.00", currency: "CHF" },
+      totalCostPercent: "0.00",
+    });
+  });
+
+  it("lists providers that can't serve the amount with a reason code, not English text", async () => {
+    const pricey: ProviderOffer = {
+      ...yuh,
+      providerId: "pricey",
+      providerName: "Pricey",
+      fees: { kind: "deducted", rule: feeRule("CHF", { fixed: "15" }) },
+    };
+    const app = createApp(deps({ offers: { latestOffers: async () => [pricey] } }));
+    const res = await request(app).get("/v1/compare?from=CHF&to=EUR&amount=10");
+    expect(res.body.unavailable).toEqual([
+      { providerId: "pricey", providerName: "Pricey", reason: "amount_not_supported" },
+    ]);
+  });
+
   it.each([
     ["missing amount", "/v1/compare?from=CHF&to=EUR"],
     ["zero amount", "/v1/compare?from=CHF&to=EUR&amount=0"],
     ["three decimals", "/v1/compare?from=CHF&to=EUR&amount=10.123"],
     ["negative", "/v1/compare?from=CHF&to=EUR&amount=-5"],
     ["unknown currency", "/v1/compare?from=CHF&to=XYZ&amount=100"],
+    // A real currency, but not one of ours: it has no cents, so "100.50" would be impossible.
+    ["currency outside the v1 corridors", "/v1/compare?from=JPY&to=EUR&amount=100.50"],
     ["same currency", "/v1/compare?from=CHF&to=CHF&amount=100"],
   ])("rejects %s with an RFC 9457 problem", async (_name, url) => {
     const res = await request(createApp(deps())).get(url);
     expect(res.status).toBe(400);
     expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
+    expect(res.body.type).toBe(PROBLEM_TYPES.invalidQuery);
     expect(res.body.title).toBe("Invalid query");
     expect(res.body.errors.length).toBeGreaterThan(0);
   });
@@ -128,6 +192,7 @@ describe("GET /v1/compare", () => {
   it("returns 404 when the corridor has no reference rate", async () => {
     const res = await request(createApp(deps())).get("/v1/compare?from=CHF&to=GBP&amount=100");
     expect(res.status).toBe(404);
+    expect(res.body.type).toBe(PROBLEM_TYPES.corridorNotAvailable);
     expect(res.body.title).toBe("Corridor not available");
   });
 
@@ -148,5 +213,7 @@ describe("GET /v1/compare", () => {
     const res = await request(createApp(deps())).get("/nope");
     expect(res.status).toBe(404);
     expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
+    // "about:blank" means "just the HTTP status", so the title is the status phrase (RFC 9457 §4.2.1).
+    expect(res.body).toMatchObject({ type: "about:blank", title: "Not Found" });
   });
 });

@@ -39,7 +39,6 @@ type OfferRow = {
   rate_captured_at: Date | null;
   source_url: string;
   checked_at: Date;
-  note: string | null;
 };
 
 export class PrismaOfferRepository implements OfferRepository {
@@ -60,7 +59,7 @@ export class PrismaOfferRepository implements OfferRepository {
         fs.fixed_fee, fs.percent_fee, fs.min_fee, fs.max_fee,
         fs.fx_markup, fs.fx_markup_tier_up_to, fs.fx_markup_above,
         fs.provider_rate, fs.rate_captured_at,
-        fs.source_url, fs.checked_at, fs.note
+        fs.source_url, fs.checked_at
       FROM fee_schedules fs
       JOIN providers p ON p.id = fs.provider_id
       JOIN corridors c ON c.id = fs.corridor_id
@@ -114,7 +113,6 @@ function toOffer(row: OfferRow): ProviderOffer {
     pricing: toPricing(row, sourceCurrency, targetCurrency),
     sourceUrl: row.source_url,
     checkedAt: row.checked_at,
-    note: row.note,
   };
 }
 

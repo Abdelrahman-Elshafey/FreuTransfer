@@ -1,7 +1,7 @@
 import { type CostBreakdown, computeCost } from "./cost.ts";
 import type { CurrencyCode } from "./currency.ts";
 import type { Decimal } from "./decimal.ts";
-import { MoneyError } from "./errors.ts";
+import { AmountNotSupportedError } from "./errors.ts";
 import type { Money } from "./money.ts";
 import type { MidRateObservation, ProviderOffer } from "./offer.ts";
 import type { MidRateRepository, OfferRepository } from "./ports.ts";
@@ -21,6 +21,14 @@ export type ComparisonRow = {
   readonly approximate: boolean;
 };
 
+/**
+ * Why an offer can't be compared for this amount. A code, not a sentence: the page shows it in
+ * the reader's language (docs/adr/0005).
+ */
+export type UnavailableReason = "no_reference_rate" | "amount_not_supported";
+
+type Unavailable = { readonly offer: ProviderOffer; readonly reason: UnavailableReason };
+
 export type Comparison = {
   readonly amount: Money;
   /** The newest reference rate (used for rule-based providers). */
@@ -30,7 +38,7 @@ export type Comparison = {
   /** Offers whose data is older than RECHECK_DAYS: shown, but not ranked. */
   readonly stale: readonly ComparisonRow[];
   /** Offers that can't serve this amount, or have no reference rate for their day. */
-  readonly unavailable: readonly { readonly offer: ProviderOffer; readonly reason: string }[];
+  readonly unavailable: readonly Unavailable[];
 };
 
 /** No reference rate is stored for the corridor, so no fair comparison is possible. */
@@ -97,7 +105,7 @@ export function rankOffers(
 ): Comparison {
   const fresh: ComparisonRow[] = [];
   const stale: ComparisonRow[] = [];
-  const unavailable: { offer: ProviderOffer; reason: string }[] = [];
+  const unavailable: Unavailable[] = [];
 
   for (const offer of offers) {
     const { pricing } = offer;
@@ -106,7 +114,7 @@ export function rankOffers(
       const day = zurichDay(pricing.capturedAt);
       const found = midOn(day);
       if (!found) {
-        unavailable.push({ offer, reason: `No reference rate on or before ${day}` });
+        unavailable.push({ offer, reason: "no_reference_rate" });
         continue;
       }
       rowMid = found;
@@ -121,8 +129,9 @@ export function rankOffers(
     try {
       quote = quoteFromRule({ totalPaid: amount, fees: offer.fees, providerRate });
     } catch (error) {
-      if (!(error instanceof MoneyError)) throw error;
-      unavailable.push({ offer, reason: error.message });
+      // Only "this amount can't be served"; any other error is a bug or broken data and must surface.
+      if (!(error instanceof AmountNotSupportedError)) throw error;
+      unavailable.push({ offer, reason: "amount_not_supported" });
       continue;
     }
     const row: ComparisonRow = {

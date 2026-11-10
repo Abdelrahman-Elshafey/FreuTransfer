@@ -28,29 +28,19 @@
   {
     "providerId": "revolut",
     "corridorId": "CHF-EUR",
-    "status": "draft",
+    "status": "verified",
     "sourceKind": "rule_based",
     "feeMode": "deducted",
     "fixedFee": "0",
     "percentFee": "0",
     "fxMarkup": "0",
-    "markupTier": { "upTo": "1250", "markupAbove": "0.01" },
-    "sourceUrl": "https://www.revolut.com/en-CH/legal/paid-plans-ch/",
-    "checkedAt": "2026-11-05T20:28:00Z",
-    "note": "Owner verified 2026-11-05 21:28 (revolut.com/money-transfer): CHF→EUR bank transfer 'No fees', 1,000 CHF → 1,090.85 EUR at a shown rate of 1.09086. Standard plan: 0% within the monthly allowance, 1% above, weekends +1% (not modelled). TO VERIFY: the CHF 1,250 allowance for Swiss residents (the page shown was the UK one)."
-  },
-  {
-    "providerId": "ubs",
-    "corridorId": "CHF-EUR",
-    "status": "draft",
-    "sourceKind": "rule_based",
-    "feeMode": "deducted",
-    "fixedFee": "0",
-    "percentFee": "0",
-    "fxMarkup": "0.017",
-    "sourceUrl": "https://www.ubs.com/content/dam/assets/rc/static/noindex/contract-terms/services-prices-en.pdf",
-    "checkedAt": "2026-11-05T17:30:00Z",
-    "note": "'Up to 1.70%' foreign-currency surcharge (price list valid from 24 June 2026). TO VERIFY: the EUR surcharge from a CHF account, in the current 'Services and prices for private clients' PDF. Not shown by: the 'UBS Pay Worldwide' sheet (exotic currencies only; EGP/RSD up to 3.60%) or the key4 FX calculator (it only recommends a subscription: Basic CHF 2/month = 30% lower FX fee, Standard CHF 5 = at least 50%, Premium CHF 10 = at least 75%; max CHF 25,000 a month)."
+    "markupTier": {
+      "upTo": "1250",
+      "markupAbove": "0.01"
+    },
+    "sourceUrl": "https://cdn.revolut.com/terms_and_conditions/pdf/personal_fees_standard_for_swiss_clients_of_revolut_bank_uab_59eb6320_2.1.0_1763725496_en.pdf",
+    "checkedAt": "2026-11-10T07:38:00Z",
+    "note": "Revolut Bank UAB, 'Personal Fees Standard' for Swiss clients, valid from 21 November 2025 (read 2026-11-10; the owner supplied the en-LT fee pages, this is the Swiss version of the same terms): 'Standard: Exchange limit of CHF 1'250 per month. Fair usage fee of 1% for Standard plans applies to any additional exchange.' Weekday exchanges free; weekends (Fri 5pm to Sun 6pm New York time) 1% (not modelled). SEPA payments in EUR free. Owner check 2026-11-05 21:28: 1,000 CHF → 1,090.85 EUR, no fee."
   },
   {
     "providerId": "postfinance",
@@ -79,5 +69,18 @@
     "sourceUrl": "https://www.postfinance.ch/en/support/services/tools-calculator/currency-converter.html",
     "checkedAt": "2026-11-06T17:58:00Z",
     "note": "Owner screenshot of the PostFinance currency converter, 2026-11-06 18:58 ('latest update 06.11.2026', rate for electronic payments): CHF 1 = EUR 1.08038 / EUR 1 = CHF 0.9256. Stored as 1 / 0.9256 = 1.0803802939 (the converter uses exactly this inverse)."
+  },
+  {
+    "providerId": "alpian",
+    "corridorId": "CHF-EUR",
+    "status": "draft",
+    "sourceKind": "rule_based",
+    "feeMode": "deducted",
+    "fixedFee": "0",
+    "percentFee": "0",
+    "fxMarkup": "0.002",
+    "sourceUrl": "https://www.alpian.com/en/pricing",
+    "checkedAt": "2026-11-10T07:38:00Z",
+    "note": "Pricing page ('Pricing conditions effective from February 15, 2026', read 2026-11-10): 'FX markup weekdays 0.2%', 'FX markup weekends 0.5%' (weekends not modelled); outgoing 'EUR (SEPA or other) Eurozone + Switzerland: Free'. TO VERIFY by the owner: the same figures on the page."
   }
 ]

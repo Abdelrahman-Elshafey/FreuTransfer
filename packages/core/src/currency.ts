@@ -1,8 +1,9 @@
 import { MoneyError } from "./errors.ts";
 
 /**
- * Currencies we support, with their ISO 4217 minor units (digits after the decimal point).
- * JPY is included only to prove rounding works for a currency with no cents.
+ * Currencies we support (the v1 corridors, Project Plan §2), with their ISO 4217 minor units
+ * (digits after the decimal point). Only real corridor currencies: the API and the data files
+ * accept exactly this list.
  */
 const MINOR_UNITS = {
   CHF: 2,
@@ -10,7 +11,6 @@ const MINOR_UNITS = {
   GBP: 2,
   EGP: 2,
   RSD: 2,
-  JPY: 0,
 } as const;
 
 export type CurrencyCode = keyof typeof MINOR_UNITS;
