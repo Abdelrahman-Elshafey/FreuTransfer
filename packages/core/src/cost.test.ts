@@ -127,8 +127,4 @@ describe("golden tests (real calculator results)", () => {
     });
     expect(quote.received.toString()).toBe("1.08 EUR");
   });
-
-  it.todo(
-    "golden test 3: a calculator showing its exact rate and the amount received for ~1,000 CHF",
-  );
 });

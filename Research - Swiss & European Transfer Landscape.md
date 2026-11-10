@@ -181,7 +181,7 @@ Send amount 1,000. Reference = Wise's mid-market rate at capture time. Total cos
 | **Ria** | CH site exists (403 to our test) | – | ◐ |
 | **Remitly**, **WorldRemit**, **TransferGo** | Owner checked 2026-11-06: Remitly doesn't send from Switzerland; WorldRemit and TransferGo not usable for these corridors | – | ❌ dropped |
 | **Taptap Send** | Not in its sending-country list | – | ❓ (probably not) |
-| **XE**, **OFX** | Owner checked 2026-11-06: XE shows prices only after sign-up (dropped). OFX: in Wise data for EUR→CHF; CH-resident sending still unchecked | – | XE ❌ · OFX ❓ |
+| **XE**, **OFX** | Owner checked 2026-11-06: XE shows prices only after sign-up (dropped). OFX: in Wise data for EUR→CHF; dropped by the owner 2026-11-10 | – | XE ❌ · OFX ❌ |
 | CurrencyFair (Zai) | Still listed by aggregators | €3-style fixed fee (old) | ❓ |
 
 ### 5.6 Wallets and P2P
@@ -256,7 +256,7 @@ Send amount 1,000. Reference = Wise's mid-market rate at capture time. Total cos
 - Written permission from **Wise** (comparison data) and possibly from 1–2 cantonal banks.
 - ToS and robots.txt check for each bank rate page we automate.
 - Current **UBS** and **Raiffeisen** transfer price lists (PDFs) for manual schedules.
-- ~~Whether Remitly, WorldRemit, TransferGo, XE and OFX accept Swiss-resident senders~~ — checked 2026-11-06, all dropped except **OFX** (still unchecked).
+- ~~Whether Remitly, WorldRemit, TransferGo, XE and OFX accept Swiss-resident senders~~ — checked 2026-11-06, all dropped; **OFX** dropped too (owner, 2026-11-10).
 - Verified **N26 / bunq** EUR→CHF pricing.
 - A legal reading of 924/2009 scope for transfers to CH, and PSR article numbers once it's published in the Official Journal.
 - World Bank RPW: download the Excel file and filter for Switzerland-origin corridors (the site blocked our automated fetch).

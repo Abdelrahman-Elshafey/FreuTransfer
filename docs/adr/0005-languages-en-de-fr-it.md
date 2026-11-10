@@ -55,7 +55,7 @@ dependency, no build plugin and no runtime cost:
 ## Consequences
 - Every visible word in `apps/web` comes from a catalog, in all four languages, in the same change
   (CLAUDE.md). Reviewers can check one folder.
-- Translations are drafts by Claude until a native speaker checks them (owner's list in
-  `docs/progress.md`).
+- Translations are written by Claude and reviewed by the owner (formal register, accepted
+  2026-11-10). New texts follow the same tone.
 - All catalogs ship in one bundle (a few KB). If they grow past ~20 KB, load them per language.
 - Legal texts (disclaimer, privacy policy, methodology) need all four languages before launch.

@@ -20,12 +20,12 @@ best first, and splits the cost into the **visible fee** and the **hidden cost i
 
 ## 2. Scope for v1
 - **Corridors:** CHF→EUR, EUR→CHF (main), CHF→GBP, CHF→EGP, CHF→RSD. Bank transfer → bank account only.
-- **Providers (~8):**
-  - **rule-based** from published pricing: Revolut, Yuh, Alpian, Wise (public pricing page only)
-  - **manual**: Swiss banks (UBS, PostFinance, Raiffeisen, 1–2 cantonal banks), Western Union,
-    a few EU banks for EUR→CHF. Claude researches the published fees/rates with links; the owner verifies.
-  - **dropped** (owner, 2026-11-06): ZKB (UBS is the big bank); Remitly (doesn't send from Switzerland);
-    WorldRemit and TransferGo (not usable for these corridors); XE (prices only after sign-up).
+- **Providers (5), only where exact public values exist** (owner, 2026-11-10; sources in `docs/feasibility.md`):
+  - **rule-based** from published pricing: Wise (public pricing page only), Yuh, Revolut, Alpian
+  - **manual**: PostFinance (published rate sheet / converter). Claude researches with links; the owner verifies.
+  - **dropped:** ZKB, Remitly, WorldRemit, TransferGo, XE (owner, 2026-11-06); OFX, cantonal banks,
+    UBS (publishes only "up to 1.70%"), Raiffeisen (prices per regional bank), Western Union (live
+    calculator only), EU banks (no source without Wise data) (owner, 2026-11-10: keep only exact values).
 - **Only automated source:** Frankfurter (mid-market rate). See ADR 0003.
 - **Languages:** English, German, French, Italian, from v1 (owner, 2026-11-09). See §5a and ADR 0005.
 
@@ -56,7 +56,8 @@ rates stored as `NUMERIC(20,10)`; timestamps in UTC.
   sender and recipient country; EUR→CHF has two routes (convert at the EU bank, or SEPA then convert in CH).
 - **Costs we can't measure** (SWIFT intermediary fees, weekend markups): disclose them in the UI.
 - **Freshness:** every number shows its source and date; stale data is listed separately, not ranked.
-- **Validation:** 3 real calculator results reproduced to the cent; compare with World Bank data.
+- **Validation:** 2 real calculator results reproduced to the cent (a third was skipped by the owner,
+  2026-11-10); compare with World Bank data.
 
 ## 5. Architecture (ADR 0001, hosting ADRs 0002 and 0004)
 Modular monolith with ports & adapters:
@@ -82,7 +83,7 @@ EN / DE / FR / IT. Rules for every stage from now on, so no language work piles 
 - **Content:** provider names are not translated; research notes stay English (evidence, not page
   text); reader-facing caveats become codes with translated text (stage 6); disclaimer, privacy
   policy and methodology exist in all four languages before launch (stage 7).
-- Translations are drafted by Claude and checked by a native speaker before launch.
+- Translations are drafted by Claude and reviewed by the owner (formal "Sie / vous / Lei"; accepted 2026-11-10).
 
 ## 6. Testing
 | Layer | What |
@@ -98,12 +99,12 @@ EN / DE / FR / IT. Rules for every stage from now on, so no language work piles 
 |---|---|---|
 | 0 | Feasibility (in parallel): app checks, `docs/feasibility.md` | every provider has a confirmed source before stage 5 |
 | 1 | Setup | CI green |
-| 2 | Core engine: Money/Rate, fee strategies, `computeCost`, rounding, tests | 3 real calculator results reproduced to the cent |
+| 2 | Core engine: Money/Rate, fee strategies, `computeCost`, rounding, tests | 2 real calculator results reproduced to the cent |
 | 3 | v0.1: DB schema, first manual data, `/v1/compare`, results table, i18n foundation (EN/DE/FR/IT), first VPS deploy | live on your domain with manual data, in four languages |
 | 4 | Frankfurter adapter, raw → parse pipeline, daily timer | a week of daily rates stored |
 | 5 | Provider data: researched by Claude, verified by the owner | all v1 providers present, labelled, no negative hidden costs |
 | 6 | Frontend: breakdown, charts, "my bank vs best", translated caveat codes | usable on mobile, every number shows its source, every text in four languages |
-| 7 | Polish: README, methodology and legal texts in four languages, OpenAPI from the Zod schemas (ADR 0001), language URLs/SEO decision | a reviewer understands it in 5 minutes; translations checked by native speakers |
+| 7 | Polish: README, methodology and legal texts in four languages, OpenAPI from the Zod schemas (ADR 0001), language URLs/SEO decision | a reviewer understands it in 5 minutes |
 | 8 | Later: intraday rates, receive mode, more corridors, bank page automation | — |
 
 ## 8. Legal and trust
@@ -114,13 +115,13 @@ no logos; no affiliate links; a privacy policy (revFADP) before collecting any e
 Decided by the owner (2026-11-06):
 - Re-check period before manual data counts as stale: **30 days** (`RECHECK_DAYS` in core).
 - No extra Swiss/EU banks for now: v1 providers are those in §2.
+- (2026-11-10) Only providers with exact public values; UBS, Raiffeisen, Western Union, cantonal and
+  EU banks and OFX dropped. Golden test 3 skipped. Translations accepted, formal register.
 - Languages (2026-11-09): English, German, French and Italian from v1; Swiss number formatting in all.
 - Sanity guard (stage 5): a total cost **above 10%** or **below 0%** is treated as a data error: the
   offer isn't ranked but listed for checking. Can be raised per corridor (e.g. EGP/RSD) if needed.
 
 Still open:
-- Whether OFX accepts Swiss senders.
 - Production domain (subdomain of `aelshafey.com`?), to discuss before stage 3e.
 - Whether to automate any bank rate page later.
-- Who checks the German, French and Italian texts (native speakers), before launch.
 - Language-specific URLs (`/de/…`) for search engines, or one URL with a switcher (stage 7).
