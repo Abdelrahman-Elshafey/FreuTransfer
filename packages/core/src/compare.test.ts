@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { compareProviders, NoMidRateError, rankOffers } from "./compare.ts";
 import { Decimal } from "./decimal.ts";
+import { CurrencyMismatchError } from "./errors.ts";
 import { feeRule } from "./fees.ts";
 import { Money } from "./money.ts";
 import type { MidRateObservation, ProviderOffer } from "./offer.ts";
@@ -82,6 +83,17 @@ describe("rankOffers", () => {
     );
     expect(result.ranked).toEqual([]);
     expect(result.unavailable[0]?.offer.providerId).toBe("pricey");
+  });
+
+  it("fails on broken data instead of hiding it as 'unavailable'", () => {
+    // A fee rule in EUR for a CHF payment is a data bug, not an amount the provider can't serve.
+    const broken = {
+      ...offer("broken", markup("0")),
+      fees: { kind: "deducted", rule: feeRule("EUR", { fixed: "1" }) },
+    } as const;
+    expect(() => rankOffers([broken], mid, Money.of("1000", "CHF"), now)).toThrow(
+      CurrencyMismatchError,
+    );
   });
 });
 

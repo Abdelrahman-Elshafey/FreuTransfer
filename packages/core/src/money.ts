@@ -59,7 +59,7 @@ export class Money {
     return this.amount.isNegative() && !this.amount.isZero();
   }
 
-  /** Round half-even to the currency's minor unit (CHF → 2 decimals, JPY → 0). */
+  /** Round half-even to the currency's minor unit (2 decimals for every v1 currency). */
   round(): Money {
     return new Money(
       this.amount.toDecimalPlaces(minorUnits(this.currency), ROUND_HALF_EVEN),

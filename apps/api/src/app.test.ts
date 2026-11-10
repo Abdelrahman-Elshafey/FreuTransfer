@@ -8,6 +8,7 @@ import {
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { type AppDeps, createApp } from "./app.ts";
+import { PROBLEM_TYPES } from "./problem.ts";
 
 const now = new Date("2026-11-05T18:00:00Z");
 const mid: MidRateObservation = {
@@ -140,11 +141,14 @@ describe("GET /v1/compare", () => {
     ["three decimals", "/v1/compare?from=CHF&to=EUR&amount=10.123"],
     ["negative", "/v1/compare?from=CHF&to=EUR&amount=-5"],
     ["unknown currency", "/v1/compare?from=CHF&to=XYZ&amount=100"],
+    // A real currency, but not one of ours: it has no cents, so "100.50" would be impossible.
+    ["currency outside the v1 corridors", "/v1/compare?from=JPY&to=EUR&amount=100.50"],
     ["same currency", "/v1/compare?from=CHF&to=CHF&amount=100"],
   ])("rejects %s with an RFC 9457 problem", async (_name, url) => {
     const res = await request(createApp(deps())).get(url);
     expect(res.status).toBe(400);
     expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
+    expect(res.body.type).toBe(PROBLEM_TYPES.invalidQuery);
     expect(res.body.title).toBe("Invalid query");
     expect(res.body.errors.length).toBeGreaterThan(0);
   });
@@ -152,6 +156,7 @@ describe("GET /v1/compare", () => {
   it("returns 404 when the corridor has no reference rate", async () => {
     const res = await request(createApp(deps())).get("/v1/compare?from=CHF&to=GBP&amount=100");
     expect(res.status).toBe(404);
+    expect(res.body.type).toBe(PROBLEM_TYPES.corridorNotAvailable);
     expect(res.body.title).toBe("Corridor not available");
   });
 
@@ -172,5 +177,7 @@ describe("GET /v1/compare", () => {
     const res = await request(createApp(deps())).get("/nope");
     expect(res.status).toBe(404);
     expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
+    // "about:blank" means "just the HTTP status", so the title is the status phrase (RFC 9457 §4.2.1).
+    expect(res.body).toMatchObject({ type: "about:blank", title: "Not Found" });
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CurrencyMismatchError, MoneyError } from "./errors.ts";
+import { AmountNotSupportedError, CurrencyMismatchError } from "./errors.ts";
 import { type FeeModel, feeRule, splitPayment } from "./fees.ts";
 import { Money } from "./money.ts";
 
@@ -59,9 +59,19 @@ describe("splitPayment", () => {
     expect(split("1000", model).fee).toBe("10.00");
   });
 
+  it("tiered: an amount above the last tier can't be served", () => {
+    const model: FeeModel = {
+      kind: "tiered",
+      tiers: [
+        { upTo: chf("500"), model: { kind: "deducted", rule: feeRule("CHF", { fixed: "3" }) } },
+      ],
+    };
+    expect(() => splitPayment(chf("500.01"), model)).toThrow(AmountNotSupportedError);
+  });
+
   it("rejects a fee that eats the whole amount, and non-positive amounts", () => {
     const model: FeeModel = { kind: "deducted", rule: feeRule("CHF", { fixed: "5" }) };
-    expect(() => splitPayment(chf("4"), model)).toThrow(MoneyError);
+    expect(() => splitPayment(chf("4"), model)).toThrow(AmountNotSupportedError);
     expect(() => splitPayment(chf("0"), model)).toThrow(/positive/);
   });
 

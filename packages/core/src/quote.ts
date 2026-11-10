@@ -4,7 +4,7 @@ import type { Rate } from "./rate.ts";
 
 /**
  * The three amounts every comparison needs. The full stored quote (capture time, source,
- * countries, mid rate used) is added with the database in stage 3 and wraps these amounts.
+ * countries, mid rate used) comes with the collector pipeline in stage 4 and wraps these amounts.
  */
 export type QuoteAmounts = {
   /** Everything that leaves the sender's account (sender currency). */

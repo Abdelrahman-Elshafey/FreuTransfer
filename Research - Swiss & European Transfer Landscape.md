@@ -1,6 +1,6 @@
 # Research: Swiss & European Money-Transfer Landscape
 
-> **Note (2026-11-05):** the Wise API/comparison data described below is no longer used (ADR 0003). The rest of the research still applies.
+> **Note (2026-11-05):** the Wise API/comparison data described below is no longer used (ADR 0003). This overrides every recommendation below that relies on it: the "primary: Wise mid" choice in §8 (Frankfurter is the only mid-market source) and the "via Wise data" rows in §9 (those providers are researched manually or dropped). The rest of the research still applies.
 >
 > Research date: **2026-11-04**. Scope: transfers **Switzerland → Europe** and **Europe → Switzerland**, plus the earlier CHF→EGP and CHF→RSD corridors.
 > Confidence labels: ✅ **verified** (official source or our own live test) · ◐ **secondary source** (comparison site, blog, press) · ❓ **unconfirmed / conflicting**.

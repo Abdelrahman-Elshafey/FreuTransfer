@@ -12,7 +12,7 @@ import {
 } from "@freu-transfer/core";
 import { type RequestHandler, Router } from "express";
 import { z } from "zod";
-import { sendProblem } from "./problem.ts";
+import { PROBLEM_TYPES, sendProblem } from "./problem.ts";
 
 const currency = z.string().transform((s, ctx): CurrencyCode => {
   const code = s.toUpperCase();
@@ -50,7 +50,7 @@ export function compareRouter(deps: CompareDeps): Router {
     const parsed = querySchema.safeParse(req.query);
     if (!parsed.success) {
       sendProblem(res, {
-        type: "about:blank",
+        type: PROBLEM_TYPES.invalidQuery,
         title: "Invalid query",
         status: 400,
         errors: parsed.error.issues.map((i) => ({ field: i.path.join("."), message: i.message })),
@@ -82,7 +82,7 @@ export function compareRouter(deps: CompareDeps): Router {
     } catch (error) {
       if (!(error instanceof NoMidRateError)) throw error;
       sendProblem(res, {
-        type: "about:blank",
+        type: PROBLEM_TYPES.corridorNotAvailable,
         title: "Corridor not available",
         status: 404,
         detail: error.message,

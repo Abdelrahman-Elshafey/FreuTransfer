@@ -1,7 +1,7 @@
 import { type CostBreakdown, computeCost } from "./cost.ts";
 import type { CurrencyCode } from "./currency.ts";
 import type { Decimal } from "./decimal.ts";
-import { MoneyError } from "./errors.ts";
+import { AmountNotSupportedError } from "./errors.ts";
 import type { Money } from "./money.ts";
 import type { MidRateObservation, ProviderOffer } from "./offer.ts";
 import type { MidRateRepository, OfferRepository } from "./ports.ts";
@@ -121,7 +121,8 @@ export function rankOffers(
     try {
       quote = quoteFromRule({ totalPaid: amount, fees: offer.fees, providerRate });
     } catch (error) {
-      if (!(error instanceof MoneyError)) throw error;
+      // Only "this amount can't be served"; any other error is a bug or broken data and must surface.
+      if (!(error instanceof AmountNotSupportedError)) throw error;
       unavailable.push({ offer, reason: error.message });
       continue;
     }

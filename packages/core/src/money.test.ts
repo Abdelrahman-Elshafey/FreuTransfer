@@ -28,11 +28,6 @@ describe("Money", () => {
     expect(Money.of("0.135", "CHF").round().toFixed()).toBe("0.14");
   });
 
-  it("uses 0 decimals for JPY", () => {
-    expect(Money.of("1234.5", "JPY").toFixed()).toBe("1234");
-    expect(Money.of("1235.5", "JPY").toFixed()).toBe("1236");
-  });
-
   it("serialises amounts as strings for the API", () => {
     expect(JSON.stringify(Money.of("1044.7", "EUR"))).toBe('{"amount":"1044.70","currency":"EUR"}');
   });

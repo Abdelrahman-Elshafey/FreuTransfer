@@ -11,7 +11,6 @@
   "scripts": {
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "format": "biome format --write .",
     "typecheck": "pnpm -r typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -26,9 +25,9 @@
     "knip": "knip"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.4",
+    "@biomejs/biome": "2.6.6",
     "@types/node": "^26.6.6",
-    "knip": "^6.44.1",
+    "knip": "^6.44.2",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
   }
