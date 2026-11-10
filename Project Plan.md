@@ -20,12 +20,12 @@ best first, and splits the cost into the **visible fee** and the **hidden cost i
 
 ## 2. Scope for v1
 - **Corridors:** CHF→EUR, EUR→CHF (main), CHF→GBP, CHF→EGP, CHF→RSD. Bank transfer → bank account only.
-- **Providers (5), only where exact public values exist** (owner, 2026-11-10; sources in `docs/feasibility.md`):
-  - **rule-based** from published pricing: Wise (public pricing page only), Yuh, Revolut, Alpian
+- **Providers (4), only where exact public values exist** (owner, 2026-11-10; sources in `docs/feasibility.md`):
+  - **rule-based** from published pricing: Wise (public pricing page only), Yuh, Revolut
   - **manual**: PostFinance (published rate sheet / converter). Claude researches with links; the owner verifies.
   - **dropped:** ZKB, Remitly, WorldRemit, TransferGo, XE (owner, 2026-11-06); OFX, cantonal banks,
     UBS (publishes only "up to 1.70%"), Raiffeisen (prices per regional bank), Western Union (live
-    calculator only), EU banks (no source without Wise data) (owner, 2026-11-10: keep only exact values).
+    calculator only), EU banks (no source without Wise data) (owner, 2026-11-10: keep only exact values); Alpian (owner, 2026-11-10).
 - **Only automated source:** Frankfurter (mid-market rate). See ADR 0003.
 - **Languages:** English, German, French, Italian, from v1 (owner, 2026-11-09). See §5a and ADR 0005.
 

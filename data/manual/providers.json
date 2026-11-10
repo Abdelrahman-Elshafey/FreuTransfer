@@ -22,11 +22,5 @@
     "name": "Wise",
     "kind": "fintech",
     "website": "https://wise.com/ch/"
-  },
-  {
-    "id": "alpian",
-    "name": "Alpian",
-    "kind": "bank",
-    "website": "https://www.alpian.com"
   }
 ]

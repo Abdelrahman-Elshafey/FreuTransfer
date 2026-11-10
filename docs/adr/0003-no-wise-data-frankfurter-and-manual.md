@@ -13,8 +13,8 @@ weeks or never come, and the project shouldn't wait on it.
 - **Mid-market rate:** Frankfurter v2 only, pinned per source (ECB, CBE for EGP, NBS for RSD). It is
   the only automated data source in v1, fetched daily after the ECB publishes.
 - **Provider prices:**
-  - **Rule-based** where the provider publishes its pricing (Revolut, Yuh, Alpian, Wise's public pricing
-    page): rate = mid × (1 − markup), plus the published fees. No timing gap with the mid rate.
+  - **Rule-based** where the provider publishes its pricing (Revolut, Yuh, Wise's public pricing page):
+    rate = mid × (1 − markup), plus the published fees. No timing gap with the mid rate.
   - **Manual** for banks and others: the owner reads the published rate sheet, price list or
     calculator and enters it. Claude researches first and lists the figures with source links; the
     owner verifies them. Entries carry `source_url`, `checked_at` and `source_kind = manual`.
