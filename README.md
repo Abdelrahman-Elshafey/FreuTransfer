@@ -25,7 +25,9 @@ pnpm dev:web      # http://localhost:5173
 ## Branches
 
 Work happens on short-lived `step-<n>/<name>` branches, merged into `dev` by pull request (CI must
-pass). `dev` is merged into `main` (production) only when a version is ready to release.
+pass). Until v1.0, `dev` is what runs in production: a merge builds the images and, after the
+owner's approval, deploys them ([`docs/deploy.md`](docs/deploy.md)). `main` receives `dev` once, as
+v1.0, at the end of the project.
 
 ## Progress
 

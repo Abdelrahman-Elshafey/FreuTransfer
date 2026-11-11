@@ -9,8 +9,10 @@ Source of truth for scope and roadmap: `Project Plan.md`. Market and data-source
   and why. After it: walk the user through the code until they can explain it.
 - Write tests together with the code. After every change run `pnpm check`
   (Prisma generate + lint + knip + typecheck + test).
-- **Git workflow (from 2026-11-08):** two long-lived branches. `dev` collects finished work; `main`
-  is production and only receives `dev` through a pull request when a version is ready to release.
+- **Git workflow (from 2026-11-08):** two long-lived branches. `dev` collects finished work and is
+  what production runs until v1.0: a merge into `dev` builds the images and, after the owner's
+  approval, deploys them (ADR 0006). `main` stays untouched until the end of the project, when
+  `dev` is merged into it as v1.0 (owner, 2026-11-11).
   Never commit to `main` or `dev` directly. Each roadmap step or sub-step gets a short-lived branch
   from `dev` (`step-<n>/<short-name>`, e.g. `step-3/deploy`), pushed and merged **into `dev`**
   through a pull request once CI passes; then the branch is deleted. **Tell the owner before

@@ -1,3 +1,12 @@
+# CI and deploys (ADR 0006). Until v1.0, `dev` is what runs in production; `main` gets its first
+# release at the end of the project.
+#   check   → every push and PR: Prisma generate, lint, knip, typecheck, tests (as `pnpm check`)
+#   images  → every PR: build the three images (catches a broken Dockerfile before the merge).
+#             After a merge into dev: also push them to GHCR, tagged with the commit id.
+#   deploy  → after a merge into dev, once the owner approves it (GitHub environment
+#             "production"): the server runs scripts/deploy.sh <commit>; then a check from outside.
+# Rollback: Actions tab → an older successful run → "Re-run jobs" (images stay in GHCR;
+# migrations are NOT undone).
 name: CI
 
 on:
@@ -11,6 +20,7 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6 # reads the version from package.json "packageManager"
@@ -21,3 +31,86 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # Same command as locally: Prisma generate, lint, knip, typecheck, tests (incl. Testcontainers DB tests).
       - run: pnpm check
+
+  images:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # SECURITY: only this job may write to GHCR. GITHUB_TOKEN is created per run and expires with it.
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - { image: api, file: apps/api/Dockerfile, target: api }
+          - { image: migrate, file: apps/api/Dockerfile, target: migrate }
+          - { image: web, file: apps/web/Dockerfile, target: "" }
+    env:
+      # Push only after a merge into dev; PRs (and main, until v1.0) only build.
+      PUSH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/dev' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # Image names must be lowercase; the owner "Abdelrahman-Elshafey" isn't. The same prefix is
+      # IMAGE_PREFIX in the server's .env.prod (.env.prod.example).
+      - id: owner
+        run: echo "name=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v4
+
+      - if: env.PUSH == 'true'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The same Dockerfiles as a local `docker compose -f compose.prod.yml build`. The layer cache
+      # lives in GitHub Actions, so an unchanged dependency install is reused.
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ${{ matrix.file }}
+          target: ${{ matrix.target }}
+          push: ${{ env.PUSH == 'true' }}
+          tags: ghcr.io/${{ steps.owner.outputs.name }}/freutransfer-${{ matrix.image }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  deploy:
+    needs: images
+    # Only after a merge into dev, and only once the server is set up: DEPLOY_HOST is a repository
+    # variable the owner adds after the first deploy by hand (docs/deploy.md). Without it the
+    # job is skipped instead of failing.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev' && vars.DEPLOY_HOST != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Never two deploys at once, and never cancel one half-way: a newer merge waits its turn.
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    # The "production" environment holds the deploy key and requires the owner's approval;
+    # only jobs that name it can read its secrets.
+    environment:
+      name: production
+      url: https://freutransfer.aelshafey.com
+    steps:
+      # SECURITY: the server's host key is pinned (DEPLOY_KNOWN_HOSTS), never fetched with
+      # ssh-keyscan at run time: that would trust whatever machine answers on that address.
+      - name: Deploy over SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+          HOST: ${{ vars.DEPLOY_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # The server ignores the command and runs scripts/deploy.sh; the commit id is its input.
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "ubuntu@$HOST" "$GITHUB_SHA"
+
+      # From outside, through Cloudflare and the tunnel, the way a visitor reaches the site.
+      - name: Check from outside
+        run: curl -fsS --retry 10 --retry-all-errors --retry-delay 3 https://freutransfer.aelshafey.com/health
