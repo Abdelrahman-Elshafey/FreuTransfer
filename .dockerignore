@@ -1,0 +1,18 @@
+# What `docker build` may NOT see (the build context is the repo root). Keeps images small,
+# builds cache-friendly, and secrets out: images are public on GHCR.
+**/node_modules
+**/dist
+.git
+.github
+.claude
+**/.claude
+.env
+.env.*
+coverage
+docs
+*.md
+# Generated in the image by `prisma generate`, never copied from the host (it may be stale).
+packages/db/src/generated
+# Tests and their helpers don't ship (test-database.ts needs Testcontainers, a dev dependency).
+**/*.test.ts
+packages/db/src/test-database.ts

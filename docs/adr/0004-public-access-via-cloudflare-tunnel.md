@@ -19,7 +19,11 @@ and changes nothing in the UrConnections stack.
 - Routing stays as in ADR 0002: `/v1/*` and `/health` go to the API, everything else to the built
   React files. The page calls `/v1/...` on its own origin, in development (Vite proxy) and production.
 - The tunnel token is a secret in the server's `.env`, never in git.
-- Still open, decided at stage 3e: the subdomain, and which container serves the static files.
+- **Decided at stage 3e (2026-11-10/11):** the address is **`freutransfer.aelshafey.com`** (the owner).
+  The `web` container (nginx, `apps/web/nginx.conf`) serves the built files **and** does the routing,
+  so the tunnel has a single route (`freutransfer.aelshafey.com` → `web:8080`) and the routing is in
+  git and tested locally with the same files (`docs/deploy.md`). `/docs` joins the API routes when
+  the API documentation exists (stage 7).
 
 ## Alternatives considered
 - **A site block in UrConnections' Caddy:** works, but ties FreuTransfer's deploys to another
