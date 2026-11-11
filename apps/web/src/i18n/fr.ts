@@ -47,9 +47,11 @@ export const fr: Messages = {
       "les frais dépassent ce montant, ou il est hors des limites du prestataire",
   },
   errors: {
-    unreachable: "L’API est injoignable. Est-elle lancée ?",
-    notJson: (status) => `L’API a répondu autre chose que du JSON (HTTP ${status}).`,
-    http: (status) => `L’API a répondu avec HTTP ${status}.`,
+    unreachable: "Le service est injoignable pour le moment. Veuillez réessayer plus tard.",
+    notJson: (status) =>
+      `Le service a donné une réponse inattendue (HTTP ${status}). Veuillez réessayer plus tard.`,
+    http: (status) =>
+      `Le service rencontre un problème (HTTP ${status}). Veuillez réessayer plus tard.`,
     invalidQuery: "La demande a été refusée. Vérifiez le montant.",
     corridorNotAvailable: "Il n’y a pas encore de taux de référence pour ces devises.",
   },

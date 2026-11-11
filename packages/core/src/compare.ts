@@ -145,9 +145,10 @@ export function rankOffers(
     (ageDays > RECHECK_DAYS ? stale : fresh).push(row);
   }
 
+  // Equal costs: by provider id as plain text, the same on every server (not localeCompare).
   const byCost = (a: ComparisonRow, b: ComparisonRow) =>
     a.cost.totalCost.compareTo(b.cost.totalCost) ||
-    a.offer.providerName.localeCompare(b.offer.providerName);
+    (a.offer.providerId < b.offer.providerId ? -1 : 1);
 
   return { amount, mid, ranked: fresh.sort(byCost), stale: stale.sort(byCost), unavailable };
 }

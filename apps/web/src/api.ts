@@ -15,8 +15,8 @@ export type CompareOutcome =
 /**
  * Calls `GET /v1/compare`. Network and server failures become a `CompareError`; only unexpected
  * errors (bugs) are thrown. `amount` is already in the API's form ("1000.50", see parseAmount).
- * /v1/* goes to the API: through Vite's proxy in development (vite.config.ts), through the
- * Cloudflare Tunnel in production (docs/adr/0004).
+ * /v1/* goes to the API: through Vite's proxy in development (vite.config.ts), through nginx
+ * in production (apps/web/nginx.conf, docs/adr/0004).
  */
 export async function fetchComparison(
   amount: string,

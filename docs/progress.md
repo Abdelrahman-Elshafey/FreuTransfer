@@ -112,3 +112,9 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   api, web, tunnel; no ports), `.env.prod.example`, `compose.local.yml`, `docs/deploy.md`, a test that
   keeps Node/Postgres versions equal across files. Whole stack run locally: migrations + seed, `/health`,
   `/v1/compare`, page in four languages, cache headers, 404s, repeat start, API restart and API down.
+- **2026-11-11:** Full review with the method now written in `review.md` (log of findings there).
+  Fixed: data links https only (a `javascript:` link was accepted), values with more decimals than
+  the database stores, dates in the future, ranking ties independent of the server's language,
+  reader-friendly error texts in four languages, third copy of the Postgres version under test.
+  For the owner: reference rate has no age limit until stage 4; a provider can't be withdrawn from
+  production (stage 5). 141 tests pass; production stack re-run locally.

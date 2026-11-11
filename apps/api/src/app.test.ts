@@ -180,6 +180,9 @@ describe("GET /v1/compare", () => {
     // A real currency, but not one of ours: it has no cents, so "100.50" would be impossible.
     ["currency outside the v1 corridors", "/v1/compare?from=JPY&to=EUR&amount=100.50"],
     ["same currency", "/v1/compare?from=CHF&to=CHF&amount=100"],
+    ["a repeated parameter", "/v1/compare?from=CHF&to=EUR&amount=100&amount=200"],
+    // The page turns "1'000,50" into "1000.50" before calling; the API takes only that form.
+    ["an amount as people type it", "/v1/compare?from=CHF&to=EUR&amount=1'000,50"],
   ])("rejects %s with an RFC 9457 problem", async (_name, url) => {
     const res = await request(createApp(deps())).get(url);
     expect(res.status).toBe(400);
