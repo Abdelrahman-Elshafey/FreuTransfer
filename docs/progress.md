@@ -2,14 +2,14 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0 and 2 done. Stage 3: 3a database ✅, 3b manual data ✅ (all 4 providers verified), 3c API ✅, 3d page ✅, reviews ✅, 3f languages ✅, **3e deploy in progress**: 3e-1 images ✅, 3e-2 CI images + deploy job ✅ (waiting for merge), then 3e-3 first deploy to `freutransfer.aelshafey.com`, 3e-4 backups (ADR 0006, `docs/deploy.md`).
+**Now:** stages 0 and 2 done. Stage 3: 3a database ✅, 3b manual data ✅ (all 4 providers verified), 3c API ✅, 3d page ✅, reviews ✅, 3f languages ✅, **3e deploy in progress**: 3e-1 images ✅, 3e-2 CI images + deploy job ✅, 3e-3 first deploy ✅ (live at https://freutransfer.aelshafey.com; automatic deploys set up, first one with the next merge), then 3e-4 backups (ADR 0006, `docs/deploy.md`).
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
 | 0 | Feasibility | ✅ Done (2026-11-10) | Research doc ✅ · Wise removed as a source (ADR 0003) ✅ · app checks ✅ · providers without exact public values dropped ✅ · `docs/feasibility.md` ✅ | Every v1 provider has a confirmed data source **before stage 5** ✅ |
 | 1 | Setup | ✅ Done (`d555741`) | Monorepo, Biome, TypeScript, Docker Postgres, CI, `CLAUDE.md`, ADR 0001; renamed to FreuTransfer + OVH hosting (ADR 0002) | CI green on GitHub ✅ |
 | 2 | Core engine | ✅ Done (2026-11-10) | `Money`/`Rate` value objects, fee strategies, `computeCost`, rounding, golden + property tests | 2 real calculator results reproduced to the cent ✅ (third skipped by the owner) |
-| 3 | v0.1 end-to-end | 🟡 **In progress**: 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy 🟡 (3e-1 images ✅ · 3e-2 CI ✅) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
+| 3 | v0.1 end-to-end | 🟡 **In progress**: 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy 🟡 (3e-1 images ✅ · 3e-2 CI ✅ · 3e-3 first deploy ✅ · 3e-4 backups ⏭️) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
 | 4 | Mid-market + pipeline | ⬜ Not started | Frankfurter adapter, raw → parse pipeline, `collector_runs`, daily timer on the VPS | A week of daily snapshots stored |
 | 5 | Provider data | ⬜ Not started | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ⬜ Not started | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
@@ -125,3 +125,12 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   SSH with a key limited to that script, then checks `/health` from outside. The job is skipped until
   the repository variable `DEPLOY_HOST` exists. Script checked with shellcheck, workflow with
   actionlint; commit-id check tested with 5 bad inputs (incl. `<sha>; rm -rf /`).
+- **2026-11-11:** **3e-3: FreuTransfer is live** at https://freutransfer.aelshafey.com. The owner
+  cloned the repository to `~/apps/freutransfer`, wrote `.env.prod` (password and tunnel token stay on
+  the server) and started the stack for `bf37523`. Checked: migrate and seed exit 0 (5 fee
+  schedules), api/web/db healthy, tunnel with 4 connections, `/health`, `/v1/compare` and the page from
+  outside; all 7 UrConnections containers healthy. Automatic deploys: deploy key added by the owner as a
+  forced command (refuses `ls`, `cat .env.prod`, a short id, `; id` and a shell; tested from outside),
+  GitHub environment `production` (owner as reviewer) and host key in `DEPLOY_KNOWN_HOSTS` set up by the owner
+  (fingerprint compared with the one already trusted). The reference rate is still the seeded one
+  (2026-11-06) until stage 4.
