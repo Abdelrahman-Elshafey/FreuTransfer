@@ -2,14 +2,14 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0 and 2 done. Stage 3: 3a database ✅, 3b manual data ✅ (all 4 providers verified), 3c API ✅, 3d page ✅, reviews ✅, 3f languages ✅, **3e deploy next** (Cloudflare Tunnel, ADR 0004; needs the subdomain).
+**Now:** stages 0 and 2 done. Stage 3: 3a database ✅, 3b manual data ✅ (all 4 providers verified), 3c API ✅, 3d page ✅, reviews ✅, 3f languages ✅, **3e deploy in progress**: 3e-1 images ✅, 3e-2 CI images + deploy job next, then 3e-3 first deploy to `freutransfer.aelshafey.com`, 3e-4 backups (ADR 0006, `docs/deploy.md`).
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
 | 0 | Feasibility | ✅ Done (2026-11-10) | Research doc ✅ · Wise removed as a source (ADR 0003) ✅ · app checks ✅ · providers without exact public values dropped ✅ · `docs/feasibility.md` ✅ | Every v1 provider has a confirmed data source **before stage 5** ✅ |
 | 1 | Setup | ✅ Done (`d555741`) | Monorepo, Biome, TypeScript, Docker Postgres, CI, `CLAUDE.md`, ADR 0001; renamed to FreuTransfer + OVH hosting (ADR 0002) | CI green on GitHub ✅ |
 | 2 | Core engine | ✅ Done (2026-11-10) | `Money`/`Rate` value objects, fee strategies, `computeCost`, rounding, golden + property tests | 2 real calculator results reproduced to the cent ✅ (third skipped by the owner) |
-| 3 | v0.1 end-to-end | 🟡 **In progress**: 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ⬜ | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
+| 3 | v0.1 end-to-end | 🟡 **In progress**: 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy 🟡 (3e-1 images ✅) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
 | 4 | Mid-market + pipeline | ⬜ Not started | Frankfurter adapter, raw → parse pipeline, `collector_runs`, daily timer on the VPS | A week of daily snapshots stored |
 | 5 | Provider data | ⬜ Not started | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ⬜ Not started | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
@@ -104,3 +104,17 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   `docs/feasibility.md` written: stage 0 done.
 - **2026-11-10:** PRs #1–#3 merged into `dev`. Owner decision: **Alpian removed**; v1 has 4
   providers, all verified (Wise, Yuh, Revolut, PostFinance).
+- **2026-11-11:** Server rebooted by the owner (kernel 7.0.0-43; all UrConnections containers came back).
+  Owner decisions (ADR 0006): `freutransfer.aelshafey.com`; own folder on the server; images from CI,
+  first deploy by hand, then automatic deploys after approval; nightly backups to Cloudflare R2.
+  **3e-1:** `apps/api/Dockerfile` (targets `api` and `migrate`: the Prisma CLI stays out of the API
+  image), `apps/web/Dockerfile` + `nginx.conf` (page + routing), `compose.prod.yml` (db, migrate, seed,
+  api, web, tunnel; no ports), `.env.prod.example`, `compose.local.yml`, `docs/deploy.md`, a test that
+  keeps Node/Postgres versions equal across files. Whole stack run locally: migrations + seed, `/health`,
+  `/v1/compare`, page in four languages, cache headers, 404s, repeat start, API restart and API down.
+- **2026-11-11:** Full review with the method now written in `review.md` (log of findings there).
+  Fixed: data links https only (a `javascript:` link was accepted), values with more decimals than
+  the database stores, dates in the future, ranking ties independent of the server's language,
+  reader-friendly error texts in four languages, third copy of the Postgres version under test.
+  For the owner: reference rate has no age limit until stage 4; a provider can't be withdrawn from
+  production (stage 5). 141 tests pass; production stack re-run locally.

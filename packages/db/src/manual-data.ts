@@ -8,7 +8,17 @@ import { z } from "zod";
  * touches the database, and money values stay strings (never JSON numbers).
  */
 
-const decimal = z.string().regex(/^\d+(\.\d+)?$/, "must be a non-negative decimal string");
+// The database columns are NUMERIC(20,10): at most 10 digits before and 10 after the point.
+// More decimals would be rounded silently by Postgres, and the next seed would then see a
+// "changed" history row and stop.
+const decimal = z
+  .string()
+  .regex(
+    /^\d{1,10}(\.\d{1,10})?$/,
+    "must be a non-negative decimal string with at most 10 digits and 10 decimals",
+  );
+// Links are shown on the page as <a href>: https only (z.url() alone also accepts javascript:).
+const link = z.url({ protocol: /^https$/, error: "must be an https:// link" });
 // Only currencies the core engine knows (with their minor units); anything else would be stored
 // and then fail when compared.
 const currency = z.string().refine(isCurrencyCode, "unsupported currency");
@@ -18,7 +28,7 @@ const providerSchema = z.object({
   id,
   name: z.string().min(1),
   kind: z.enum(["bank", "fintech", "money_transfer_operator"]),
-  website: z.url(),
+  website: link,
 });
 
 const corridorSchema = z.object({ id, sourceCurrency: currency, targetCurrency: currency });
@@ -30,7 +40,7 @@ const midRateSchema = z.object({
   source: z.enum(["ecb", "cbe", "nbs"]),
   asOf: z.iso.date(),
   fetchedAt: z.iso.datetime(),
-  sourceUrl: z.url(),
+  sourceUrl: link,
   note: z.string().optional(),
 });
 
@@ -46,7 +56,7 @@ const feeBase = {
   percentFee: decimal,
   minFee: decimal.optional(),
   maxFee: decimal.optional(),
-  sourceUrl: z.url(),
+  sourceUrl: link,
   checkedAt: z.iso.datetime(),
   note: z.string().optional(),
 };
@@ -80,14 +90,18 @@ const feeScheduleSchema = z
 
 export type FeeScheduleEntry = z.infer<typeof feeScheduleSchema>;
 
-const manualDataSchema = z
-  .object({
-    providers: z.array(providerSchema),
-    corridors: z.array(corridorSchema),
-    midRates: z.array(midRateSchema),
-    feeSchedules: z.array(feeScheduleSchema),
-  })
-  .superRefine((data, ctx) => {
+const filesSchema = z.object({
+  providers: z.array(providerSchema),
+  corridors: z.array(corridorSchema),
+  midRates: z.array(midRateSchema),
+  feeSchedules: z.array(feeScheduleSchema),
+});
+
+export type ManualData = z.infer<typeof filesSchema>;
+
+/** The rules that look across entries, or need the current time. */
+const manualDataSchema = (now: Date) =>
+  filesSchema.superRefine((data, ctx) => {
     const providers = new Set(data.providers.map((p) => p.id));
     const corridors = new Set(data.corridors.map((c) => c.id));
     data.feeSchedules.forEach((fs, i) => {
@@ -105,14 +119,42 @@ const manualDataSchema = z
           message: `Unknown corridor "${fs.corridorId}"`,
         });
       }
+      // The newest entry per provider wins and counts as fresh for RECHECK_DAYS: a date typed in
+      // the future (2027 for 2026) would win forever and never go stale.
+      const times = {
+        checkedAt: fs.checkedAt,
+        rateCapturedAt: fs.sourceKind === "manual" ? fs.rateCapturedAt : null,
+      };
+      for (const [field, value] of Object.entries(times)) {
+        if (value !== null && new Date(value) > now) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["feeSchedules", i, field],
+            message: `${field} ${value} is in the future`,
+          });
+        }
+      }
+    });
+    // Publication days are compared as UTC days: reference rates appear in the afternoon (CET),
+    // long after the UTC day has started.
+    const today = now.toISOString().slice(0, 10);
+    data.midRates.forEach((rate, i) => {
+      if (rate.asOf > today || new Date(rate.fetchedAt) > now) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["midRates", i],
+          message: `asOf ${rate.asOf} or fetchedAt ${rate.fetchedAt} is in the future`,
+        });
+      }
     });
   });
 
-export type ManualData = z.infer<typeof manualDataSchema>;
-
-/** Validates already-parsed data (used by tests and by `loadManualData`). */
-export function parseManualData(raw: unknown): ManualData {
-  return manualDataSchema.parse(raw);
+/**
+ * Validates already-parsed data (used by tests and by `loadManualData`). `now` is the time the
+ * dates are checked against (tests pass a fixed one).
+ */
+export function parseManualData(raw: unknown, now: Date = new Date()): ManualData {
+  return manualDataSchema(now).parse(raw);
 }
 
 /** Reads and validates the four files in a `data/manual/` directory. */

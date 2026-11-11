@@ -50,6 +50,15 @@ describe("rankOffers", () => {
     expect(result.ranked[2]?.cost.fxMarkup.toString()).toBe("17.00 CHF");
   });
 
+  // Equal costs need a fixed order that doesn't depend on the server's language settings
+  // (localeCompare) or on display names: the provider id, compared as plain text.
+  it("orders equal costs by provider id", () => {
+    const zeta = { ...offer("a", markup("0.01")), providerName: "Zeta" };
+    const alpha = { ...offer("b", markup("0.01")), providerName: "Alpha" };
+    const result = rankOffers([alpha, zeta], mid, Money.of("1000", "CHF"), now);
+    expect(result.ranked.map((r) => r.offer.providerId)).toEqual(["a", "b"]);
+  });
+
   it("marks manual rates as approximate", () => {
     const manual = offer("pf", {
       kind: "rate",

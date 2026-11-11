@@ -7,10 +7,11 @@ coverage/
 .vite/
 *.tsbuildinfo
 
-# env & secrets (commit .env.example only)
+# env & secrets (commit only the .example templates)
 .env
 .env.*
 !.env.example
+!.env.prod.example
 
 # logs & OS noise
 *.log

@@ -46,9 +46,10 @@ export const it: Messages = {
       "le commissioni superano questo importo, oppure è fuori dai limiti del fornitore",
   },
   errors: {
-    unreachable: "L’API non è raggiungibile. È avviata?",
-    notJson: (status) => `L’API ha risposto con qualcosa che non è JSON (HTTP ${status}).`,
-    http: (status) => `L’API ha risposto con HTTP ${status}.`,
+    unreachable: "Il servizio non è raggiungibile al momento. Riprovi più tardi.",
+    notJson: (status) =>
+      `Il servizio ha dato una risposta inattesa (HTTP ${status}). Riprovi più tardi.`,
+    http: (status) => `Il servizio ha un problema al momento (HTTP ${status}). Riprovi più tardi.`,
     invalidQuery: "La richiesta è stata rifiutata. Controlli l’importo.",
     corridorNotAvailable: "Non c’è ancora un tasso di riferimento per queste valute.",
   },

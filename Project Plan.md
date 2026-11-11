@@ -117,11 +117,12 @@ Decided by the owner (2026-11-06):
 - No extra Swiss/EU banks for now: v1 providers are those in §2.
 - (2026-11-10) Only providers with exact public values; UBS, Raiffeisen, Western Union, cantonal and
   EU banks and OFX dropped. Golden test 3 skipped. Translations accepted, formal register.
+- (2026-11-10) Production at `freutransfer.aelshafey.com`; deploys and backups as in ADR 0006
+  (CI images, first deploy by hand then approved automatic deploys, nightly backups to Cloudflare R2).
 - Languages (2026-11-09): English, German, French and Italian from v1; Swiss number formatting in all.
 - Sanity guard (stage 5): a total cost **above 10%** or **below 0%** is treated as a data error: the
   offer isn't ranked but listed for checking. Can be raised per corridor (e.g. EGP/RSD) if needed.
 
 Still open:
-- Production domain (subdomain of `aelshafey.com`?), to discuss before stage 3e.
 - Whether to automate any bank rate page later.
 - Language-specific URLs (`/de/…`) for search engines, or one URL with a switcher (stage 7).

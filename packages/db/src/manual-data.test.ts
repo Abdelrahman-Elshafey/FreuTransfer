@@ -7,7 +7,7 @@ const repoDataDir = fileURLToPath(new URL("../../../data/manual/", import.meta.u
 const valid = () => ({
   providers: [{ id: "yuh", name: "Yuh", kind: "fintech", website: "https://www.yuh.com" }],
   corridors: [{ id: "CHF-EUR", sourceCurrency: "CHF", targetCurrency: "EUR" }],
-  midRates: [],
+  midRates: [] as Record<string, unknown>[],
   feeSchedules: [
     {
       providerId: "yuh",
@@ -65,5 +65,78 @@ describe("manual data files", () => {
     expect(() => parseManualData(data)).toThrow(/needs_input/);
     (data.feeSchedules[0] as Record<string, unknown>).status = "needs_input";
     expect(() => parseManualData(data)).not.toThrow();
+  });
+
+  // The database stores NUMERIC(20,10). Postgres would silently round an 11th decimal, and the
+  // next seed would then report a changed history row (file "…05341" ≠ stored "…0534").
+  it("rejects more decimals or digits than the database stores", () => {
+    const entry = (field: string, value: string) => {
+      const data = valid();
+      (data.feeSchedules[0] as Record<string, unknown>)[field] = value;
+      return data;
+    };
+    expect(() => parseManualData(entry("fxMarkup", "0.0123456789"))).not.toThrow(); // 10 decimals
+    expect(() => parseManualData(entry("fxMarkup", "0.01234567891"))).toThrow(/10 decimals/);
+    expect(() => parseManualData(entry("fixedFee", "12345678901"))).toThrow(/10 decimals/);
+  });
+
+  // These links become <a href> on the page: only https, never javascript: or http:.
+  it.each([["javascript:alert(1)"], ["http://www.yuh.com/en/pricing/"], ["www.yuh.com"]])(
+    "rejects the link %s",
+    (link) => {
+      const source = valid();
+      (source.feeSchedules[0] as Record<string, unknown>).sourceUrl = link;
+      expect(() => parseManualData(source)).toThrow(/https/);
+      const website = valid();
+      (website.providers[0] as Record<string, unknown>).website = link;
+      expect(() => parseManualData(website)).toThrow(/https/);
+    },
+  );
+
+  // A typo like 2027 would make an entry the newest forever, and never stale.
+  describe("dates in the future", () => {
+    const now = new Date("2026-11-05T18:00:00Z");
+    const midRate = {
+      base: "CHF",
+      quote: "EUR",
+      rate: "1.0893",
+      source: "ecb",
+      asOf: "2026-11-05",
+      fetchedAt: "2026-11-05T17:29:37Z",
+      sourceUrl: "https://api.frankfurter.dev/v2/rates",
+    };
+
+    it("accepts dates up to now (the same day, an earlier time)", () => {
+      const data = { ...valid(), midRates: [midRate] };
+      expect(() => parseManualData(data, now)).not.toThrow();
+    });
+
+    it("rejects a check time after now", () => {
+      const data = valid();
+      (data.feeSchedules[0] as Record<string, unknown>).checkedAt = "2026-11-05T18:00:01Z";
+      expect(() => parseManualData(data, now)).toThrow(/in the future/);
+    });
+
+    it("rejects a manual rate read after now", () => {
+      const data = valid();
+      data.feeSchedules[0] = {
+        ...data.feeSchedules[0],
+        sourceKind: "manual",
+        fxMarkup: undefined,
+        providerRate: "1.08",
+        rateCapturedAt: "2027-11-05T17:00:00Z",
+      };
+      expect(() => parseManualData(data, now)).toThrow(/in the future/);
+    });
+
+    it("rejects a reference rate dated or fetched after now", () => {
+      const tomorrow = { ...valid(), midRates: [{ ...midRate, asOf: "2026-11-06" }] };
+      expect(() => parseManualData(tomorrow, now)).toThrow(/in the future/);
+      const fetchedLater = {
+        ...valid(),
+        midRates: [{ ...midRate, fetchedAt: "2026-11-05T18:30:00Z" }],
+      };
+      expect(() => parseManualData(fetchedLater, now)).toThrow(/in the future/);
+    });
   });
 });

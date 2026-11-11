@@ -1,0 +1,110 @@
+# The production stack (docs/deploy.md). Secrets come from .env.prod, never committed
+# (template: .env.prod.example). On the server:
+#   docker compose -f compose.prod.yml --env-file .env.prod up -d --wait
+#
+#   Cloudflare ──tunnel──▶ web (nginx) ─┬─ /v1/*, /health ─▶ api ──▶ db
+#   (outbound only)                      └─ everything else: the built page
+#
+# No service publishes a port (ADR 0004): `tunnel` dials out to Cloudflare, everything else is
+# reachable only inside this project's private network, by service name (api:3000, db:5432).
+# Order on every start: db healthy → migrate (schema) → seed (provider data) → api → web.
+
+# Its own project name: never mixes with the dev database (docker-compose.yml, project
+# "freutransfer") or UrConnections' containers on the server.
+name: freutransfer-prod
+
+# Image names. Locally: built here, e.g. freutransfer-api:latest. On the server .env.prod sets
+# IMAGE_PREFIX=ghcr.io/<owner>/ and IMAGE_TAG to a commit, so it pulls what CI built.
+x-api-image: &api-image ${IMAGE_PREFIX:-}freutransfer-api:${IMAGE_TAG:-latest}
+x-api-build: &api-build
+  context: .
+  dockerfile: apps/api/Dockerfile
+  target: api
+# ${VAR:?message}: compose refuses to start and prints the message if the variable is unset.
+x-database-url: &database-url postgresql://freu:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.prod}@db:5432/freu_transfer
+
+services:
+  db:
+    # Same version as the dev database (deploy/versions.test.ts keeps them equal).
+    image: postgres:18.6
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: freu
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.prod}
+      POSTGRES_DB: freu_transfer
+      TZ: UTC
+    volumes:
+      # Postgres 18 images keep data under /var/lib/postgresql/<major>/, so mount the parent.
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U freu -d freu_transfer"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # One-off: applies new migrations, then exits. The seed and the API wait for it to succeed,
+  # so they never run against an outdated schema.
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: migrate
+    image: ${IMAGE_PREFIX:-}freutransfer-migrate:${IMAGE_TAG:-latest}
+    restart: "no"
+    environment:
+      DATABASE_URL: *database-url
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # One-off: loads the reviewed provider data (verified entries only; already stored rows are
+  # left alone, an edited history row stops it: packages/db/src/seed.ts). Data changes in git
+  # therefore reach production with the next deploy.
+  seed:
+    build: *api-build
+    image: *api-image
+    command: ["node", "packages/db/src/seed-cli.ts"]
+    restart: "no"
+    environment:
+      DATABASE_URL: *database-url
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  api:
+    build: *api-build
+    image: *api-image
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: *database-url
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    image: ${IMAGE_PREFIX:-}freutransfer-web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # Cloudflare Tunnel (ADR 0004). Opt-in through a profile: it runs only where .env.prod sets
+  # COMPOSE_PROFILES=tunnel (the server), so the stack also starts on a computer without a token.
+  tunnel:
+    image: cloudflare/cloudflared:2026.10.7
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      # cloudflared reads the token from this variable. `:-` and not `:?`: compose checks every
+      # service's variables, even those of an inactive profile.
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      web:
+        condition: service_healthy
+
+volumes:
+  pgdata:

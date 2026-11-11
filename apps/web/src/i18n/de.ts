@@ -43,9 +43,11 @@ export const de: Messages = {
       "die Gebühren sind höher als dieser Betrag, oder er liegt ausserhalb der Limiten des Anbieters",
   },
   errors: {
-    unreachable: "Die API ist nicht erreichbar. Läuft sie?",
-    notJson: (status) => `Die API hat etwas geantwortet, das kein JSON ist (HTTP ${status}).`,
-    http: (status) => `Die API hat mit HTTP ${status} geantwortet.`,
+    unreachable: "Der Dienst ist im Moment nicht erreichbar. Bitte versuchen Sie es später erneut.",
+    notJson: (status) =>
+      `Der Dienst hat unerwartet geantwortet (HTTP ${status}). Bitte versuchen Sie es später erneut.`,
+    http: (status) =>
+      `Der Dienst hat im Moment ein Problem (HTTP ${status}). Bitte versuchen Sie es später erneut.`,
     invalidQuery: "Die Anfrage wurde abgelehnt. Bitte prüfen Sie den Betrag.",
     corridorNotAvailable: "Für diese Währungen gibt es noch keinen Referenzkurs.",
   },

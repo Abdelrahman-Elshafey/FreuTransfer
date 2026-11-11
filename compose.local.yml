@@ -1,0 +1,8 @@
+# Try the production stack on your computer (docs/deploy.md, "Run it locally"):
+#   docker compose -f compose.prod.yml -f compose.local.yml up -d --build --wait
+# Adds the one thing production must not have: a port, here on this computer only
+# (127.0.0.1), so a browser can open http://127.0.0.1:8080.
+services:
+  web:
+    ports:
+      - "127.0.0.1:8080:8080"

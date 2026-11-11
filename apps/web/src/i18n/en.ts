@@ -51,10 +51,11 @@ export const en = {
       "the fees are higher than this amount, or it is outside the provider's limits",
   } satisfies Record<UnavailableReason, string>,
   errors: {
-    unreachable: "The API can't be reached. Is it running?",
+    unreachable: "The service can't be reached right now. Please try again later.",
     notJson: (status: number) =>
-      `The API answered with something that isn't JSON (HTTP ${status}).`,
-    http: (status: number) => `The API answered with HTTP ${status}.`,
+      `The service sent an unexpected answer (HTTP ${status}). Please try again later.`,
+    http: (status: number) =>
+      `The service has a problem right now (HTTP ${status}). Please try again later.`,
     invalidQuery: "The request was rejected. Please check the amount.",
     corridorNotAvailable: "There is no reference rate for these currencies yet.",
   },
