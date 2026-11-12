@@ -26,8 +26,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.6",
+    "@testcontainers/postgresql": "^12.2.1",
     "@types/node": "^26.6.6",
     "knip": "^6.44.2",
+    "testcontainers": "^12.2.1",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
   }

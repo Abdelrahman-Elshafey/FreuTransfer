@@ -2,14 +2,14 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0 and 2 done. Stage 3: 3a database ✅, 3b manual data ✅ (all 4 providers verified), 3c API ✅, 3d page ✅, reviews ✅, 3f languages ✅, **3e deploy in progress**: 3e-1 images ✅, 3e-2 CI images + deploy job ✅, 3e-3 first deploy ✅ (live at https://freutransfer.aelshafey.com; automatic deploys set up, first one with the next merge), then 3e-4 backups (ADR 0006, `docs/deploy.md`).
+**Now:** stages 0 and 2 done. Stage 3: 3a database ✅, 3b manual data ✅ (all 4 providers verified), 3c API ✅, 3d page ✅, reviews ✅, 3f languages ✅, **3e deploy in progress**: 3e-1 images ✅, 3e-2 CI images + deploy job ✅, 3e-3 first deploy ✅ (live at https://freutransfer.aelshafey.com; automatic deploys work), 3e-4 backups 🟡 (built; R2 bucket + `.env.prod` by the owner, then a restore drill on the server) (ADR 0006, `docs/deploy.md`).
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
 | 0 | Feasibility | ✅ Done (2026-11-10) | Research doc ✅ · Wise removed as a source (ADR 0003) ✅ · app checks ✅ · providers without exact public values dropped ✅ · `docs/feasibility.md` ✅ | Every v1 provider has a confirmed data source **before stage 5** ✅ |
 | 1 | Setup | ✅ Done (`d555741`) | Monorepo, Biome, TypeScript, Docker Postgres, CI, `CLAUDE.md`, ADR 0001; renamed to FreuTransfer + OVH hosting (ADR 0002) | CI green on GitHub ✅ |
 | 2 | Core engine | ✅ Done (2026-11-10) | `Money`/`Rate` value objects, fee strategies, `computeCost`, rounding, golden + property tests | 2 real calculator results reproduced to the cent ✅ (third skipped by the owner) |
-| 3 | v0.1 end-to-end | 🟡 **In progress**: 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy 🟡 (3e-1 images ✅ · 3e-2 CI ✅ · 3e-3 first deploy ✅ · 3e-4 backups ⏭️) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
+| 3 | v0.1 end-to-end | 🟡 **In progress**: 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy 🟡 (3e-1 images ✅ · 3e-2 CI ✅ · 3e-3 first deploy ✅ · 3e-4 backups 🟡) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
 | 4 | Mid-market + pipeline | ⬜ Not started | Frankfurter adapter, raw → parse pipeline, `collector_runs`, daily timer on the VPS | A week of daily snapshots stored |
 | 5 | Provider data | ⬜ Not started | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ⬜ Not started | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
@@ -134,3 +134,15 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   GitHub environment `production` (owner as reviewer) and host key in `DEPLOY_KNOWN_HOSTS` set up by the owner
   (fingerprint compared with the one already trusted). The reference rate is still the seeded one
   (2026-11-06) until stage 4.
+- **2026-11-12:** First automatic deploy (`cb02be7`, PR #7) after the owner's approval: images pulled,
+  `migrate`/`seed` exit 0, `api`/`web` replaced and healthy, `db` and `tunnel` not restarted, the
+  previous commit's images removed. (The first try was skipped: `DEPLOY_HOST` wasn't a repository
+  variable yet.) **3e-4 backups built:** `backup` service (`pg_dump` at start, every 24 h and before
+  every deploy in `deploy.sh`; 14 days), `offsite` service (rclone 1.75.2 to Cloudflare R2 every 6 h;
+  30 days); old dumps deleted by the time in their name, the newest always kept. 7 tests run the
+  scripts in the production images (`deploy/backup.test.ts`, incl. a real restore); two deliberate
+  bugs (newest copy deleted, partial file left) were each caught by a test. Run locally: service dump,
+  `deploy.sh`'s backup command, restore drill with equal row counts in all 5 tables, `offsite`
+  without settings names the missing lines. `deploy.sh` now refuses to run without
+  `COMPOSE_PROFILES=tunnel,offsite`. Open: nothing alerts when a backup fails (no stage covers
+  monitoring yet; for the owner).

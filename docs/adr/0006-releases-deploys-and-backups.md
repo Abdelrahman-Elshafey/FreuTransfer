@@ -25,8 +25,13 @@ from GitHub's registry (GHCR) and keeps off-site backups in Cloudflare R2.
   every step. `main` gets its first release, v1.0, at the end of the project.
 - **Every start** runs `migrate` (schema) and `seed` (verified provider data from git) before the API,
   so a data change reaches production with the next deploy.
-- **Backups** (stage 3e-4): a nightly `pg_dump` kept a few days on the server, copied to
-  **Cloudflare R2** in a bucket and key of FreuTransfer's own (not UrConnections'), and a restore test.
+- **Backups** (stage 3e-4): a `pg_dump` every 24 hours and before every deploy, kept 14 days on
+  the server; copied every 6 hours to **Cloudflare R2**, kept 30 days, in a bucket with a key of
+  FreuTransfer's own (not UrConnections'); a restore drill from R2. Old dumps are deleted by the
+  time in their name and the newest is always kept, so a backup outage never empties the bucket.
+  The scripts (`deploy/backup`) are mounted as a folder, not built into an image: no fourth image
+  to build and publish, and a folder mount (unlike a single-file mount) shows the new files after
+  a deploy.
 
 ## Alternatives considered
 - **Release `dev` → `main` for every deploy:** the textbook flow, but a PR per deploy adds nothing

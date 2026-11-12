@@ -39,14 +39,25 @@ OLD="$2"
 SHA="$3"
 echo "deploy: $OLD -> $SHA"
 grep -q '^IMAGE_PREFIX=ghcr.io/' .env.prod || { echo "deploy: set IMAGE_PREFIX in .env.prod" >&2; exit 1; }
+# The server runs the tunnel (the way in) and the off-site copies; without them in
+# COMPOSE_PROFILES, `up` would silently leave them out.
+grep -q '^COMPOSE_PROFILES=tunnel,offsite$' .env.prod ||
+  { echo "deploy: set COMPOSE_PROFILES=tunnel,offsite in .env.prod" >&2; exit 1; }
 
 # 1. Pull the images CI built for this commit; nothing is built on the server. A variable from
-#    the shell wins over .env.prod, so this pulls the NEW tag. (A backup before migrations
-#    comes with the backup service, stage 3e-4.)
+#    the shell wins over .env.prod, so this pulls the NEW tag.
 export IMAGE_TAG="$SHA"
 dc pull --quiet migrate api web
 
-# 2. Only after a successful pull, record the version in .env.prod: a later manual `dc up`
+# 2. A database backup before the new version's migrations run (deploy/backup/backup.sh), so a
+#    bad migration can be undone from it. Skipped only if the database isn't running (the very
+#    first start: nothing to save yet). A failed backup stops the deploy.
+if [ -n "$(dc ps --status running --quiet db)" ]; then
+  # -T: no terminal; a deploy started by GitHub over SSH has none.
+  dc run --rm --no-deps -T backup "sh /scripts/backup.sh"
+fi
+
+# 3. Only after a successful pull, record the version in .env.prod: a later manual `dc up`
 #    then starts the same images instead of an older tag.
 if grep -q '^IMAGE_TAG=' .env.prod; then
   sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=$SHA/" .env.prod
@@ -54,11 +65,11 @@ else
   echo "IMAGE_TAG=$SHA" >> .env.prod
 fi
 
-# 3. Start the new version: migrate and seed run first, api and web are replaced,
+# 4. Start the new version: migrate and seed run first, api and web are replaced,
 #    --wait = until everything is healthy (and migrate/seed finished successfully).
 dc up -d --no-build --wait
 
-# 4. Remove FreuTransfer's images of earlier commits (each deploy adds three). Only ours: the
+# 5. Remove FreuTransfer's images of earlier commits (each deploy adds three). Only ours: the
 #    server is shared with UrConnections, so no global `docker image prune`. Rollback still works:
 #    this script pulls an older commit's images from GHCR again.
 PREFIX=$(sed -n 's/^IMAGE_PREFIX=//p' .env.prod)
