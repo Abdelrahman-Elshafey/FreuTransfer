@@ -2,15 +2,15 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0 and 2 done. Stage 3: 3a database ✅, 3b manual data ✅ (all 4 providers verified), 3c API ✅, 3d page ✅, reviews ✅, 3f languages ✅, **3e deploy in progress**: 3e-1 images ✅, 3e-2 CI images + deploy job ✅, 3e-3 first deploy ✅ (live at https://freutransfer.aelshafey.com; automatic deploys work), 3e-4 backups 🟡 (built; R2 bucket + `.env.prod` by the owner, then a restore drill on the server) (ADR 0006, `docs/deploy.md`).
+**Now:** stages 0–3 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2; ADR 0006, `docs/deploy.md`). **Next: stage 4**, the daily mid-market rate (the live rate is still the seeded one from 2026-11-06).
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
 | 0 | Feasibility | ✅ Done (2026-11-10) | Research doc ✅ · Wise removed as a source (ADR 0003) ✅ · app checks ✅ · providers without exact public values dropped ✅ · `docs/feasibility.md` ✅ | Every v1 provider has a confirmed data source **before stage 5** ✅ |
 | 1 | Setup | ✅ Done (`d555741`) | Monorepo, Biome, TypeScript, Docker Postgres, CI, `CLAUDE.md`, ADR 0001; renamed to FreuTransfer + OVH hosting (ADR 0002) | CI green on GitHub ✅ |
 | 2 | Core engine | ✅ Done (2026-11-10) | `Money`/`Rate` value objects, fee strategies, `computeCost`, rounding, golden + property tests | 2 real calculator results reproduced to the cent ✅ (third skipped by the owner) |
-| 3 | v0.1 end-to-end | 🟡 **In progress**: 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy 🟡 (3e-1 images ✅ · 3e-2 CI ✅ · 3e-3 first deploy ✅ · 3e-4 backups 🟡) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
-| 4 | Mid-market + pipeline | ⬜ Not started | Frankfurter adapter, raw → parse pipeline, `collector_runs`, daily timer on the VPS | A week of daily snapshots stored |
+| 3 | v0.1 end-to-end | ✅ Done (2026-11-12): 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ✅ (3e-1 images · 3e-2 CI · 3e-3 first deploy · 3e-4 backups) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
+| 4 | Mid-market + pipeline | ⏭️ Next | Frankfurter adapter, raw → parse pipeline, `collector_runs`, daily timer on the VPS | A week of daily snapshots stored |
 | 5 | Provider data | ⬜ Not started | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ⬜ Not started | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
 | 7 | Polish | ⬜ Not started | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes |
@@ -155,3 +155,10 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   private-network routing off. **For the owner:** pin the GitHub Actions to commit ids (before
   v1.0); a ruleset protecting `dev` (instructions given). Fine: API input checks, no raw SQL in
   app code, no HTML injection, containers as non-root users, no secrets in the git history.
+- **2026-11-12:** **3e-4 done, stage 3 done.** The owner created the R2 bucket and a key limited to it
+  and added the values to `.env.prod`; a one-off rclone test on the server uploaded, read and deleted
+  a file, and listing all buckets was refused (403). PR #8 (backups + deploy guard) deployed after
+  approval (`2bd1d4e`): `deploy.sh` took a backup before the deploy, `backup` and `offsite` run, the
+  first copy is in R2 (same size as on the server). **Restore drill from R2 passed** on the server:
+  the newest copy restored into a scratch database with the same row counts in all 5 tables
+  (scratch database removed). Owner set up a ruleset protecting `dev`.
