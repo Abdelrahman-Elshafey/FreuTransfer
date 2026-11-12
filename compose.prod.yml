@@ -8,6 +8,8 @@
 # No service publishes a port (ADR 0004): `tunnel` dials out to Cloudflare, everything else is
 # reachable only inside this project's private network, by service name (api:3000, db:5432).
 # Order on every start: db healthy → migrate (schema) → seed (provider data) → api → web.
+# Backups (docs/deploy.md, "Backups"): `backup` dumps the database every 24 hours, `offsite`
+# copies the dumps to Cloudflare R2 every 6 hours.
 
 # Its own project name: never mixes with the dev database (docker-compose.yml, project
 # "freutransfer") or UrConnections' containers on the server.
@@ -106,5 +108,63 @@ services:
       web:
         condition: service_healthy
 
+  # A database dump now, then every 24 hours (deploy/backup/backup.sh), kept 14 days in the
+  # `backups` volume. scripts/deploy.sh also runs one before every deploy:
+  #   docker compose ... run --rm --no-deps backup "sh /scripts/backup.sh"
+  backup:
+    # The database's own image: pg_dump is exactly the server's version (deploy/versions.test.ts).
+    image: postgres:18.6
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    # Each round starts the script anew, so a deploy that changes it takes effect without a
+    # restart. A failed round is logged and retried the next day; the loop keeps running.
+    command:
+      [
+        "while true; do sh /scripts/backup.sh || echo 'backup: next try in 24 hours' >&2; sleep 86400; done",
+      ]
+    environment:
+      PGHOST: db
+      PGUSER: freu
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.prod}
+      PGDATABASE: freu_transfer
+      BACKUP_KEEP_DAYS: 14
+    volumes:
+      # A folder, not single files: a file mounted alone keeps showing its old version after a
+      # `git checkout` replaces it (found on UrConnections); a folder shows the current files.
+      - ./deploy/backup:/scripts:ro
+      - backups:/backups
+    depends_on:
+      # After the data is in: a first dump of a database without its schema would be useless.
+      seed:
+        condition: service_completed_successfully
+
+  # Copies new dumps to the Cloudflare R2 bucket every 6 hours (deploy/backup/offsite.sh), kept
+  # 30 days there. Opt-in through a profile: it runs only where .env.prod sets
+  # COMPOSE_PROFILES=tunnel,offsite (the server), so the stack also starts without a bucket.
+  offsite:
+    image: rclone/rclone:1.75.2
+    profiles: ["offsite"]
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      [
+        "while true; do sh /scripts/offsite.sh || echo 'offsite: next try in 6 hours' >&2; sleep 21600; done",
+      ]
+    environment:
+      OFFSITE_S3_BUCKET: ${OFFSITE_S3_BUCKET:-}
+      OFFSITE_KEEP_DAYS: 30
+      # rclone builds its remote "r2" from these variables (no config file).
+      RCLONE_CONFIG_R2_TYPE: s3
+      RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+      RCLONE_CONFIG_R2_ENDPOINT: ${OFFSITE_S3_ENDPOINT:-}
+      RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${OFFSITE_S3_ACCESS_KEY_ID:-}
+      RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${OFFSITE_S3_SECRET_ACCESS_KEY:-}
+      # The key may only touch its own bucket, so rclone must not try to list or create buckets.
+      RCLONE_CONFIG_R2_NO_CHECK_BUCKET: "true"
+    volumes:
+      - ./deploy/backup:/scripts:ro
+      - backups:/backups:ro
+
 volumes:
   pgdata:
+  backups:
