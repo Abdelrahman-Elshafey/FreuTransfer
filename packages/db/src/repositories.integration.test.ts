@@ -213,3 +213,134 @@ describe("database rules", () => {
     ).rejects.toThrow(/fee_schedules_amounts_check/);
   });
 });
+
+/**
+ * The database's own reason for refusing a write. For a single-row update or delete, Prisma
+ * reports a trigger's error code (restrict_violation) as "Foreign key constraint violated" and
+ * keeps the trigger's message only in `meta.driverAdapterError.cause`.
+ */
+async function refusal(write: Promise<unknown>): Promise<string> {
+  try {
+    await write;
+  } catch (error) {
+    const meta = (
+      error as { meta?: { driverAdapterError?: { cause?: { originalMessage?: string } } } }
+    ).meta;
+    return meta?.driverAdapterError?.cause?.originalMessage ?? String(error);
+  }
+  throw new Error("expected the database to refuse this write");
+}
+
+describe("collector pipeline rules (stage 4)", () => {
+  const startedAt = new Date("2026-11-12T15:30:00Z");
+  const finishedAt = new Date("2026-11-12T15:30:05Z");
+  const startRun = () => db.collectorRun.create({ data: { collector: "frankfurter", startedAt } });
+
+  it("finishes a run exactly once, and never deletes one", async () => {
+    const run = await startRun();
+    expect(run.status).toBe("running");
+
+    const finished = await db.collectorRun.update({
+      where: { id: run.id },
+      data: { status: "succeeded", finishedAt },
+    });
+    expect(finished.status).toBe("succeeded");
+
+    expect(
+      await refusal(
+        db.collectorRun.update({
+          where: { id: run.id },
+          data: { status: "failed", error: "rewritten later" },
+        }),
+      ),
+    ).toBe(`Collector run ${run.id} is already finished`);
+    expect(await refusal(db.collectorRun.delete({ where: { id: run.id } }))).toBe(
+      "Table collector_runs is append-only: DELETE is not allowed",
+    );
+  });
+
+  it("keeps who and when of a running run fixed", async () => {
+    const run = await startRun();
+    expect(
+      await refusal(
+        db.collectorRun.update({ where: { id: run.id }, data: { collector: "other" } }),
+      ),
+    ).toBe("Only status, finished_at and error of a running collector run may change");
+  });
+
+  it.each([
+    ["succeeded without a finish time", { status: "succeeded" as const }],
+    ["failed without a reason", { status: "failed" as const, finishedAt }],
+    ["failed with an empty reason", { status: "failed" as const, finishedAt, error: "" }],
+    ["succeeded with an error", { status: "succeeded" as const, finishedAt, error: "x" }],
+  ])("refuses a run %s", async (_name, data) => {
+    const run = await startRun();
+    await expect(db.collectorRun.update({ where: { id: run.id }, data })).rejects.toThrow(
+      /collector_runs_state_check/,
+    );
+  });
+
+  it("refuses a run that finishes before it started", async () => {
+    const run = await startRun();
+    await expect(
+      db.collectorRun.update({
+        where: { id: run.id },
+        data: { status: "succeeded", finishedAt: new Date("2026-11-12T15:29:59Z") },
+      }),
+    ).rejects.toThrow(/collector_runs_times_check/);
+  });
+
+  it("stores a raw response only for an existing run, and never changes or deletes it", async () => {
+    await expect(
+      db.rawObservation.create({
+        data: {
+          runId: 999_999n,
+          url: "https://x.test",
+          httpStatus: 200,
+          body: "[]",
+          fetchedAt: finishedAt,
+        },
+      }),
+    ).rejects.toThrow(/raw_observations_run_id_fkey/);
+
+    const run = await startRun();
+    const raw = await db.rawObservation.create({
+      data: {
+        runId: run.id,
+        url: "https://x.test",
+        httpStatus: 200,
+        body: "[]",
+        fetchedAt: finishedAt,
+      },
+    });
+    expect(
+      await refusal(db.rawObservation.update({ where: { id: raw.id }, data: { body: "[1]" } })),
+    ).toBe("Table raw_observations is append-only: UPDATE is not allowed");
+    expect(await refusal(db.rawObservation.delete({ where: { id: raw.id } }))).toBe(
+      "Table raw_observations is append-only: DELETE is not allowed",
+    );
+  });
+
+  it("links a parsed rate to the exact response it came from", async () => {
+    const run = await startRun();
+    // The body as Frankfurter sends it: the rate is a JSON number, stored here as text.
+    const body = '[{"date":"2026-11-12","base":"CHF","quote":"EUR","rate":1.0832}]';
+    const raw = await db.rawObservation.create({
+      data: { runId: run.id, url: "https://x.test", httpStatus: 200, body, fetchedAt: finishedAt },
+    });
+    const rate = await db.midMarketRate.create({
+      data: {
+        base: "CHF",
+        quote: "EUR",
+        rate: "1.0832",
+        source: "ecb",
+        asOf: new Date("2026-11-12"),
+        fetchedAt: finishedAt,
+        rawObservationId: raw.id,
+      },
+      include: { rawObservation: true },
+    });
+    expect(rate.rawObservation?.body).toBe(body);
+    expect(rate.rawObservation?.runId).toBe(run.id);
+  });
+});

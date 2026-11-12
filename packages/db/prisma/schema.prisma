@@ -1,8 +1,9 @@
-// FreuTransfer v0.1 schema. Only what stage 3 needs; raw observations, stored quotes and
-// collector runs arrive with the pipeline in stage 4.
+// FreuTransfer schema. Stage 3: providers, corridors, fee schedules, reference rates. Stage 4: the
+// collector pipeline (collector runs → raw observations → parsed reference rates).
 //
 // Rules: money and rates are NUMERIC (never float); timestamps are timestamptz (UTC);
-// mid_market_rates and fee_schedules are append-only (enforced by triggers in the migration).
+// mid_market_rates, fee_schedules and raw_observations are append-only, and a collector run can
+// only be finished once (enforced by triggers in the migrations).
 
 generator client {
   provider               = "prisma-client"
@@ -60,15 +61,18 @@ model Corridor {
 
 /// Official reference rates (ECB, CBE, NBS via Frankfurter). 1 base = rate × quote.
 model MidMarketRate {
-  id        BigInt   @id @default(autoincrement())
-  base      String   @db.Char(3)
-  quote     String   @db.Char(3)
-  rate      Decimal  @db.Decimal(20, 10)
+  id               BigInt          @id @default(autoincrement())
+  base             String          @db.Char(3)
+  quote            String          @db.Char(3)
+  rate             Decimal         @db.Decimal(20, 10)
   /// "ecb", "cbe" or "nbs"
-  source    String
+  source           String
   /// The publication date of the reference rate.
-  asOf      DateTime @map("as_of") @db.Date
-  fetchedAt DateTime @map("fetched_at") @db.Timestamptz(3)
+  asOf             DateTime        @map("as_of") @db.Date
+  fetchedAt        DateTime        @map("fetched_at") @db.Timestamptz(3)
+  /// The response this rate was read from. Empty for the rates typed in by hand (data/manual).
+  rawObservationId BigInt?         @map("raw_observation_id")
+  rawObservation   RawObservation? @relation(fields: [rawObservationId], references: [id], onDelete: Restrict)
 
   @@unique([base, quote, source, asOf])
   @@index([base, quote, asOf(sort: Desc)])
@@ -108,4 +112,44 @@ model FeeSchedule {
 
   @@index([corridorId, providerId, checkedAt(sort: Desc)])
   @@map("fee_schedules")
+}
+
+enum CollectorRunStatus {
+  running
+  succeeded
+  failed
+}
+
+/// One run of a collector (e.g. the daily Frankfurter fetch). Inserted as `running` when it
+/// starts and finished exactly once: a run that never finishes (crash) stays visible as running.
+model CollectorRun {
+  id              BigInt             @id @default(autoincrement())
+  /// e.g. "frankfurter"
+  collector       String
+  status          CollectorRunStatus @default(running)
+  startedAt       DateTime           @map("started_at") @db.Timestamptz(3)
+  finishedAt      DateTime?          @map("finished_at") @db.Timestamptz(3)
+  /// Why a failed run failed (for the owner, in English; never shown on the page).
+  error           String?
+  rawObservations RawObservation[]
+
+  @@index([collector, startedAt(sort: Desc)])
+  @@map("collector_runs")
+}
+
+/// A response exactly as a collector received it, stored BEFORE parsing, so every parsed value can
+/// be traced back to what the source really sent (and re-parsed if the parser was wrong).
+model RawObservation {
+  id             BigInt          @id @default(autoincrement())
+  runId          BigInt          @map("run_id")
+  url            String
+  httpStatus     Int             @map("http_status")
+  /// The response body, unchanged.
+  body           String
+  fetchedAt      DateTime        @map("fetched_at") @db.Timestamptz(3)
+  run            CollectorRun    @relation(fields: [runId], references: [id])
+  midMarketRates MidMarketRate[]
+
+  @@index([runId])
+  @@map("raw_observations")
 }

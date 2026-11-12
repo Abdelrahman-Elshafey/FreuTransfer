@@ -10,7 +10,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 1 | Setup | ✅ Done (`d555741`) | Monorepo, Biome, TypeScript, Docker Postgres, CI, `CLAUDE.md`, ADR 0001; renamed to FreuTransfer + OVH hosting (ADR 0002) | CI green on GitHub ✅ |
 | 2 | Core engine | ✅ Done (2026-11-10) | `Money`/`Rate` value objects, fee strategies, `computeCost`, rounding, golden + property tests | 2 real calculator results reproduced to the cent ✅ (third skipped by the owner) |
 | 3 | v0.1 end-to-end | ✅ Done (2026-11-12): 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ✅ (3e-1 images · 3e-2 CI · 3e-3 first deploy · 3e-4 backups) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
-| 4 | Mid-market + pipeline | ⏭️ Next | Frankfurter adapter, raw → parse pipeline, `collector_runs`, daily timer on the VPS | A week of daily snapshots stored |
+| 4 | Mid-market + pipeline | 🟡 **In progress**: 4a database ✅ · 4b collector ⏭️ · 4c production · 4d one week | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored |
 | 5 | Provider data | ⬜ Not started | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ⬜ Not started | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
 | 7 | Polish | ⬜ Not started | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes |
@@ -162,3 +162,12 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   first copy is in R2 (same size as on the server). **Restore drill from R2 passed** on the server:
   the newest copy restored into a scratch database with the same row counts in all 5 tables
   (scratch database removed). Owner set up a ruleset protecting `dev`.
+- **2026-11-12:** Stage 4 planned; owner decision: the collector runs as an hourly Compose service
+  instead of a systemd timer (ADR 0007, ADR 0002 updated). Frankfurter checked at the source: free,
+  no quotas, `robots.txt` allows all; CHF→EUR (ECB), CHF→EGP (CBE) and CHF→RSD (NBS) work; the two
+  hand-entered rates match it. Rates arrive as JSON numbers: the adapter must read their source text
+  (a normal parse turned `123456789.1234567891` into `123456789.12345679`). **4a:** migration
+  `collector_pipeline`: `collector_runs` (finished exactly once, never deleted), `raw_observations`
+  (append-only, belongs to a run), `mid_market_rates.raw_observation_id` (empty for hand-entered
+  rates). 7 new database tests; removing two of the rules on purpose made their tests fail. Applied
+  locally to a production database with data: existing rates kept, seed, API and backup work.

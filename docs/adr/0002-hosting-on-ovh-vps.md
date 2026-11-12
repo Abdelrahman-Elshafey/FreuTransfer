@@ -1,6 +1,7 @@
 # ADR 0002: Host production on the owner's OVH VPS
 
-- **Status:** accepted (public entry point superseded by ADR 0004: Cloudflare Tunnel)
+- **Status:** accepted (public entry point superseded by ADR 0004: Cloudflare Tunnel; collector
+  schedule superseded by ADR 0007: a Compose service)
 - **Date:** 2026-11-04
 - **Supersedes:** the hosting parts of ADR 0001 (Vercel / Render, Neon, GitHub Actions cron)
 
@@ -19,7 +20,8 @@ Run everything on the VPS with **Docker Compose**:
   Cloudflare Tunnel, ADR 0004; the routing below still applies). It serves the built
   React files and forwards `/v1/*`, `/health` and `/docs` to the API.
 - **Collectors** run as a one-off container started by a **systemd timer**, whose `OnCalendar` accepts
-  `Europe/Zurich`, so the daily ECB-aligned snapshot is DST-safe.
+  `Europe/Zurich`, so the daily ECB-aligned snapshot is DST-safe. *(Superseded by ADR 0007: an
+  hourly `collect` service in Docker Compose.)*
 - **Backups:** a nightly `pg_dump` kept on the VPS and copied off the server (target chosen at deploy).
 - **CI** stays on GitHub Actions. A deploy job (SSH to the VPS, pull, `docker compose up -d`) is added
   once the server is prepared.
