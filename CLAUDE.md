@@ -86,11 +86,13 @@ Each rule names the mistake it prevents.
   German: `ss`, never `ß`). Numbers and dates only through the `Intl` formatter, from the API's
   strings. The API's response shape lives in `apps/api/src/contract.ts`, shared with the page.
 - Production: the owner's OVH VPS + domain, Docker Compose with Postgres not exposed publicly,
-  collectors on a systemd timer (ADR 0002), public access through a Cloudflare Tunnel with no open
+  collectors as an hourly Compose service (ADR 0007), public access through a Cloudflare Tunnel with no open
   ports (ADR 0004; UrConnections' Caddy owns 80/443 on that server). No Vercel/Neon.
   Stack: `compose.prod.yml` (images from `apps/*/Dockerfile`), runbook `docs/deploy.md`, releases
   and backups ADR 0006. Versions copied into Docker files are kept equal by `deploy/versions.test.ts`.
-- Append-only data: never update or delete observations, rates or quotes.
+- Append-only data: never update or delete observations, rates or quotes (database triggers enforce
+  it). The one exception: a `collector_runs` row is finished exactly once (status, finish time,
+  error), so a run that crashes stays visible as `running`.
 - SQL: Prisma TypedSQL or tagged `$queryRaw` only, **never `$queryRawUnsafe`**.
 - Data sourcing: respect ToS and robots.txt. No automated access to sources that disallow it
   (e.g. Revolut `/api/`); use rule-based or manual adapters instead.
