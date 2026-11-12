@@ -146,3 +146,12 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   without settings names the missing lines. `deploy.sh` now refuses to run without
   `COMPOSE_PROFILES=tunnel,offsite`. Open: nothing alerts when a backup fails (no stage covers
   monitoring yet; for the owner).
+- **2026-11-12:** Focused security review (Cloudflare `security-audit` skill, guidance mode; source
+  only, nothing run against the live site). **Fixed:** `deploy.sh` accepted a commit from any branch
+  and then ran that commit's own copy of itself, so the deploy key plus a pushed branch could run
+  anything on the server without the owner's approval; it now accepts only commits on `dev`
+  (4 tests in `deploy/deploy-script.test.ts` on a throwaway repository; removing the check fails 2).
+  Checked by reading the tunnel's log: one route, `freutransfer.aelshafey.com` → `web:8080`,
+  private-network routing off. **For the owner:** pin the GitHub Actions to commit ids (before
+  v1.0); a ruleset protecting `dev` (instructions given). Fine: API input checks, no raw SQL in
+  app code, no HTML injection, containers as non-root users, no secrets in the git history.

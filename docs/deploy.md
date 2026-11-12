@@ -55,7 +55,8 @@ Notes:
 ## How a deploy works
 
 `scripts/deploy.sh <commit id>`, on the server, in a copy of this (public) repository:
-1. accepts only a 40-character commit id, and only one deploy at a time;
+1. accepts only a 40-character commit id of a commit on `dev` (the newest or an older one, for a
+   rollback; never another branch), and only one deploy at a time;
 2. checks that commit out (the server always equals one commit of the repo; `.env.prod` is
    git-ignored and never touched);
 3. pulls that commit's images from GHCR (built by CI, never on the server);

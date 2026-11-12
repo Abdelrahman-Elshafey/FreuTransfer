@@ -47,7 +47,9 @@ from GitHub's registry (GHCR) and keeps off-site backups in Cloudflare R2.
   company than the server.
 
 ## Consequences
-- A GitHub secret (the deploy key) can redeploy a commit on the server, nothing more.
+- A GitHub secret (the deploy key) can redeploy a commit that is part of `dev`'s history, nothing
+  more. `deploy.sh` checks this (added after the security review of 2026-11-12): it runs the
+  checked-out commit's own copy of itself, so a commit from any other branch could run anything.
 - Migrations only move forward: rolling back past a schema change needs a new fixing migration.
 - Cloudflare holds both the public entry point (ADR 0004) and the backups: an account problem there
   affects both, but not the running server or its local backups.
