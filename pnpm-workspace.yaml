@@ -1,6 +1,11 @@
 packages:
   - "apps/*"
   - "packages/*"
+# Supply-chain gate (CLAUDE.md, "dependencies"): refuse any version, also of a dependency's
+# dependency, released less than 7 days ago (in minutes). Poisoned releases are usually found and
+# pulled within days. Set explicitly, so it is also strict: pnpm fails instead of quietly taking a
+# too-new version (its built-in default is 1 day and not strict). https://pnpm.io/settings/dependency-resolution
+minimumReleaseAge: 10080
 allowBuilds:
   "@prisma/engines": true
   cpu-features: false

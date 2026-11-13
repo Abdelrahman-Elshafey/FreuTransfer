@@ -116,10 +116,10 @@ no leftovers. No error found in the money calculations.
    compared with its own day), the amount is what would have arrived on 6 Nov. Options: show a
    manual provider's amount as today's reference rate minus its measured markup (comparable, and
    labelled as an estimate); or keep it and say so next to the amount (stage 6).
-2. The `minimumReleaseAge` gate is still not configured (same as the last review).
-3. Merged branches are never deleted (20 on GitHub, plus `ccr-3fbd7ef4-jafk20`, which belongs to
+2. *(Resolved 2026-11-13: 7 days, strict, `pnpm-workspace.yaml`.)* The `minimumReleaseAge` gate is still not configured (same as the last review).
+3. *(Resolved 2026-11-13: 20 deleted; `ccr-…` kept as a local tag only.)* Merged branches are never deleted (20 on GitHub, plus `ccr-3fbd7ef4-jafk20`, which belongs to
    no step), although CLAUDE.md says "then the branch is deleted". Delete them, or change the rule?
-4. `docs/deploy.md` shows the server's IP address in a public repository. SSH is key-only, and
+4. *(Resolved 2026-11-13: placeholder; older commits still contain it.)* `docs/deploy.md` shows the server's IP address in a public repository. SSH is key-only, and
    scanners find the address anyway, but it could be a placeholder.
 5. The local `.env` and `.env.prod` hold the off-site backup keys (only the names were looked
    at). `pnpm dev:api` loads `.env` into the API's environment, where nothing uses them: better
