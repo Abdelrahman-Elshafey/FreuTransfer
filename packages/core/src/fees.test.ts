@@ -84,5 +84,7 @@ describe("splitPayment", () => {
     expect(() => feeRule("CHF", { fixed: "-1" })).toThrow(/negative/);
     expect(() => feeRule("CHF", { percent: "-0.1" })).toThrow(/negative/);
     expect(() => feeRule("CHF", { min: "10", max: "5" })).toThrow(/Minimum/);
+    expect(() => feeRule("CHF", { min: "-5" })).toThrow(/Minimum fee cannot be negative/);
+    expect(() => feeRule("CHF", { max: "-5" })).toThrow(/Maximum fee cannot be negative/);
   });
 });

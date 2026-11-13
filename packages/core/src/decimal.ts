@@ -31,6 +31,9 @@ export function toFixedString(value: Decimal, places: number): string {
 /** Values we accept for money and rates. JS `number` is deliberately not allowed. */
 export type DecimalInput = string | Decimal;
 
+/** Plain decimal notation only. decimal.js alone would also read "0x10", "0b11", "1_000" and "1e3". */
+const PLAIN_DECIMAL = /^-?\d+(\.\d+)?$/;
+
 /**
  * Turns a string or Decimal into our Decimal. Rejects numbers at runtime too, because
  * plain JavaScript callers (or `as any`) could slip one past the type checker.
@@ -39,12 +42,10 @@ export function toDecimal(value: DecimalInput, what: string): Decimal {
   if (typeof value !== "string" && !Decimal.isDecimal(value)) {
     throw new MoneyError(`${what} must be a string or Decimal, not ${typeof value}`);
   }
-  let result: Decimal;
-  try {
-    result = new Decimal(value);
-  } catch {
-    throw new MoneyError(`${what} is not a valid number: "${String(value)}"`);
+  if (typeof value === "string" && !PLAIN_DECIMAL.test(value)) {
+    throw new MoneyError(`${what} is not a valid number: "${value}"`);
   }
+  const result = new Decimal(value);
   if (!result.isFinite()) {
     throw new MoneyError(`${what} must be finite: "${String(value)}"`);
   }
