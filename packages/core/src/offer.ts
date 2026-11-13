@@ -45,7 +45,7 @@ export type ProviderOffer = {
 /** A dated official reference rate (e.g. the ECB rate of 2026-11-05). */
 export type MidRateObservation = {
   readonly rate: Rate;
-  /** "ecb", "cbe" or "nbs" */
+  /** "ecb" (the only reference rate source in v1, ADR 0008) */
   readonly source: string;
   /** Publication date, "YYYY-MM-DD". */
   readonly asOf: string;

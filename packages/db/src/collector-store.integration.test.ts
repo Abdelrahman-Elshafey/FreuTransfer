@@ -14,7 +14,7 @@ beforeAll(async () => {
   await db.corridor.createMany({
     data: [
       { id: "CHF-EUR", sourceCurrency: "CHF", targetCurrency: "EUR" },
-      { id: "CHF-EGP", sourceCurrency: "CHF", targetCurrency: "EGP" },
+      { id: "EUR-CHF", sourceCurrency: "EUR", targetCurrency: "CHF" },
     ],
   });
 }, 180_000);
@@ -120,8 +120,8 @@ describe("PrismaCollectorStore", () => {
 describe("PrismaCorridorRepository", () => {
   it("lists every corridor as a currency pair", async () => {
     expect(await new PrismaCorridorRepository(db).all()).toEqual([
-      { source: "CHF", target: "EGP" },
       { source: "CHF", target: "EUR" },
+      { source: "EUR", target: "CHF" },
     ]);
   });
 });

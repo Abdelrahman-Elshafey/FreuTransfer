@@ -84,7 +84,7 @@ describe("computeCost", () => {
       visibleFee: Money.of("5", "CHF"),
       received: Money.of("1044.75", "EUR"),
     };
-    expect(() => computeCost(quote, Rate.of("CHF", "GBP", "0.9"))).toThrow(CurrencyMismatchError);
+    expect(() => computeCost(quote, Rate.of("EUR", "CHF", "0.9"))).toThrow(CurrencyMismatchError);
     expect(() => computeCost(quote, mid.invert())).toThrow(CurrencyMismatchError);
     expect(() => computeCost({ ...quote, visibleFee: Money.of("5", "EUR") }, mid)).toThrow(
       CurrencyMismatchError,

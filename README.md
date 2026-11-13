@@ -1,7 +1,7 @@
 # FreuTransfer — Cost Comparer
 
-What **actually arrives** when you send money between **Switzerland and Europe** (CHF ⇄ EUR, plus a
-few remittance corridors), and how much of the cost is hidden in the exchange rate. In English,
+What **actually arrives** when you send money between **Switzerland and the euro area** (CHF → EUR
+and EUR → CHF), and how much of the cost is hidden in the exchange rate. In English,
 German, French and Italian.
 
 > 🚧 Early development: roadmap step 3 (first end-to-end version: database, `/v1/compare`, results

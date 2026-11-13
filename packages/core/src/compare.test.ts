@@ -244,7 +244,7 @@ describe("compareProviders", () => {
     await expect(
       compareProviders(
         { offers: { latestOffers: async () => [] }, midRates: { latest: async () => null } },
-        { amount: Money.of("500", "CHF"), target: "EGP", now },
+        { amount: Money.of("500", "EUR"), target: "CHF", now },
       ),
     ).rejects.toThrow(NoMidRateError);
   });

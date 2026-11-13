@@ -37,7 +37,7 @@ const midRateSchema = z.object({
   base: currency,
   quote: currency,
   rate: decimal,
-  source: z.enum(["ecb", "cbe", "nbs"]),
+  source: z.enum(["ecb"]),
   asOf: z.iso.date(),
   fetchedAt: z.iso.datetime(),
   sourceUrl: link,

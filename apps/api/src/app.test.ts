@@ -195,6 +195,8 @@ describe("GET /v1/compare", () => {
     ["unknown currency", "/v1/compare?from=CHF&to=XYZ&amount=100"],
     // A real currency, but not one of ours: it has no cents, so "100.50" would be impossible.
     ["currency outside the v1 corridors", "/v1/compare?from=JPY&to=EUR&amount=100.50"],
+    // Supported until ADR 0008 (v1 = CHF⇄EUR only).
+    ["a dropped corridor currency", "/v1/compare?from=CHF&to=GBP&amount=100"],
     ["same currency", "/v1/compare?from=CHF&to=CHF&amount=100"],
     ["a repeated parameter", "/v1/compare?from=CHF&to=EUR&amount=100&amount=200"],
     // The page turns "1'000,50" into "1000.50" before calling; the API takes only that form.
@@ -209,7 +211,7 @@ describe("GET /v1/compare", () => {
   });
 
   it("returns 404 when the corridor has no reference rate", async () => {
-    const res = await request(createApp(deps())).get("/v1/compare?from=CHF&to=GBP&amount=100");
+    const res = await request(createApp(deps())).get("/v1/compare?from=EUR&to=CHF&amount=100");
     expect(res.status).toBe(404);
     expect(res.body.type).toBe(PROBLEM_TYPES.corridorNotAvailable);
     expect(res.body.title).toBe("Corridor not available");

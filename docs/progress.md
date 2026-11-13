@@ -2,7 +2,7 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0–3 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2; ADR 0006, `docs/deploy.md`). **Next: stage 4**, the daily mid-market rate (the live rate is still the seeded one from 2026-11-06).
+**Now:** stages 0–4 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Next: stage 5**, provider data.
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
@@ -10,8 +10,8 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 1 | Setup | ✅ Done (`d555741`) | Monorepo, Biome, TypeScript, Docker Postgres, CI, `CLAUDE.md`, ADR 0001; renamed to FreuTransfer + OVH hosting (ADR 0002) | CI green on GitHub ✅ |
 | 2 | Core engine | ✅ Done (2026-11-10) | `Money`/`Rate` value objects, fee strategies, `computeCost`, rounding, golden + property tests | 2 real calculator results reproduced to the cent ✅ (third skipped by the owner) |
 | 3 | v0.1 end-to-end | ✅ Done (2026-11-12): 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ✅ (3e-1 images · 3e-2 CI · 3e-3 first deploy · 3e-4 backups) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
-| 4 | Mid-market + pipeline | 🟡 **In progress**: 4a database ✅ · 4b collector ✅ · 4c production 🟡 · 4e old-rate warning ✅ · 4d one week | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored |
-| 5 | Provider data | ⬜ Not started | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
+| 4 | Mid-market + pipeline | ✅ Done (2026-11-13): 4a database ✅ · 4b collector ✅ · 4c hourly `collect` service ✅ · 4e old-rate warning ✅ · 4d one week ⏳ (verify 20 Nov) | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored (8 working days 3–12 Nov stored; 16–20 Nov to be collected live) |
+| 5 | Provider data | 🟡 **In progress**: 5-0 scope ✅ · 5a guard + limits · 5b withdrawing a provider · 5c EUR→CHF data · 5e corridor choice | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ⬜ Not started | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
 | 7 | Polish | ⬜ Not started | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes |
 | 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts | — |
@@ -209,3 +209,22 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   Real run in headless Edge: with only the seeded rate (6 Nov, 7 days old) the warning shows in all
   four languages with the right date format; with the collected rate (12 Nov) none. Branch built on
   4c (both touch this file): merge 4c first.
+- **2026-11-13:** 4c deployed (`b7d6382`): `collect` runs on the server (`up --wait` passed, so the
+  health-check fix works there too); first run stored 6 new days and matched the 2 hand-entered
+  ones; the live rate became 1.0832 (12 Nov) instead of 1.0937 (6 Nov); backup before the deploy;
+  UrConnections untouched. 4e deployed (`b0fde5d`): the live API sends `midRateTooOld: false` and
+  `midRateMaxAgeDays: 5`. **Stage 4 closed by the owner.** Honest state of its "done when": the
+  server holds rates for 8 working days (3–12 Nov), but all were fetched in one go by the 10-day
+  window; that the hourly runs keep working day after day is the open check 4d (every working day
+  16–20 Nov collected by itself, all runs succeeded; verify on 20 Nov). It doesn't block stage 5.
+- **2026-11-13:** Stage 5 planned. Owner decisions (ADR 0008): v1 = **CHF→EUR and EUR→CHF** only
+  (CHF→GBP/EGP/RSD dropped); **Western Union added for CHF→EUR** (manual, its own calculator; not
+  EUR→CHF, its price depends on the sending country); PayPal and Migros Bank not added; Wise's
+  comparison page only as a cross-check (ADR 0003: Wise's terms). Research EUR→CHF: Yuh 0.95% both
+  ways; Revolut's allowance is CHF 1ʼ250 whichever direction; PostFinance buy column; Wise 1.69 EUR
+  + 0.4301% on top, derived from three calculator readings; Wise CHF→EUR re-confirmed at 100 and
+  5,000 CHF; Western Union's shown 1.0540 is rounded, 1.054014 reproduces 100/1,000/4,700 CHF.
+  **5-0:** currencies CHF and EUR only, the collector's sources only the ECB, data files `ecb` only,
+  the Egyptian/Serbian bank names removed from the four catalogs; tests that used GBP/EGP/RSD as
+  stand-ins now use EUR→CHF (the opposite direction of the same pair, a sharper leak test); the
+  API refuses GBP (400). Plan, CLAUDE.md, README, ADR 0003, feasibility study updated.

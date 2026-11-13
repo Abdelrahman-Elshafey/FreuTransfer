@@ -98,7 +98,7 @@ describe("seedManualData", () => {
   it("refuses a stored corridor whose currencies changed, instead of silently skipping it", async () => {
     const edited = parseManualData({
       ...data,
-      corridors: [{ id: "CHF-EUR", sourceCurrency: "CHF", targetCurrency: "GBP" }],
+      corridors: [{ id: "CHF-EUR", sourceCurrency: "EUR", targetCurrency: "CHF" }],
       feeSchedules: [],
     });
     await expect(seedManualData(db, edited)).rejects.toThrow(/Corridor CHF-EUR is CHF→EUR/);

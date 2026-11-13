@@ -28,16 +28,13 @@ const TIMEOUT_MS = 30_000;
 const USER_AGENT = "FreuTransfer/0.1 (+https://freutransfer.aelshafey.com)";
 
 /**
- * The official source pinned for each quote currency (Project Plan §4): the ECB where it publishes
- * the currency, else the national bank. Typed over every supported currency, so adding a currency
- * to core fails the typecheck until its source is chosen here.
+ * The official source pinned for each quote currency (Project Plan §4): the ECB for both v1
+ * currencies (ADR 0008). Typed over every supported currency, so adding a currency to core fails
+ * the typecheck until its source is chosen here.
  */
-const SOURCE_FOR_QUOTE: Readonly<Record<CurrencyCode, "ECB" | "CBE" | "NBS">> = {
+const SOURCE_FOR_QUOTE: Readonly<Record<CurrencyCode, "ECB">> = {
   CHF: "ECB",
   EUR: "ECB",
-  GBP: "ECB",
-  EGP: "CBE",
-  RSD: "NBS",
 };
 
 /** A response that can't be trusted; the raw body is already stored for a look. */

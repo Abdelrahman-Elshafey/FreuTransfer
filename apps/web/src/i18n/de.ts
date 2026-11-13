@@ -29,7 +29,7 @@ export const de: Messages = {
     checked: (date) => `geprüft am ${date}`,
     comparedWith: (rate, bank, day) => `vs. Mittelkurs ${rate} (${bank}, ${day})`,
   },
-  rateSources: { ecb: "EZB", cbe: "Zentralbank Ägyptens", nbs: "Nationalbank Serbiens" },
+  rateSources: { ecb: "EZB" },
   results: {
     midRate: (p) =>
       `Verglichen mit dem Mittelkurs 1 ${p.from} = ${p.rate} ${p.to} (${p.bank}, ${p.day}); manuelle Kurse mit dem Kurs des Tages, an dem sie abgelesen wurden.`,

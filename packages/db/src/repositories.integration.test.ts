@@ -24,7 +24,7 @@ beforeAll(async () => {
   await db.corridor.createMany({
     data: [
       { id: "CHF-EUR", sourceCurrency: "CHF", targetCurrency: "EUR" },
-      { id: "CHF-GBP", sourceCurrency: "CHF", targetCurrency: "GBP" },
+      { id: "EUR-CHF", sourceCurrency: "EUR", targetCurrency: "CHF" },
     ],
   });
   await db.feeSchedule.createMany({
@@ -71,14 +71,14 @@ beforeAll(async () => {
         checkedAt: new Date("2026-11-04T09:30:00Z"),
         note: "Devisen rate, amount tier up to 10,000",
       },
-      // Another corridor: must not leak into CHF→EUR results.
+      // The opposite direction of the same pair: must not leak into CHF→EUR results.
       {
         providerId: "yuh",
-        corridorId: "CHF-GBP",
+        corridorId: "EUR-CHF",
         sourceKind: "rule_based",
         feeMode: "deducted",
         fxMarkup: "0.0095",
-        sourceUrl: "https://example.test/yuh-gbp",
+        sourceUrl: "https://example.test/yuh-eur-chf",
         checkedAt: new Date("2026-11-03T10:00:00Z"),
       },
     ],
@@ -131,8 +131,11 @@ describe("PrismaOfferRepository", () => {
     expect(pf?.fees.kind).toBe("deducted");
   });
 
-  it("returns nothing for a corridor without data", async () => {
-    expect(await new PrismaOfferRepository(db).latestOffers("CHF", "EGP")).toEqual([]);
+  it("keeps the two directions of a currency pair apart", async () => {
+    const offers = await new PrismaOfferRepository(db).latestOffers("EUR", "CHF");
+    expect(offers.map((o) => [o.providerId, o.sourceUrl, o.sourceCurrency])).toEqual([
+      ["yuh", "https://example.test/yuh-eur-chf", "EUR"],
+    ]);
   });
 });
 
@@ -152,7 +155,8 @@ describe("PrismaMidRateRepository", () => {
   });
 
   it("returns null when no rate is stored", async () => {
-    expect(await new PrismaMidRateRepository(db).latest("CHF", "RSD")).toBeNull();
+    // Only CHF→EUR rates are stored; the other direction has none.
+    expect(await new PrismaMidRateRepository(db).latest("EUR", "CHF")).toBeNull();
   });
 });
 

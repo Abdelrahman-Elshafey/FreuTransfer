@@ -28,11 +28,7 @@ export const it: Messages = {
     checked: (date) => `verificato il ${date}`,
     comparedWith: (rate, bank, day) => `vs tasso medio ${rate} (${bank}, ${day})`,
   },
-  rateSources: {
-    ecb: "BCE",
-    cbe: "Banca centrale d’Egitto",
-    nbs: "Banca nazionale di Serbia",
-  },
+  rateSources: { ecb: "BCE" },
   results: {
     midRate: (p) =>
       `Confrontato con il tasso medio di mercato 1 ${p.from} = ${p.rate} ${p.to} (${p.bank}, ${p.day}); i tassi manuali con quello del giorno in cui sono stati letti.`,
