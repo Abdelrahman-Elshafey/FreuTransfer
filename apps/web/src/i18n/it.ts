@@ -36,7 +36,7 @@ export const it: Messages = {
       `Il tasso di riferimento è del ${p.day}, cioè di oltre ${p.days} giorni fa: al momento non arrivano nuovi tassi, quindi questi risultati potrebbero non essere aggiornati.`,
     none: "Ancora nessun dato verificato.",
     staleHeading: (days) => `Non ricontrollati da oltre ${days} giorni`,
-    unavailableHeading: "Non disponibile per questo importo",
+    unavailableHeading: "Non in questo confronto",
   },
   unavailable: {
     no_reference_rate: "nessun tasso di riferimento per il giorno in cui è stato letto il tasso",

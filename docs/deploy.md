@@ -63,9 +63,12 @@ Notes:
 3. pulls that commit's images from GHCR (built by CI, never on the server);
 4. **backs up the database** (unless it isn't running yet): a failed backup stops the deploy, so
    migrations never run without a dump taken just before them;
-5. records the tag in `.env.prod`, starts the new version (`migrate` → `seed` → `api` → `web`) and
+5. runs the new version's **migrations and seed while the old version keeps serving**: if either
+   fails (a bad migration, an edited or deleted history row, a value the database refuses), the
+   deploy stops with nothing replaced and the site stays up;
+6. records the tag in `.env.prod`, starts the new version (`migrate` → `seed` → `api` → `web`) and
    waits until everything is healthy;
-6. deletes FreuTransfer's images of older commits (never UrConnections' images).
+7. deletes FreuTransfer's images of older commits (never UrConnections' images).
 
 It refuses to run unless `.env.prod` has `IMAGE_PREFIX=ghcr.io/…` and
 `COMPOSE_PROFILES=tunnel,offsite`.
@@ -142,12 +145,22 @@ Then check the page in all four languages, and that UrConnections is still healt
 - **Update:** merge a PR into `dev`, then approve the deploy in the Actions tab (or run
   `sh scripts/deploy.sh <commit id>` on the server).
 - **Roll back:** Actions → an older successful run → **Re-run jobs** (or the script with the older
-  commit id). Migrations only move forward, so a rollback past a schema change needs a new fixing
-  migration instead.
+  commit id). Two limits, because the database only moves forward:
+  - past a **schema change**: migrations are never undone, so fix it with a new migration;
+  - past a **data change** (entries added to `data/manual/fee-schedules.json` since that commit):
+    the older commit's seed finds stored entries missing from its files and stops the deploy; the
+    running version stays. Undo the bad change with a new pull request that keeps the data files
+    instead (ADR 0009).
 - **Logs:** `dc logs -f api` (or `web`, `tunnel`; `dc logs migrate seed` for the last start).
 - **Database shell:** `dc exec db psql -U freu -d freu_transfer`.
 - Every start re-runs `migrate` and `seed`; both are safe to repeat (no new migration = nothing to
-  do; already stored rows are skipped, an edited history row stops the seed with an error).
+  do; already stored rows are skipped). The seed stops with an error, and the deploy with it, when
+  a stored history row was edited in the files or deleted from them. A deploy runs both before it
+  replaces anything; a plain `dc up` by hand with new images doesn't: there a failed seed leaves
+  the API stopped (`dc logs seed` says why).
+- **Take a provider off the site:** never delete its entries. Add a withdrawal entry to
+  `data/manual/fee-schedules.json` (`"withdrawn": true`, the provider and corridor, a new
+  `checkedAt`, a source link and the reason in `note`, `"status": "verified"`) and deploy (ADR 0009).
 
 ## Collector (stage 4)
 

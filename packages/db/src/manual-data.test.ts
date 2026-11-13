@@ -105,9 +105,10 @@ describe("manual data files", () => {
         maxAmount: "4700",
         markupTier: { upTo: "1250", markupAbove: "0.01", currency: "EUR" },
       });
-      const fs = parseManualData(data).feeSchedules[0];
-      expect(fs?.maxAmount).toBe("4700");
-      expect(fs?.sourceKind === "rule_based" && fs.markupTier?.currency).toBe("EUR");
+      expect(parseManualData(data).feeSchedules[0]).toMatchObject({
+        maxAmount: "4700",
+        markupTier: { currency: "EUR" },
+      });
     });
 
     it.each([["0"], ["0.00"]])("rejects a maximum amount of %s", (maxAmount) => {
@@ -119,6 +120,54 @@ describe("manual data files", () => {
         markupTier: { upTo: "1250", markupAbove: "0.01", currency: "GBP" },
       });
       expect(() => parseManualData(data)).toThrow(/unsupported currency/);
+    });
+  });
+
+  describe("withdrawals (stage 5b)", () => {
+    const withdrawal = {
+      providerId: "yuh",
+      corridorId: "CHF-EUR",
+      status: "verified",
+      withdrawn: true,
+      sourceUrl: "https://www.yuh.com/en/pricing/",
+      checkedAt: "2026-11-06T09:00:00Z",
+      note: "Transfers to euro accounts stopped",
+    };
+    const withEntry = (entry: Record<string, unknown>) => {
+      const data = valid();
+      data.feeSchedules.push(entry);
+      return data;
+    };
+
+    it("accepts a withdrawal after a price, with a reason", () => {
+      const fs = parseManualData(withEntry(withdrawal)).feeSchedules[1];
+      expect(fs).toEqual(withdrawal);
+    });
+
+    it.each([[undefined], [""], ["   "]])("rejects a withdrawal without a reason (%j)", (note) => {
+      expect(() => parseManualData(withEntry({ ...withdrawal, note }))).toThrow();
+    });
+
+    it("rejects a withdrawal that also carries a price", () => {
+      expect(() =>
+        parseManualData(withEntry({ ...withdrawal, sourceKind: "rule_based", fxMarkup: "0.01" })),
+      ).toThrow(/Unrecognized key/);
+    });
+
+    // Otherwise "withdrawn" would be dropped as an unknown field and the provider stay listed.
+    it.each([[true], [false]])("rejects withdrawn: %s on a priced entry", (withdrawn) => {
+      const data = valid();
+      (data.feeSchedules[0] as Record<string, unknown>).withdrawn = withdrawn;
+      expect(() => parseManualData(data)).toThrow(/a withdrawal has no prices/);
+    });
+
+    it("rejects needs_input: a withdrawal has nothing left to read", () => {
+      expect(() => parseManualData(withEntry({ ...withdrawal, status: "needs_input" }))).toThrow();
+    });
+
+    it("rejects a withdrawal dated in the future", () => {
+      const now = new Date("2026-11-06T08:59:59Z"); // one second before the withdrawal
+      expect(() => parseManualData(withEntry(withdrawal), now)).toThrow(/in the future/);
     });
   });
 

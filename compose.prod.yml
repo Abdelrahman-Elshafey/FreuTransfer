@@ -61,8 +61,9 @@ services:
         condition: service_healthy
 
   # One-off: loads the reviewed provider data (verified entries only; already stored rows are
-  # left alone, an edited history row stops it: packages/db/src/seed.ts). Data changes in git
-  # therefore reach production with the next deploy.
+  # left alone; a history row edited in the files or deleted from them stops it:
+  # packages/db/src/seed.ts, ADR 0009). Data changes in git therefore reach production with the
+  # next deploy.
   seed:
     build: *api-build
     image: *api-image

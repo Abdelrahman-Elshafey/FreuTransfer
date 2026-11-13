@@ -73,7 +73,8 @@ Modular monolith with ports & adapters:
 - `apps/web`: React + Vite.
 
 Data is **append-only**: reference rates come from raw responses (`raw_observations` → `mid_market_rates`,
-stage 4); provider prices are reviewed data files loaded into `fee_schedules` (ADR 0003). Quotes and
+stage 4); provider prices are reviewed data files loaded into `fee_schedules` (ADR 0003). A provider
+leaves a corridor through a withdrawal entry, never by deleting its history (ADR 0009). Quotes and
 cost breakdowns are **computed on every request, not stored**, so a fix to the method applies to all
 history.
 

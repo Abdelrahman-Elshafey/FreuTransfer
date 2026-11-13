@@ -1,7 +1,10 @@
-// scripts/deploy.sh, phase 1 (which commit may be deployed), run in a container against a
-// throwaway git repository shaped like GitHub: a `dev` branch and another branch. Phase 2 needs
-// Docker and .env.prod; reaching its first check ("set IMAGE_PREFIX") shows phase 1 let the
-// commit through. Needs Docker, like the database tests.
+// scripts/deploy.sh, run in a container against a throwaway git repository shaped like GitHub: a
+// `dev` branch and another branch.
+// - Phase 1 (which commit may be deployed): without .env.prod, reaching phase 2's first check
+//   ("set IMAGE_PREFIX") shows phase 1 let the commit through.
+// - Phase 2 (the order of the deploy): with .env.prod and a stand-in `docker` that records every
+//   call (FAKE_DOCKER), since the real stack can't run inside this container.
+// Needs Docker, like the database tests.
 import { fileURLToPath } from "node:url";
 import { GenericContainer, type StartedTestContainer } from "testcontainers";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -31,7 +34,19 @@ git rev-parse HEAD > /other
 git checkout -q dev && echo dev2 > dev2.txt && git add . && git commit -qm dev2 && git push -q origin dev
 git rev-parse HEAD > /dev2`;
 
-describe("deploy.sh: which commits may be deployed", () => {
+/**
+ * Stands in for `docker` in phase 2: appends its arguments to /docker.log, says the database is
+ * running, and fails the one-off seed while /fail-seed exists.
+ */
+const FAKE_DOCKER = `#!/bin/sh
+echo "$*" >> /docker.log
+case "$*" in
+  *" ps "*) echo db-container-id ;;
+  *" run "*" seed") if [ -e /fail-seed ]; then exit 1; fi ;;
+esac
+exit 0`;
+
+describe("deploy.sh", () => {
   let git: StartedTestContainer;
   const sha: Record<"base" | "other" | "dev2", string> = { base: "", other: "", dev2: "" };
 
@@ -94,5 +109,58 @@ describe("deploy.sh: which commits may be deployed", () => {
     expect(result.exitCode).toBe(2);
     expect(result.stderr).toContain(`deploy: ${unknown} is not a commit on dev`);
     expect(await serverHead()).toBe(before);
+  });
+
+  describe("phase 2: the order of a deploy", () => {
+    /** The stand-in docker's calls, one per line, without the compose options every call shares. */
+    const dockerCalls = async () =>
+      (await run("cat /docker.log")).stdout
+        .trim()
+        .split("\n")
+        .map((line) => line.replace("compose -f compose.prod.yml --env-file .env.prod ", ""));
+    const envProd = async () => (await run("cat /server/.env.prod")).stdout;
+
+    beforeAll(async () => {
+      const setup = await run(`set -e
+cat > /usr/local/bin/docker <<'DOCKER'
+${FAKE_DOCKER}
+DOCKER
+chmod +x /usr/local/bin/docker
+printf 'IMAGE_PREFIX=ghcr.io/owner/\\nCOMPOSE_PROFILES=tunnel,offsite\\nIMAGE_TAG=old\\n' > /server/.env.prod`);
+      expect(setup.exitCode, setup.output).toBe(0);
+    });
+
+    it("stops before replacing anything when the seed fails: the old version keeps running", async () => {
+      await run("touch /fail-seed && rm -f /docker.log");
+
+      const result = await deploy(sha.dev2);
+
+      expect(result.exitCode).not.toBe(0);
+      const calls = await dockerCalls();
+      expect(calls).toContain("run --rm --no-deps -T seed");
+      // `up` is what stops the old API and web containers: it must not have been reached.
+      expect(calls.filter((call) => call.startsWith("up "))).toEqual([]);
+      // A later `up` by hand must still start the old images.
+      expect(await envProd()).toContain("IMAGE_TAG=old");
+    });
+
+    it("backs up, migrates and seeds first, then records the commit and starts the new version", async () => {
+      await run("rm -f /fail-seed /docker.log");
+
+      const result = await deploy(sha.dev2);
+
+      expect(result.exitCode, result.output).toBe(0);
+      expect(await dockerCalls()).toEqual([
+        "pull --quiet migrate api web",
+        "ps --status running --quiet db",
+        "run --rm --no-deps -T backup sh /scripts/backup.sh",
+        "run --rm --no-deps -T migrate",
+        "run --rm --no-deps -T seed",
+        "up -d --no-build --wait",
+        "image ls --format {{.Repository}}:{{.Tag}}",
+      ]);
+      expect(await envProd()).toContain(`IMAGE_TAG=${sha.dev2}`);
+      expect(result.stdout).toContain(`deploy: ${sha.dev2} is live`);
+    });
   });
 });

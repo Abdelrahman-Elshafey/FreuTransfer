@@ -20,8 +20,8 @@ export const MID_RATE_MAX_AGE_DAYS = 5;
 const DAY_MS = 24 * 60 * 60 * 1000;
 /**
  * Sanity guard (Project Plan §9): a total cost above 10% or below 0% (at least a cent below) is
- * almost certainly a data error (a mistyped rate or fee), not a real price. Such an offer is never ranked; it is listed as
- * "being checked" so a typo can't top the ranking.
+ * almost certainly a data error (a mistyped rate or fee), not a real price. Such an offer is never
+ * ranked; it is listed as "being checked", so a typo can't top the ranking.
  */
 const MAX_PLAUSIBLE_COST = new Decimal("0.10");
 

@@ -37,7 +37,7 @@ export const de: Messages = {
       `Der Referenzkurs ist vom ${p.day}, also über ${p.days} Tage alt: Zurzeit kommen keine neuen Kurse an, die Ergebnisse können deshalb veraltet sein.`,
     none: "Noch keine geprüften Anbieterdaten.",
     staleHeading: (days) => `Seit über ${days} Tagen nicht mehr überprüft`,
-    unavailableHeading: "Für diesen Betrag nicht verfügbar",
+    unavailableHeading: "Nicht in diesem Vergleich",
   },
   unavailable: {
     no_reference_rate: "kein Referenzkurs für den Tag, an dem der Kurs abgelesen wurde",

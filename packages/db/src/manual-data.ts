@@ -51,6 +51,11 @@ const feeBase = {
   providerId: id,
   corridorId: id,
   status: statusSchema,
+  // Without this, `"withdrawn": true` on a priced entry would be dropped silently and the
+  // provider would stay on the site.
+  withdrawn: z
+    .never({ error: "a withdrawal has no prices: remove sourceKind, feeMode and the fees" })
+    .optional(),
   feeMode: z.enum(["deducted", "on_top"]),
   fixedFee: decimal,
   percentFee: decimal,
@@ -63,7 +68,7 @@ const feeBase = {
   note: z.string().optional(),
 };
 
-const feeScheduleSchema = z
+const pricedSchema = z
   .discriminatedUnion("sourceKind", [
     z.object({
       ...feeBase,
@@ -94,6 +99,23 @@ const feeScheduleSchema = z
       });
     }
   });
+
+/**
+ * The provider no longer offers this corridor, from `checkedAt` on (stage 5b). Stored history is
+ * never deleted, so removing a provider from the files would leave it on the site: it is withdrawn
+ * with this entry instead. A later priced entry brings it back. Strict: no prices, no other fields.
+ */
+const withdrawalSchema = z.strictObject({
+  providerId: id,
+  corridorId: id,
+  status: z.enum(["draft", "verified"]),
+  withdrawn: z.literal(true),
+  sourceUrl: link,
+  checkedAt: z.iso.datetime(),
+  note: z.string().trim().min(1, "a withdrawal needs a reason"),
+});
+
+const feeScheduleSchema = z.union([withdrawalSchema, pricedSchema]);
 
 export type FeeScheduleEntry = z.infer<typeof feeScheduleSchema>;
 
@@ -130,7 +152,7 @@ const manualDataSchema = (now: Date) =>
       // the future (2027 for 2026) would win forever and never go stale.
       const times = {
         checkedAt: fs.checkedAt,
-        rateCapturedAt: fs.sourceKind === "manual" ? fs.rateCapturedAt : null,
+        rateCapturedAt: "rateCapturedAt" in fs ? fs.rateCapturedAt : null,
       };
       for (const [field, value] of Object.entries(times)) {
         if (value !== null && new Date(value) > now) {

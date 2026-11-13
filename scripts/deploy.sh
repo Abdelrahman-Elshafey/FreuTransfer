@@ -61,21 +61,29 @@ dc pull --quiet migrate api web
 if [ -n "$(dc ps --status running --quiet db)" ]; then
   # -T: no terminal; a deploy started by GitHub over SSH has none.
   dc run --rm --no-deps -T backup "sh /scripts/backup.sh"
+
+  # 3. The new version's migrations and data, while the old version keeps serving. `up` (step 5)
+  #    stops the old API before it runs them, and never starts the new one if the seed fails
+  #    (an edited or deleted history row, a value the database refuses): the site would be down
+  #    until someone fixes it. Run here first, a failure stops the deploy with nothing replaced.
+  #    Step 5 runs both again; they are safe to repeat.
+  dc run --rm --no-deps -T migrate
+  dc run --rm --no-deps -T seed
 fi
 
-# 3. Only after a successful pull, record the version in .env.prod: a later manual `dc up`
-#    then starts the same images instead of an older tag.
+# 4. Only now record the version in .env.prod: a later manual `dc up` then starts the same
+#    images, and after a failed deploy still the old ones.
 if grep -q '^IMAGE_TAG=' .env.prod; then
   sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=$SHA/" .env.prod
 else
   echo "IMAGE_TAG=$SHA" >> .env.prod
 fi
 
-# 4. Start the new version: migrate and seed run first, api and web are replaced,
-#    --wait = until everything is healthy (and migrate/seed finished successfully).
+# 5. Start the new version: migrate and seed run again (nothing left to do), api and web are
+#    replaced, --wait = until everything is healthy.
 dc up -d --no-build --wait
 
-# 5. Remove FreuTransfer's images of earlier commits (each deploy adds three). Only ours: the
+# 6. Remove FreuTransfer's images of earlier commits (each deploy adds three). Only ours: the
 #    server is shared with UrConnections, so no global `docker image prune`. Rollback still works:
 #    this script pulls an older commit's images from GHCR again.
 PREFIX=$(sed -n 's/^IMAGE_PREFIX=//p' .env.prod)

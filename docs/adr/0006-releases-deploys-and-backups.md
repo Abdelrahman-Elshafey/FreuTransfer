@@ -24,7 +24,9 @@ from GitHub's registry (GHCR) and keeps off-site backups in Cloudflare R2.
   command), as for UrConnections. The first deploy is run by hand with the same script, to see
   every step. `main` gets its first release, v1.0, at the end of the project.
 - **Every start** runs `migrate` (schema) and `seed` (verified provider data from git) before the API,
-  so a data change reaches production with the next deploy.
+  so a data change reaches production with the next deploy. A deploy also runs both once before it
+  replaces anything (since 2026-11-13): a failed migration or seed then stops the deploy while the
+  old version keeps serving.
 - **Backups** (stage 3e-4): a `pg_dump` every 24 hours and before every deploy, kept 14 days on
   the server; copied every 6 hours to **Cloudflare R2**, kept 30 days, in a bucket with a key of
   FreuTransfer's own (not UrConnections'); a restore drill from R2. Old dumps are deleted by the

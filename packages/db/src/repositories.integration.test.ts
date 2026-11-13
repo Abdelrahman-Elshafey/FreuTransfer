@@ -462,3 +462,67 @@ describe("limits (stage 5a)", () => {
     ).rejects.toThrow(/fee_schedules_markup_tier_currency_check/);
   });
 });
+
+describe("withdrawals (stage 5b)", () => {
+  // Own provider, so the rows above don't interfere. Times: t1 price, t2 withdrawal, t3 price.
+  const t1 = new Date("2026-11-13T10:00:00Z");
+  const t2 = new Date("2026-11-13T11:00:00Z");
+  const t3 = new Date("2026-11-13T12:00:00Z");
+  const price = (corridorId: string, checkedAt: Date) => ({
+    providerId: "acme",
+    corridorId,
+    sourceKind: "rule_based" as const,
+    feeMode: "deducted" as const,
+    fxMarkup: "0.01",
+    sourceUrl: "https://example.test/acme",
+    checkedAt,
+  });
+  const withdrawal = {
+    providerId: "acme",
+    corridorId: "CHF-EUR",
+    withdrawn: true,
+    sourceUrl: "https://example.test/acme-news",
+    checkedAt: t2,
+    note: "Stopped transfers to the euro area",
+  };
+  let refused = 0;
+  const ids = async (source: "CHF" | "EUR", target: "CHF" | "EUR") =>
+    (await new PrismaOfferRepository(db).latestOffers(source, target)).map((o) => o.providerId);
+
+  it("hides the provider while a withdrawal is its newest row, in that direction only", async () => {
+    await db.provider.create({
+      data: { id: "acme", name: "Acme", kind: "fintech", website: "https://example.test" },
+    });
+    await db.feeSchedule.createMany({
+      data: [price("CHF-EUR", t1), price("EUR-CHF", t1), withdrawal],
+    });
+    // Not the t1 price either: the withdrawal is dropped only after picking the newest row.
+    expect(await ids("CHF", "EUR")).not.toContain("acme");
+    expect(await ids("EUR", "CHF")).toContain("acme");
+  });
+
+  it("shows the provider again after a newer price", async () => {
+    await db.feeSchedule.create({ data: price("CHF-EUR", t3) });
+    const acme = (await new PrismaOfferRepository(db).latestOffers("CHF", "EUR")).find(
+      (o) => o.providerId === "acme",
+    );
+    expect(acme?.checkedAt).toEqual(t3);
+  });
+
+  it.each([
+    ["a priced row without a source kind", { ...price("CHF-EUR", t1), sourceKind: null }],
+    ["a priced row without a fee mode", { ...price("CHF-EUR", t1), feeMode: null }],
+    ["a withdrawal with a markup", { ...withdrawal, fxMarkup: "0.01" }],
+    ["a withdrawal with a source kind", { ...withdrawal, sourceKind: "manual" as const }],
+    ["a withdrawal with a fee", { ...withdrawal, fixedFee: "5" }],
+    ["a withdrawal with a maximum amount", { ...withdrawal, maxAmount: "4700" }],
+    ["a withdrawal without a reason", { ...withdrawal, note: null }],
+    ["a withdrawal with a blank reason", { ...withdrawal, note: "  " }],
+  ])("the database refuses %s", async (_, row) => {
+    // A new time per row, so only the CHECK can refuse it (not the unique key).
+    const checkedAt = new Date(Date.UTC(2026, 10, 14, 0, 0, ++refused));
+    await expect(db.feeSchedule.create({ data: { ...row, checkedAt } })).rejects.toThrow(
+      /fee_schedules_pricing_check/,
+    );
+  });
+});

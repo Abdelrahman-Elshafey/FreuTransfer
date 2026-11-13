@@ -94,7 +94,8 @@ Each rule names the mistake it prevents.
   and backups ADR 0006. Versions copied into Docker files are kept equal by `deploy/versions.test.ts`.
 - Append-only data: never update or delete observations, rates or quotes (database triggers enforce
   it). The one exception: a `collector_runs` row is finished exactly once (status, finish time,
-  error), so a run that crashes stays visible as `running`.
+  error), so a run that crashes stays visible as `running`. A provider is taken off the site with a
+  withdrawal entry in `fee-schedules.json` (ADR 0009); the seed refuses entries deleted from the files.
 - SQL: Prisma TypedSQL or tagged `$queryRaw` only, **never `$queryRawUnsafe`**.
 - Data sourcing: respect ToS and robots.txt. No automated access to sources that disallow it
   (e.g. Revolut `/api/`); use rule-based or manual adapters instead.
@@ -106,7 +107,7 @@ Each rule names the mistake it prevents.
 - Node **26.13.0 LTS** (`.node-version`), pnpm **12.16.1** (`packageManager`), TypeScript 7.
 - TypeScript runs natively in Node (type stripping): use only erasable syntax (no `enum`,
   `namespace` or parameter properties) and import local files **with the `.ts` extension**.
-- Commands: `pnpm install` · `pnpm check` (generates the Prisma client first; DB tests need Docker running) · `pnpm knip` (unused files, exports, dependencies) · `pnpm lint:fix` · `pnpm db:up` / `pnpm db:down` · `pnpm db:migrate` · `pnpm db:generate` · `pnpm collect` (one Frankfurter run)
+- Commands: `pnpm install` · `pnpm check` (generates the Prisma client first; DB tests need Docker running) · `pnpm knip` (unused files, exports, dependencies) · `pnpm lint:fix` · `pnpm db:up` / `pnpm db:down` · `pnpm db:migrate` · `pnpm db:seed` (loads `data/manual`) · `pnpm db:generate` · `pnpm collect` (one Frankfurter run)
   · `pnpm dev:api` (http://localhost:3000) · `pnpm dev:web` (http://localhost:5173).
 - Windows host: the repo forces LF line endings (`.gitattributes`).
 - Local DB = Docker container on **127.0.0.1:5434**. Port 5432 is the owner's native PostgreSQL

@@ -45,7 +45,7 @@ export const en = {
       `The reference rate is from ${p.day}, more than ${p.days} days ago: new rates are not arriving right now, so these results may be out of date.`,
     none: "No verified provider data yet.",
     staleHeading: (days: number) => `Not re-checked for over ${days} days`,
-    unavailableHeading: "Not available for this amount",
+    unavailableHeading: "Not in this comparison",
   },
   unavailable: {
     no_reference_rate: "no reference rate for the day its rate was read",

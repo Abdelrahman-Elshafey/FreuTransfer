@@ -124,17 +124,19 @@ describe("seedManualData", () => {
   });
 });
 
-describe("limits are history too (stage 5a)", () => {
-  // A stored row with both limits (EUR is the target of CHF-EUR), then the same row edited.
-  const withLimits = {
-    ...entry("yuh", "verified", "0"),
-    checkedAt: "2026-11-05T18:00:00Z",
-    maxAmount: "4700",
-    markupTier: { upTo: "1250", markupAbove: "0.01", currency: "EUR" },
-  };
-  const seedWith = (fs: Record<string, unknown>) =>
-    seedManualData(db, parseManualData({ ...data, feeSchedules: [fs] }));
+// The files keep every stored entry (the seed refuses a missing one, stage 5b), plus `extra`.
+const seedWith = (...extra: Record<string, unknown>[]) =>
+  seedManualData(db, parseManualData({ ...data, feeSchedules: [...data.feeSchedules, ...extra] }));
 
+// A stored row with both limits (EUR is the target of CHF-EUR), then the same row edited.
+const withLimits = {
+  ...entry("yuh", "verified", "0"),
+  checkedAt: "2026-11-05T18:00:00Z",
+  maxAmount: "4700",
+  markupTier: { upTo: "1250", markupAbove: "0.01", currency: "EUR" },
+};
+
+describe("limits are history too (stage 5a)", () => {
   it("refuses a changed maximum amount or tier currency on a stored row", async () => {
     expect((await seedWith(withLimits)).feeSchedules).toBe(1);
     await expect(seedWith({ ...withLimits, maxAmount: "5000" })).rejects.toThrow(
@@ -145,5 +147,48 @@ describe("limits are history too (stage 5a)", () => {
     ).rejects.toThrow(/different fxMarkupTierCurrency/);
     // Unchanged: nothing to do.
     expect((await seedWith(withLimits)).feeSchedules).toBe(0);
+  });
+});
+
+describe("withdrawals (stage 5b)", () => {
+  // After yuh's newest price (withLimits, 2026-11-05 18:00).
+  const withdrawal = {
+    providerId: "yuh",
+    corridorId: "CHF-EUR",
+    status: "verified",
+    withdrawn: true,
+    sourceUrl: "https://example.test/yuh-news",
+    checkedAt: "2026-11-06T09:00:00Z",
+    note: "Transfers to euro accounts stopped",
+  };
+  const offerIds = async () =>
+    (await new PrismaOfferRepository(db).latestOffers("CHF", "EUR")).map((o) => o.providerId);
+
+  it("stores a withdrawal, and the provider leaves the comparison", async () => {
+    expect(await offerIds()).toContain("yuh");
+    expect((await seedWith(withLimits, withdrawal)).feeSchedules).toBe(1);
+    expect(await offerIds()).not.toContain("yuh");
+    // Repeated: nothing new.
+    expect((await seedWith(withLimits, withdrawal)).feeSchedules).toBe(0);
+  });
+
+  it("refuses an edited withdrawal (its reason is history too)", async () => {
+    await expect(seedWith(withLimits, { ...withdrawal, note: "Other reason" })).rejects.toThrow(
+      /different note/,
+    );
+  });
+
+  it("refuses a stored entry deleted from the files, and stores nothing", async () => {
+    // withLimits is left out; a new reference rate in the same run must not be stored.
+    const newRate = { ...data.midRates[0], asOf: "2026-11-07", rate: "1.0950" };
+    const edited = parseManualData({
+      ...data,
+      midRates: [...data.midRates, newRate],
+      feeSchedules: [...data.feeSchedules, withdrawal],
+    });
+    await expect(seedManualData(db, edited)).rejects.toThrow(
+      /yuh CHF-EUR checked at 2026-11-05T18:00:00.000Z is stored but no longer in fee-schedules.json/,
+    );
+    expect(await db.midMarketRate.count({ where: { asOf: new Date("2026-11-07") } })).toBe(0);
   });
 });
