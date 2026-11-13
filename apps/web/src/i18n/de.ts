@@ -43,6 +43,7 @@ export const de: Messages = {
     no_reference_rate: "kein Referenzkurs für den Tag, an dem der Kurs abgelesen wurde",
     amount_not_supported:
       "die Gebühren sind höher als dieser Betrag, oder er liegt ausserhalb der Limiten des Anbieters",
+    implausible_cost: "seine Preisdaten sehen fehlerhaft aus und werden überprüft",
   },
   errors: {
     unreachable: "Der Dienst ist im Moment nicht erreichbar. Bitte versuchen Sie es später erneut.",

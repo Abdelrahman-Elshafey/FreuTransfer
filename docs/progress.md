@@ -11,7 +11,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 2 | Core engine | ✅ Done (2026-11-10) | `Money`/`Rate` value objects, fee strategies, `computeCost`, rounding, golden + property tests | 2 real calculator results reproduced to the cent ✅ (third skipped by the owner) |
 | 3 | v0.1 end-to-end | ✅ Done (2026-11-12): 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ✅ (3e-1 images · 3e-2 CI · 3e-3 first deploy · 3e-4 backups) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
 | 4 | Mid-market + pipeline | ✅ Done (2026-11-13): 4a database ✅ · 4b collector ✅ · 4c hourly `collect` service ✅ · 4e old-rate warning ✅ · 4d one week ⏳ (verify 20 Nov) | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored (8 working days 3–12 Nov stored; 16–20 Nov to be collected live) |
-| 5 | Provider data | 🟡 **In progress**: 5-0 scope ✅ · 5a guard + limits · 5b withdrawing a provider · 5c EUR→CHF data · 5e corridor choice | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
+| 5 | Provider data | 🟡 **In progress**: 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider · 5c EUR→CHF data · 5e corridor choice | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ⬜ Not started | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
 | 7 | Polish | ⬜ Not started | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes |
 | 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts | — |
@@ -228,3 +228,23 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   the Egyptian/Serbian bank names removed from the four catalogs; tests that used GBP/EGP/RSD as
   stand-ins now use EUR→CHF (the opposite direction of the same pair, a sharper leak test); the
   API refuses GBP (400). Plan, CLAUDE.md, README, ADR 0003, feasibility study updated.
+- **2026-11-13:** Full review (method in `review.md`, log there), on the owner's request "anything
+  from the old rules, change it to the way we work now". Rewritten: CLAUDE.md's quote rule (no
+  stored quotes, no countries: results are computed per request, countries follow from the corridor,
+  ADR 0008); Plan §4 (route), §5 (no "parsed quotes → latest_quotes", collectors = Frankfurter
+  only), §7 and §9 (hourly collector, backups every 24 h + before deploys); README status and
+  layout; `package.json` description; ADR 0002/0003 pointers; schema comment; the reference-rate
+  notes; a note on the research file. Production address once in CI (`SITE_URL`), its copy in the
+  collector kept equal by a test. Web image: an always-ignored `ERR_PNPM_UNEXPECTED_STORE` (pnpm's
+  re-check against the wrong store) switched off with a reason; it also lacked the collectors
+  manifest; a test now checks both Dockerfiles copy every workspace manifest. **5a:** sanity guard
+  (total cost > 10% or < 0% → "implausible_cost", listed, never ranked; text in four languages);
+  `max_amount` per fee schedule (a single fee tier: above it "not available for this amount"); the
+  tier limit in its own currency (`fx_markup_tier_currency`, converted at the reference rate).
+  "Below 0%" uses the cost rounded to the cent: the first version used the exact cost and an
+  existing API test caught it hiding a free provider whose payout rounds up by a fraction of a cent
+  (Revolut within its allowance would have dropped out for many amounts); now a core test too.
+  Migration `amount_limit_tier_currency`; loader and seed (both fields are history) updated. Tests:
+  13 new; breaking the 10% boundary, the negative check, the limit conversion, the seed comparison
+  and the repository mapping each fails a test. Local production stack: migration on existing
+  data, comparison and GBP → 400 as expected.

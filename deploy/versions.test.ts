@@ -1,5 +1,6 @@
-// Versions that must be written in more than one file (Docker can't read them from another
-// file), so this test keeps the copies equal (CLAUDE.md rule 5).
+// Values that must be written in more than one file (Docker and GitHub Actions can't read them
+// from another file), so these tests keep the copies equal (CLAUDE.md rule 5).
+import { readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { composeImages, readRepoFile } from "./repo-file.ts";
 
@@ -29,4 +30,28 @@ describe("deploy versions", () => {
     )?.[1];
     expect(testContainer).toBe(development);
   });
+
+  it("the collector names the same public address as CI's deploy check", () => {
+    const site = readRepoFile(".github/workflows/ci.yml").match(/^ {2}SITE_URL: (\S+)$/m)?.[1];
+    expect(site).toMatch(/^https:\/\//);
+    const agent = readRepoFile("packages/collectors/src/frankfurter.ts").match(
+      /const USER_AGENT = "[^"]*\(\+([^)]+)\)"/,
+    )?.[1];
+    expect(agent).toBe(site);
+  });
+
+  it.each(["apps/api/Dockerfile", "apps/web/Dockerfile"])(
+    "%s copies every workspace package's manifest (so its install sees the same workspace as the lockfile)",
+    (dockerfile) => {
+      const workspace = ["apps", "packages"].flatMap((dir) =>
+        readdirSync(new URL(`../${dir}/`, import.meta.url), { withFileTypes: true })
+          .filter((entry) => entry.isDirectory())
+          .map((entry) => `${dir}/${entry.name}/package.json`),
+      );
+      const copied = [...readRepoFile(dockerfile).matchAll(/^COPY (\S+\/package\.json) /gm)].map(
+        (match) => match[1],
+      );
+      expect(new Set(copied)).toEqual(new Set(workspace));
+    },
+  );
 });

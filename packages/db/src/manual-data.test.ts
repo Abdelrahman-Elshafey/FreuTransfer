@@ -93,6 +93,35 @@ describe("manual data files", () => {
     },
   );
 
+  describe("limits (stage 5a)", () => {
+    const withLimits = (extra: Record<string, unknown>) => {
+      const data = valid();
+      Object.assign(data.feeSchedules[0] as Record<string, unknown>, extra);
+      return data;
+    };
+
+    it("accepts a maximum amount and a tier limit in its own currency", () => {
+      const data = withLimits({
+        maxAmount: "4700",
+        markupTier: { upTo: "1250", markupAbove: "0.01", currency: "EUR" },
+      });
+      const fs = parseManualData(data).feeSchedules[0];
+      expect(fs?.maxAmount).toBe("4700");
+      expect(fs?.sourceKind === "rule_based" && fs.markupTier?.currency).toBe("EUR");
+    });
+
+    it.each([["0"], ["0.00"]])("rejects a maximum amount of %s", (maxAmount) => {
+      expect(() => parseManualData(withLimits({ maxAmount }))).toThrow(/more than 0/);
+    });
+
+    it("rejects a tier limit in a currency the core engine doesn't support", () => {
+      const data = withLimits({
+        markupTier: { upTo: "1250", markupAbove: "0.01", currency: "GBP" },
+      });
+      expect(() => parseManualData(data)).toThrow(/unsupported currency/);
+    });
+  });
+
   // A typo like 2027 would make an entry the newest forever, and never stale.
   describe("dates in the future", () => {
     const now = new Date("2026-11-05T18:00:00Z");

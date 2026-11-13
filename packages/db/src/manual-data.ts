@@ -56,6 +56,8 @@ const feeBase = {
   percentFee: decimal,
   minFee: decimal.optional(),
   maxFee: decimal.optional(),
+  /** The most the provider accepts, in the source currency (e.g. Western Union online: 4,700 CHF). */
+  maxAmount: decimal.refine((v) => /[1-9]/.test(v), "must be more than 0").optional(),
   sourceUrl: link,
   checkedAt: z.iso.datetime(),
   note: z.string().optional(),
@@ -67,8 +69,13 @@ const feeScheduleSchema = z
       ...feeBase,
       sourceKind: z.literal("rule_based"),
       fxMarkup: decimal,
-      /** Optional: fxMarkup applies up to `upTo` (source currency), `markupAbove` beyond it. */
-      markupTier: z.object({ upTo: decimal, markupAbove: decimal }).optional(),
+      /**
+       * Optional: fxMarkup applies up to `upTo`, `markupAbove` beyond it. `upTo` is in `currency`
+       * (default: the corridor's source currency; Revolut's allowance is CHF also for EUR→CHF).
+       */
+      markupTier: z
+        .object({ upTo: decimal, markupAbove: decimal, currency: currency.optional() })
+        .optional(),
     }),
     z.object({
       ...feeBase,

@@ -82,30 +82,36 @@ model MidMarketRate {
 /// A provider's pricing for one corridor, as checked on `checkedAt`. Corrections are new rows;
 /// the newest row per provider × corridor is the current one.
 model FeeSchedule {
-  id               BigInt     @id @default(autoincrement())
-  providerId       String     @map("provider_id")
-  corridorId       String     @map("corridor_id")
-  sourceKind       SourceKind @map("source_kind")
-  feeMode          FeeMode    @map("fee_mode")
+  id                   BigInt     @id @default(autoincrement())
+  providerId           String     @map("provider_id")
+  corridorId           String     @map("corridor_id")
+  sourceKind           SourceKind @map("source_kind")
+  feeMode              FeeMode    @map("fee_mode")
   /// Fee amounts are in the corridor's source currency; percentages are fractions (0.005 = 0.5%).
-  fixedFee         Decimal    @default(0) @map("fixed_fee") @db.Decimal(20, 10)
-  percentFee       Decimal    @default(0) @map("percent_fee") @db.Decimal(20, 10)
-  minFee           Decimal?   @map("min_fee") @db.Decimal(20, 10)
-  maxFee           Decimal?   @map("max_fee") @db.Decimal(20, 10)
+  fixedFee             Decimal    @default(0) @map("fixed_fee") @db.Decimal(20, 10)
+  percentFee           Decimal    @default(0) @map("percent_fee") @db.Decimal(20, 10)
+  minFee               Decimal?   @map("min_fee") @db.Decimal(20, 10)
+  maxFee               Decimal?   @map("max_fee") @db.Decimal(20, 10)
+  /// The most the provider accepts, in the source currency (e.g. Western Union online: 4,700 CHF).
+  /// Above it the offer is "not available for this amount". Empty = no limit.
+  maxAmount            Decimal?   @map("max_amount") @db.Decimal(20, 10)
   /// rule_based only: markup over mid as a fraction.
-  fxMarkup         Decimal?   @map("fx_markup") @db.Decimal(20, 10)
+  fxMarkup             Decimal?   @map("fx_markup") @db.Decimal(20, 10)
   /// rule_based only, optional: fxMarkup applies to the converted amount up to this limit
   /// (source currency), fxMarkupAbove to the part above it (e.g. a monthly allowance).
-  fxMarkupTierUpTo Decimal?   @map("fx_markup_tier_up_to") @db.Decimal(20, 10)
-  fxMarkupAbove    Decimal?   @map("fx_markup_above") @db.Decimal(20, 10)
+  fxMarkupTierUpTo     Decimal?   @map("fx_markup_tier_up_to") @db.Decimal(20, 10)
+  fxMarkupAbove        Decimal?   @map("fx_markup_above") @db.Decimal(20, 10)
+  /// rule_based only, optional: the currency of fxMarkupTierUpTo when it is not the corridor's
+  /// source currency (e.g. Revolut's allowance is CHF 1'250 also for EUR→CHF). Empty = source.
+  fxMarkupTierCurrency String?    @map("fx_markup_tier_currency") @db.Char(3)
   /// manual only: the provider's own rate as read, 1 source = rate × target.
-  providerRate     Decimal?   @map("provider_rate") @db.Decimal(20, 10)
+  providerRate         Decimal?   @map("provider_rate") @db.Decimal(20, 10)
   /// manual only: when that rate was read.
-  rateCapturedAt   DateTime?  @map("rate_captured_at") @db.Timestamptz(3)
-  sourceUrl        String     @map("source_url")
-  checkedAt        DateTime   @map("checked_at") @db.Timestamptz(3)
-  note             String?
-  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  rateCapturedAt       DateTime?  @map("rate_captured_at") @db.Timestamptz(3)
+  sourceUrl            String     @map("source_url")
+  checkedAt            DateTime   @map("checked_at") @db.Timestamptz(3)
+  note                 String?
+  createdAt            DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
 
   provider Provider @relation(fields: [providerId], references: [id])
   corridor Corridor @relation(fields: [corridorId], references: [id])
@@ -122,7 +128,7 @@ enum CollectorRunStatus {
   failed
 }
 
-/// One run of a collector (e.g. the daily Frankfurter fetch). Inserted as `running` when it
+/// One run of a collector (e.g. the hourly Frankfurter fetch). Inserted as `running` when it
 /// starts and finished exactly once: a run that never finishes (crash) stays visible as running.
 model CollectorRun {
   id              BigInt             @id @default(autoincrement())

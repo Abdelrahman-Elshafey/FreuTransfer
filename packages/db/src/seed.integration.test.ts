@@ -123,3 +123,27 @@ describe("seedManualData", () => {
     expect(offers.map((o) => o.providerId).sort()).toEqual(["wise", "yuh"]);
   });
 });
+
+describe("limits are history too (stage 5a)", () => {
+  // A stored row with both limits (EUR is the target of CHF-EUR), then the same row edited.
+  const withLimits = {
+    ...entry("yuh", "verified", "0"),
+    checkedAt: "2026-11-05T18:00:00Z",
+    maxAmount: "4700",
+    markupTier: { upTo: "1250", markupAbove: "0.01", currency: "EUR" },
+  };
+  const seedWith = (fs: Record<string, unknown>) =>
+    seedManualData(db, parseManualData({ ...data, feeSchedules: [fs] }));
+
+  it("refuses a changed maximum amount or tier currency on a stored row", async () => {
+    expect((await seedWith(withLimits)).feeSchedules).toBe(1);
+    await expect(seedWith({ ...withLimits, maxAmount: "5000" })).rejects.toThrow(
+      /different maxAmount/,
+    );
+    await expect(
+      seedWith({ ...withLimits, markupTier: { ...withLimits.markupTier, currency: "CHF" } }),
+    ).rejects.toThrow(/different fxMarkupTierCurrency/);
+    // Unchanged: nothing to do.
+    expect((await seedWith(withLimits)).feeSchedules).toBe(0);
+  });
+});

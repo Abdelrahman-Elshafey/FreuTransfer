@@ -71,8 +71,9 @@ Each rule names the mistake it prevents.
 - Universal cost formula (Project Plan §3):
   `total_cost = total_paid − received / mid_rate`, `fx_markup = total_cost − visible_fee`,
   `total_cost_% = total_cost / total_paid`.
-- Every quote carries `capturedAt`, `source`, sender/recipient country, and the mid rate it was
-  compared with.
+- Every result carries its source link and check date, the capture time of a manual rate, and the
+  reference rate it was compared with (source and day). Quotes are computed on every request, not
+  stored. Sender and recipient countries follow from the corridor in v1 (ADR 0008).
 
 ## Architecture rules
 - Modular monolith, hexagonal boundaries:

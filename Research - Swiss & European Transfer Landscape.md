@@ -1,5 +1,7 @@
 # Research: Swiss & European Money-Transfer Landscape
 
+> **Note (2026-11-13):** v1 is CHF→EUR and EUR→CHF only, with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR) (ADR 0008). Everything below about GBP, EGP and RSD, other banks and remittance corridors is background, not the plan.
+>
 > **Note (2026-11-05):** the Wise API/comparison data described below is no longer used (ADR 0003). This overrides every recommendation below that relies on it: the "primary: Wise mid" choice in §8 (Frankfurter is the only mid-market source) and the "via Wise data" rows in §9 (those providers are researched manually or dropped). The rest of the research still applies.
 >
 > Research date: **2026-11-04**. Scope: transfers **Switzerland → Europe** and **Europe → Switzerland**, plus the earlier CHF→EGP and CHF→RSD corridors.

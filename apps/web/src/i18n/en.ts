@@ -51,6 +51,7 @@ export const en = {
     no_reference_rate: "no reference rate for the day its rate was read",
     amount_not_supported:
       "the fees are higher than this amount, or it is outside the provider's limits",
+    implausible_cost: "its price data looks wrong and is being checked",
   } satisfies Record<UnavailableReason, string>,
   errors: {
     unreachable: "The service can't be reached right now. Please try again later.",

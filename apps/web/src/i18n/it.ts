@@ -42,6 +42,7 @@ export const it: Messages = {
     no_reference_rate: "nessun tasso di riferimento per il giorno in cui è stato letto il tasso",
     amount_not_supported:
       "le commissioni superano questo importo, oppure è fuori dai limiti del fornitore",
+    implausible_cost: "i suoi dati di prezzo sembrano errati e sono in verifica",
   },
   errors: {
     unreachable: "Il servizio non è raggiungibile al momento. Riprovi più tardi.",

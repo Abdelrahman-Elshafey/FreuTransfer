@@ -55,8 +55,10 @@ rates stored as `NUMERIC(20,10)`; timestamps in UTC.
   Rule-based providers are computed from the mid, so no gap. Manual entries store their capture time,
   are compared with that day's rate, and are labelled "approximate".
 - **Reference source:** always pin Frankfurter's source to the ECB (its unpinned rate is blended across sources).
-- **Price depends on amount, route and method:** sample at 100 / 500 / 1,000 / 2,500 / 5,000; store
-  sender and recipient country; EUR→CHF has two routes (convert at the EU bank, or SEPA then convert in CH).
+- **Price depends on amount, route and method:** sample at 100 / 500 / 1,000 / 2,500 / 5,000. In v1 the
+  route follows from the corridor (ADR 0008): you pay from an account at a Swiss provider; CHF→EUR
+  arrives in a euro-area bank account, EUR→CHF in a Swiss one (EU banks converting EUR→CHF were
+  dropped: no exact source).
 - **Costs we can't measure** (SWIFT intermediary fees, weekend markups): disclose them in the UI.
 - **Freshness:** every number shows its source and date; stale data is listed separately, not ranked.
 - **Validation:** 2 real calculator results reproduced to the cent (a third was skipped by the owner,
@@ -66,12 +68,14 @@ rates stored as `NUMERIC(20,10)`; timestamps in UTC.
 Modular monolith with ports & adapters:
 - `packages/core`: pure domain (Money, Rate, fee strategies, `computeCost`, ports). No I/O.
 - `packages/db`: Prisma, repositories return core types.
-- `packages/collectors`: Frankfurter, rule-based and manual adapters; raw data stored before parsing.
-- `apps/api`: Express 5, `/v1/compare`, `/v1/history`, `/v1/providers`; Zod; errors as RFC 9457.
+- `packages/collectors`: the Frankfurter adapter (the only automated source, ADR 0003); raw data stored before parsing.
+- `apps/api`: Express 5, `/v1/compare` (`/v1/history` and `/v1/providers` planned with the stage 6 views); Zod; errors as RFC 9457.
 - `apps/web`: React + Vite.
 
-Data is **append-only** (raw observations → parsed quotes → `latest_quotes` view). Cost breakdowns are
-computed, not stored, so a fix to the method applies to all history.
+Data is **append-only**: reference rates come from raw responses (`raw_observations` → `mid_market_rates`,
+stage 4); provider prices are reviewed data files loaded into `fee_schedules` (ADR 0003). Quotes and
+cost breakdowns are **computed on every request, not stored**, so a fix to the method applies to all
+history.
 
 ## 5a. Languages (ADR 0005)
 EN / DE / FR / IT. Rules for every stage from now on, so no language work piles up for the end:
@@ -104,7 +108,7 @@ EN / DE / FR / IT. Rules for every stage from now on, so no language work piles 
 | 1 | Setup | CI green |
 | 2 | Core engine: Money/Rate, fee strategies, `computeCost`, rounding, tests | 2 real calculator results reproduced to the cent |
 | 3 | v0.1: DB schema, first manual data, `/v1/compare`, results table, i18n foundation (EN/DE/FR/IT), first VPS deploy | live on your domain with manual data, in four languages |
-| 4 | Frankfurter adapter, raw → parse pipeline, daily timer | a week of daily rates stored |
+| 4 | Frankfurter adapter, raw → parse pipeline, hourly `collect` service (ADR 0007) | a week of daily rates stored |
 | 5 | Provider data: researched by Claude, verified by the owner | all v1 providers present, labelled, no negative hidden costs |
 | 6 | Frontend: breakdown, charts, "my bank vs best", translated caveat codes | usable on mobile, every number shows its source, every text in four languages |
 | 7 | Polish: README, methodology and legal texts in four languages, OpenAPI from the Zod schemas (ADR 0001), language URLs/SEO decision | a reviewer understands it in 5 minutes |
@@ -121,7 +125,8 @@ Decided by the owner (2026-11-06):
 - (2026-11-10) Only providers with exact public values; UBS, Raiffeisen, Western Union, cantonal and
   EU banks and OFX dropped. (2026-11-13: Western Union back for CHF→EUR, ADR 0008.) Golden test 3 skipped. Translations accepted, formal register.
 - (2026-11-10) Production at `freutransfer.aelshafey.com`; deploys and backups as in ADR 0006
-  (CI images, first deploy by hand then approved automatic deploys, nightly backups to Cloudflare R2).
+  (CI images, first deploy by hand then approved automatic deploys, backups every 24 h and before each
+  deploy, copied to Cloudflare R2).
 - Languages (2026-11-09): English, German, French and Italian from v1; Swiss number formatting in all.
 - (2026-11-12) The collector runs as an hourly Compose service (ADR 0007).
 - (2026-11-13) v1 = CHF→EUR and EUR→CHF; Western Union added for CHF→EUR; PayPal and Migros not
@@ -129,7 +134,8 @@ Decided by the owner (2026-11-06):
 - (2026-11-13) A reference rate published **more than 5 days** ago (`MID_RATE_MAX_AGE_DAYS` in core)
   is too old: the comparison is still shown, with a warning in all four languages.
 - Sanity guard (stage 5): a total cost **above 10%** or **below 0%** is treated as a data error: the
-  offer isn't ranked but listed for checking.
+  offer isn't ranked but listed for checking (built in 5a: `MAX_PLAUSIBLE_COST` in core; exactly 10%
+  and exactly 0% still rank).
 
 Still open:
 - Whether to automate any bank rate page later.

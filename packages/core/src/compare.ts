@@ -1,11 +1,12 @@
 import { type CostBreakdown, computeCost } from "./cost.ts";
 import type { CurrencyCode } from "./currency.ts";
-import type { Decimal } from "./decimal.ts";
+import { Decimal } from "./decimal.ts";
 import { AmountNotSupportedError } from "./errors.ts";
 import type { Money } from "./money.ts";
 import type { MidRateObservation, ProviderOffer } from "./offer.ts";
 import type { MidRateRepository, OfferRepository } from "./ports.ts";
 import { type QuoteAmounts, quoteFromRule } from "./quote.ts";
+import type { Rate } from "./rate.ts";
 
 /** Manual and rule-based data older than this is shown separately, not ranked (Project Plan §4). */
 export const RECHECK_DAYS = 30;
@@ -17,6 +18,12 @@ export const RECHECK_DAYS = 30;
  */
 export const MID_RATE_MAX_AGE_DAYS = 5;
 const DAY_MS = 24 * 60 * 60 * 1000;
+/**
+ * Sanity guard (Project Plan §9): a total cost above 10% or below 0% (at least a cent below) is
+ * almost certainly a data error (a mistyped rate or fee), not a real price. Such an offer is never ranked; it is listed as
+ * "being checked" so a typo can't top the ranking.
+ */
+const MAX_PLAUSIBLE_COST = new Decimal("0.10");
 
 export type ComparisonRow = {
   readonly offer: ProviderOffer;
@@ -32,7 +39,7 @@ export type ComparisonRow = {
  * Why an offer can't be compared for this amount. A code, not a sentence: the page shows it in
  * the reader's language (docs/adr/0005).
  */
-export type UnavailableReason = "no_reference_rate" | "amount_not_supported";
+export type UnavailableReason = "no_reference_rate" | "amount_not_supported" | "implausible_cost";
 
 type Unavailable = { readonly offer: ProviderOffer; readonly reason: UnavailableReason };
 
@@ -46,7 +53,8 @@ export type Comparison = {
   readonly ranked: readonly ComparisonRow[];
   /** Offers whose data is older than RECHECK_DAYS: shown, but not ranked. */
   readonly stale: readonly ComparisonRow[];
-  /** Offers that can't serve this amount, or have no reference rate for their day. */
+  /** Offers that can't serve this amount, have no reference rate for their day, or fail the
+   * sanity guard. */
   readonly unavailable: readonly Unavailable[];
 };
 
@@ -61,22 +69,26 @@ function zurichDay(instant: Date): string {
 }
 
 /**
- * The markup for a converted amount. Without a tier it's the single published markup. With a tier,
- * the part up to `tier.upTo` gets `markup` and the part above gets `tier.markupAbove`; the result is
- * the blended fraction over the whole amount:
- *   (markup × min(c, upTo) + markupAbove × max(0, c − upTo)) / c
+ * The markup for a converted amount c. Without a tier it's the single published markup. With a
+ * tier, the part up to the limit gets `markup` and the part above gets `tier.markupAbove`; the
+ * result is the blended fraction over the whole amount:
+ *   (markup × min(c, limit) + markupAbove × max(0, c − limit)) / c
+ * The limit may be stated in the target currency (Revolut: CHF 1'250 also when you pay in EUR); it
+ * is then converted into the source currency at the reference rate, the rate the exchange uses.
  */
 function markupFor(
   pricing: Extract<ProviderOffer["pricing"], { kind: "markup" }>,
   converted: Money,
+  mid: Rate,
 ): Decimal {
   const { tier } = pricing;
-  if (!tier || converted.compareTo(tier.upTo) <= 0) return pricing.markup;
-  const above = converted.minus(tier.upTo);
-  return tier.upTo
-    .times(pricing.markup)
-    .plus(above.times(tier.markupAbove))
-    .dividedBy(converted.amount).amount;
+  if (!tier) return pricing.markup;
+  const limit =
+    tier.upTo.currency === converted.currency ? tier.upTo : mid.invert().convert(tier.upTo);
+  if (converted.compareTo(limit) <= 0) return pricing.markup;
+  const above = converted.minus(limit);
+  return limit.times(pricing.markup).plus(above.times(tier.markupAbove)).dividedBy(converted.amount)
+    .amount;
 }
 
 /** Use case: compare every provider for "I pay `amount`, the recipient gets `target`". */
@@ -131,7 +143,7 @@ export function rankOffers(
     const midRate = rowMid.rate;
     const providerRate =
       pricing.kind === "markup"
-        ? (converted: Money) => midRate.withMarkup(markupFor(pricing, converted))
+        ? (converted: Money) => midRate.withMarkup(markupFor(pricing, converted, midRate))
         : pricing.rate;
 
     let quote: QuoteAmounts;
@@ -143,10 +155,17 @@ export function rankOffers(
       unavailable.push({ offer, reason: "amount_not_supported" });
       continue;
     }
+    const cost = computeCost(quote, rowMid.rate);
+    // "Below 0%" uses the cost rounded to the cent: rounding the payout up can leave a free
+    // provider (no fee, no markup) a fraction of a cent "below 0", which is not a data error.
+    if (cost.totalCostPct.gt(MAX_PLAUSIBLE_COST) || cost.totalCost.amount.lt(0)) {
+      unavailable.push({ offer, reason: "implausible_cost" });
+      continue;
+    }
     const row: ComparisonRow = {
       offer,
       quote,
-      cost: computeCost(quote, rowMid.rate),
+      cost,
       mid: rowMid,
       approximate: pricing.kind === "rate",
     };

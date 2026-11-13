@@ -24,7 +24,8 @@ const API = "https://api.frankfurter.dev/v2/rates";
 /** Days asked for on every run: a missed run or a server outage up to this long repairs itself. */
 export const WINDOW_DAYS = 10;
 const TIMEOUT_MS = 30_000;
-/** Identifies us to Frankfurter: the public site, never a person. */
+/** Identifies us to Frankfurter: the public site, never a person (same address as SITE_URL in
+ * .github/workflows/ci.yml; deploy/versions.test.ts keeps them equal). */
 const USER_AGENT = "FreuTransfer/0.1 (+https://freutransfer.aelshafey.com)";
 
 /**
