@@ -2,7 +2,7 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0–4 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Next: stage 5**, provider data.
+**Now:** stages 0–4 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 in progress:** scope (ADR 0008), sanity guard and limits, withdrawing a provider (ADR 0009) built. **Next: 5c**, the EUR→CHF data and Western Union.
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
@@ -261,3 +261,12 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   `withdrawn` on a priced entry) fails a test. Run for real on a throwaway Postgres 18.6 with the API:
   Yuh withdrawn → gone from CHF→EUR, second seed inserts nothing, Wise deleted from the file →
   seed stops with the message. Real files on the local database: seed clean.
+- **2026-11-13:** Full review after 5a/5b (method and log in `review.md`). Found by running a
+  failed deploy in a throwaway stack: **a failed seed took the API down** (`up` stops the old
+  container first). `scripts/deploy.sh` now runs migrations and seed before replacing anything and
+  records the tag afterwards; two new tests for the script's second phase. Also: a rollback past a
+  data change stops at the seed (written into the runbook and ADR 0009); a new test seeds the real
+  data files into a fresh database (the loader is looser than the database); the heading "Not
+  available for this amount" → "Not in this comparison" in four languages; runbook: how to take a
+  provider off the site. 253 tests. For the owner: "arrives" of a manual rate isn't comparable
+  with the others (PostFinance shows more EUR than Wise but ranks last), and six smaller points.

@@ -30,6 +30,9 @@ this way before production had data, so nothing was wrong yet.
 ## Consequences
 - `fee_schedules.source_kind` and `fee_mode` are empty on withdrawal rows (and only there).
 - History stays complete: when a provider left, why, and when it came back.
+- A rollback to a commit from before a data change stops at the seed (that commit's files lack the
+  newer entries), like a rollback past a migration: undo with a new change instead
+  (`docs/deploy.md`, "Roll back").
 - A local database seeded with entries that were later deleted (e.g. old drafts) stops the seed:
   put the entries back, or start the local database afresh (`docker compose down -v` deletes its
   data; then `pnpm db:up`, `pnpm db:migrate`, `pnpm db:seed`).

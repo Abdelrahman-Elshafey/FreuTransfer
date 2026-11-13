@@ -37,7 +37,7 @@ export const fr: Messages = {
       `Le taux de référence date du ${p.day}, il y a plus de ${p.days} jours : les nouveaux taux n'arrivent pas en ce moment, ces résultats peuvent donc être dépassés.`,
     none: "Pas encore de données vérifiées.",
     staleHeading: (days) => `Pas revérifié depuis plus de ${days} jours`,
-    unavailableHeading: "Indisponible pour ce montant",
+    unavailableHeading: "Absents de cette comparaison",
   },
   unavailable: {
     no_reference_rate: "pas de taux de référence pour le jour où le taux a été relevé",

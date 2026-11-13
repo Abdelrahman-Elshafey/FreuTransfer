@@ -58,6 +58,10 @@ While reading, write down every doubt. Decide only after the whole picture is kn
     Expected values are worked out in a comment (rule 3).
 12. **Docs against reality:** run the commands in `README.md` and `docs/deploy.md` as written;
     compare numbers in docs (sizes, counts, dates) with a fresh measurement.
+13. **A deploy that fails half-way, and a rollback** (added 2026-11-13): for each step of
+    `scripts/deploy.sh`, what is running after that step fails? Then roll back after each kind of
+    change (code, schema, data). Try it in a throwaway copy of the stack
+    (`docker compose -p <name> -f compose.prod.yml …`, then `down -v`), not only by reading.
 
 ## Step 4: Fix
 - A clear defect: write the failing test, fix it, run `pnpm check`.
@@ -73,6 +77,65 @@ Add an entry to the log below and to `docs/progress.md`.
 ---
 
 ## Review log
+
+### 2026-11-13, second review (branch `step-5/review`, after 5a and 5b)
+Asked by the owner: a full review of the code, the docs and everything related. Machines:
+`pnpm check` green (253 tests); `pnpm audit` the same 2 moderate findings (Testcontainers, tests
+only); Biome 2.6.7, Vite 8.3.8, plugin-react 6.3.0 and knip 6.45.1 are 2–4 days old (skipped);
+no leftovers. No error found in the money calculations.
+
+**Fixed**
+1. **A failed seed during a deploy took the API down** (found by running it: `up` stops the old
+   API container first and never starts the new one when the seed fails; `api: Created`). Any seed
+   failure did this: an edited history row, a value the database refuses, and since 5b a row
+   deleted from the files. `scripts/deploy.sh` now runs the new version's migrations and seed
+   *before* anything is replaced and records the tag only afterwards; a failure stops the deploy
+   and the old version keeps serving. Two tests for phase 2 of the script (a stand-in `docker`
+   records the calls; both failed first), and the real thing in a throwaway stack: seed exit 1,
+   API still healthy.
+2. **A rollback past a data change stops at the seed** (a consequence of 5b that 5b didn't
+   mention: the older commit's files lack the newer entries). With fix 1 the site stays up; the
+   limit is now written in `docs/deploy.md` ("Roll back") and ADR 0009.
+3. **Nothing in CI seeded the real data files into a database.** The loader is looser than the
+   database (a markup of "1.5" passes the loader and its tests; the CHECK constraint refuses it),
+   so a typo would have passed CI and failed in production. New test
+   `real-data.integration.test.ts` (fails with that typo).
+4. **A heading promised the wrong thing:** "Not available for this amount" also listed providers
+   whose data is being checked (5a) or that lack a reference rate. Now "Not in this comparison",
+   in four languages (for the owner to review).
+5. Docs behind the code: `docs/progress.md` still said "Next: stage 5"; the runbook and
+   `compose.prod.yml` named only the edited row as a reason the seed stops, and nothing said how
+   to take a provider off the site; `pnpm db:seed` missing from CLAUDE.md's commands; an
+   overlong comment in `compare.ts`.
+
+**For the owner (not changed)**
+1. **"Arrives" isn't comparable between a manual rate and the others.** Seen on the local
+   production stack (2,500 CHF, reference rate 1.0832 of 12 Nov): PostFinance shows 2,700.95 EUR,
+   more than Wise's 2,700.48, yet ranks last with 1.22%. Its rate was read on 6 Nov (reference
+   rate 1.0937 that day) and "arrives" is computed with that old rate; the cost % is right (it is
+   compared with its own day), the amount is what would have arrived on 6 Nov. Options: show a
+   manual provider's amount as today's reference rate minus its measured markup (comparable, and
+   labelled as an estimate); or keep it and say so next to the amount (stage 6).
+2. The `minimumReleaseAge` gate is still not configured (same as the last review).
+3. Merged branches are never deleted (20 on GitHub, plus `ccr-3fbd7ef4-jafk20`, which belongs to
+   no step), although CLAUDE.md says "then the branch is deleted". Delete them, or change the rule?
+4. `docs/deploy.md` shows the server's IP address in a public repository. SSH is key-only, and
+   scanners find the address anyway, but it could be a placeholder.
+5. The local `.env` and `.env.prod` hold the off-site backup keys (only the names were looked
+   at). `pnpm dev:api` loads `.env` into the API's environment, where nothing uses them: better
+   kept only on the server and in a password manager.
+6. Fee tiers by amount: since 5a a maximum amount reaches `kind: "tiered"` with one tier; several
+   tiers and a tier without a limit (`upTo: null`) are still reached only by tests.
+7. Still open from earlier: pin GitHub Actions to commit ids before v1.0; no alert when the
+   collector or a backup fails; security headers and a request limit (stage 7).
+
+**Checked and fine**
+5a and 5b followed through every layer (file → loader → column → repository → core → API →
+page); every ADR (0001–0009) searched for its old assumption; the new migration on existing rows
+(local production stack: applied, 5 rows kept, comparison, GBP and a Swiss-typed amount → 400,
+EUR→CHF → 404 until 5c); seed twice; the Prisma skills under `packages/db/.claude` are there on
+purpose (progress log, 2026-11-09) and stay out of the images; one source for versions, ports,
+the site address and the limits; all four catalogs complete.
 
 ### 2026-11-13 (branch `step-5/guard`, after stage 4 and the scope change, ADR 0008)
 Asked by the owner: find everything still written for an old rule and bring it to how the project
