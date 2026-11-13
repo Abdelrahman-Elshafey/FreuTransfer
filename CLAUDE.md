@@ -1,6 +1,7 @@
 # CLAUDE.md — project rules for FreuTransfer
 
-Portfolio project: a money-transfer cost comparer for **Switzerland ⇄ Europe** (plus CHF→EGP/RSD).
+Portfolio project: a money-transfer cost comparer for **Switzerland ⇄ euro area** (CHF→EUR and
+EUR→CHF only, ADR 0008).
 Source of truth for scope and roadmap: `Project Plan.md`. Market and data-source research:
 `Research - Swiss & European Transfer Landscape.md`.
 

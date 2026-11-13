@@ -37,7 +37,7 @@ export const en = {
     comparedWith: (rate: string, bank: string, day: string) => `vs mid ${rate} (${bank}, ${day})`,
   },
   /** Who publishes a reference rate (the API's `midRate.source`). */
-  rateSources: { ecb: "ECB", cbe: "Central Bank of Egypt", nbs: "National Bank of Serbia" },
+  rateSources: { ecb: "ECB" },
   results: {
     midRate: (p: { from: string; to: string; rate: string; bank: string; day: string }) =>
       `Compared with the mid-market rate 1 ${p.from} = ${p.rate} ${p.to} (${p.bank}, ${p.day}); manual rates with the rate of the day they were read.`,

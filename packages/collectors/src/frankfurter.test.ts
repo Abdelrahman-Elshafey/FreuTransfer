@@ -12,6 +12,7 @@ import { collectFrankfurter, FrankfurterError, parseRates, WINDOW_DAYS } from ".
 const NOW = new Date("2026-11-12T16:30:00Z");
 const WINDOW = { from: "2026-11-02", to: "2026-11-12" };
 const CHF_EUR: CorridorPair = { source: "CHF", target: "EUR" };
+const EUR_CHF: CorridorPair = { source: "EUR", target: "CHF" };
 
 /** In-memory store that records the order of calls (raw must come before parsing). */
 class FakeStore implements CollectorStore {
@@ -147,22 +148,22 @@ describe("parseRates: reading Frankfurter's answer", () => {
 });
 
 describe("collectFrankfurter: one run", () => {
-  it("asks for the last 10 days with the source pinned per currency", async () => {
+  it("asks each corridor for the last 10 days with the ECB pinned", async () => {
     const store = new FakeStore();
     const { fetch, urls } = fakeFetch({
       EUR: () => new Response(rawBody([["2026-11-12", "1.0832"]])),
-      EGP: () => new Response(rawBody([["2026-11-11", "64.5717"]], "CHF", "EGP")),
+      CHF: () => new Response(rawBody([["2026-11-11", "0.9233"]], "EUR", "CHF")),
     });
-    await collectFrankfurter(deps(store, [CHF_EUR, { source: "CHF", target: "EGP" }], fetch));
+    await collectFrankfurter(deps(store, [CHF_EUR, EUR_CHF], fetch));
 
     expect(WINDOW_DAYS).toBe(10);
     expect(urls).toEqual([
       "https://api.frankfurter.dev/v2/rates?base=CHF&quotes=EUR&providers=ECB&from=2026-11-02&to=2026-11-12",
-      "https://api.frankfurter.dev/v2/rates?base=CHF&quotes=EGP&providers=CBE&from=2026-11-02&to=2026-11-12",
+      "https://api.frankfurter.dev/v2/rates?base=EUR&quotes=CHF&providers=ECB&from=2026-11-02&to=2026-11-12",
     ]);
     expect([...store.rates.values()].map((r) => `${r.source} ${r.rate.toString()}`)).toEqual([
       "ecb 1 CHF = 1.0832 EUR",
-      "cbe 1 CHF = 64.5717 EGP",
+      "ecb 1 EUR = 0.9233 CHF",
     ]);
   });
 
@@ -234,16 +235,12 @@ describe("collectFrankfurter: one run", () => {
     const store = new FakeStore();
     const { fetch } = fakeFetch({
       EUR: () => Promise.reject(new TypeError("fetch failed")),
-      EGP: () => new Response(rawBody([["2026-11-11", "64.5717"]], "CHF", "EGP")),
+      CHF: () => new Response(rawBody([["2026-11-11", "0.9233"]], "EUR", "CHF")),
     });
-    const result = await collectFrankfurter(
-      deps(store, [CHF_EUR, { source: "CHF", target: "EGP" }], fetch),
-    );
+    const result = await collectFrankfurter(deps(store, [CHF_EUR, EUR_CHF], fetch));
 
     expect(result.errors).toEqual(["CHF→EUR: request failed: TypeError: fetch failed"]);
-    expect(result.outcomes).toEqual([
-      { pair: { source: "CHF", target: "EGP" }, source: "cbe", stored: 1, unchanged: 0 },
-    ]);
+    expect(result.outcomes).toEqual([{ pair: EUR_CHF, source: "ecb", stored: 1, unchanged: 0 }]);
     expect(store.events).toEqual(["start frankfurter", "raw 200", "rates 1", "finish failed"]);
   });
 

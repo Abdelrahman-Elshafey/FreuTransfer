@@ -36,7 +36,7 @@ export type MoneyDto = { readonly amount: string; readonly currency: string };
 type MidRateDto = {
   /** 1 source currency = `rate` target currency, exact ("1.0893"). */
   readonly rate: string;
-  /** "ecb", "cbe" or "nbs" */
+  /** "ecb" (the only reference rate source in v1, ADR 0008) */
   readonly source: string;
   /** Publication day, "YYYY-MM-DD". */
   readonly asOf: string;

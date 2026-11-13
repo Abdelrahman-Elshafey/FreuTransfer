@@ -1,6 +1,6 @@
 # ADR 0003: No Wise data; Frankfurter for mid-market, manual and rule-based provider prices
 
-- **Status:** accepted
+- **Status:** accepted (reference-rate sources narrowed to the ECB by ADR 0008)
 - **Date:** 2026-11-05
 
 ## Context
@@ -10,7 +10,8 @@ without written permission. A permission request was emailed on 2026-11-04, but 
 weeks or never come, and the project shouldn't wait on it.
 
 ## Decision
-- **Mid-market rate:** Frankfurter v2 only, pinned per source (ECB, CBE for EGP, NBS for RSD). It is
+- **Mid-market rate:** Frankfurter v2 only, pinned per source (ECB, CBE for EGP, NBS for RSD; since ADR 0008
+  only the ECB: v1 is CHF⇄EUR). It is
   the only automated data source in v1, fetched daily after the ECB publishes.
 - **Provider prices:**
   - **Rule-based** where the provider publishes its pricing (Revolut, Yuh, Wise's public pricing page):

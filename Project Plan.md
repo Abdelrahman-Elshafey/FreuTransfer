@@ -6,26 +6,29 @@
 ## 1. What and why
 
 A website where you enter what you want to **pay in total** (e.g. 1,000 CHF) for a transfer
-**Switzerland ⇄ Europe** (plus CHF→EGP/RSD). It shows how much **actually arrives** with each provider,
+**Switzerland ⇄ euro area** (CHF→EUR and EUR→CHF, ADR 0008). It shows how much **actually arrives** with each provider,
 best first, and splits the cost into the **visible fee** and the **hidden cost in the exchange rate**.
 
 - **Problem:** providers advertise "zero fees" but use a worse rate; Swiss banks rarely show their FX margin.
 - **Goal:** portfolio / job. Correctness, tests, clean architecture and a clear README come first.
 - **Constraints:** free tools, the owner's OVH VPS + domain, 15+ h/week, v1 in about 6–8 weeks.
-- **Main users:** ~414k cross-border commuters converting CHF salary to EUR; residents sending EUR⇄CHF;
-  diaspora remittances (CHF→RSD/EGP) as the hard case.
+- **Main users:** ~414k cross-border commuters converting CHF salary to EUR; residents sending EUR⇄CHF.
+  (Diaspora corridors CHF→RSD/EGP were dropped from v1: ADR 0008.)
 - **Edge over Monito, moneyland, ibani, getrates:** dated, source-cited Swiss bank costs next to fintechs,
   in both directions, with an open method. Views: "Am I overpaying with my bank?", the commuter's yearly
   cost, and "cheapest provider by amount".
 
 ## 2. Scope for v1
-- **Corridors:** CHF→EUR, EUR→CHF (main), CHF→GBP, CHF→EGP, CHF→RSD. Bank transfer → bank account only.
-- **Providers (4), only where exact public values exist** (owner, 2026-11-10; sources in `docs/feasibility.md`):
-  - **rule-based** from published pricing: Wise (public pricing page only), Yuh, Revolut
-  - **manual**: PostFinance (published rate sheet / converter). Claude researches with links; the owner verifies.
+- **Corridors:** CHF→EUR and EUR→CHF only (owner, 2026-11-13, ADR 0008; CHF→GBP, CHF→EGP and
+  CHF→RSD dropped). Bank transfer → bank account only.
+- **Providers, only where exact public values exist** (owner, 2026-11-10; sources in `docs/feasibility.md`):
+  - **rule-based** from published pricing: Wise (its own calculator/pricing page), Yuh, Revolut: both directions
+  - **manual**: PostFinance (published rate sheet / converter), both directions; **Western Union, CHF→EUR
+    only** (its own calculator; owner, 2026-11-13). Claude researches with links; the owner verifies.
   - **dropped:** ZKB, Remitly, WorldRemit, TransferGo, XE (owner, 2026-11-06); OFX, cantonal banks,
-    UBS (publishes only "up to 1.70%"), Raiffeisen (prices per regional bank), Western Union (live
-    calculator only), EU banks (no source without Wise data) (owner, 2026-11-10: keep only exact values); Alpian (owner, 2026-11-10).
+    UBS (publishes only "up to 1.70%"), Raiffeisen (prices per regional bank), EU banks (no source
+    without Wise data) (owner, 2026-11-10: keep only exact values); Alpian (owner, 2026-11-10);
+    PayPal, Migros Bank, Western Union EUR→CHF (owner, 2026-11-13, ADR 0008).
 - **Only automated source:** Frankfurter (mid-market rate). See ADR 0003.
 - **Languages:** English, German, French, Italian, from v1 (owner, 2026-11-09). See §5a and ADR 0005.
 
@@ -51,7 +54,7 @@ rates stored as `NUMERIC(20,10)`; timestamps in UTC.
 - **Timing:** the ECB reference rate is set once a day (~14:10 CET); CHF/EUR can move 0.3–0.5% a day.
   Rule-based providers are computed from the mid, so no gap. Manual entries store their capture time,
   are compared with that day's rate, and are labelled "approximate".
-- **Non-ECB currencies:** always pin Frankfurter's source: ECB, CBE (EGP), NBS (RSD). Note on EGP results.
+- **Reference source:** always pin Frankfurter's source to the ECB (its unpinned rate is blended across sources).
 - **Price depends on amount, route and method:** sample at 100 / 500 / 1,000 / 2,500 / 5,000; store
   sender and recipient country; EUR→CHF has two routes (convert at the EU bank, or SEPA then convert in CH).
 - **Costs we can't measure** (SWIFT intermediary fees, weekend markups): disclose them in the UI.
@@ -116,15 +119,17 @@ Decided by the owner (2026-11-06):
 - Re-check period before manual data counts as stale: **30 days** (`RECHECK_DAYS` in core).
 - No extra Swiss/EU banks for now: v1 providers are those in §2.
 - (2026-11-10) Only providers with exact public values; UBS, Raiffeisen, Western Union, cantonal and
-  EU banks and OFX dropped. Golden test 3 skipped. Translations accepted, formal register.
+  EU banks and OFX dropped. (2026-11-13: Western Union back for CHF→EUR, ADR 0008.) Golden test 3 skipped. Translations accepted, formal register.
 - (2026-11-10) Production at `freutransfer.aelshafey.com`; deploys and backups as in ADR 0006
   (CI images, first deploy by hand then approved automatic deploys, nightly backups to Cloudflare R2).
 - Languages (2026-11-09): English, German, French and Italian from v1; Swiss number formatting in all.
 - (2026-11-12) The collector runs as an hourly Compose service (ADR 0007).
+- (2026-11-13) v1 = CHF→EUR and EUR→CHF; Western Union added for CHF→EUR; PayPal and Migros not
+  added; Wise's comparison data only as a cross-check (ADR 0008).
 - (2026-11-13) A reference rate published **more than 5 days** ago (`MID_RATE_MAX_AGE_DAYS` in core)
   is too old: the comparison is still shown, with a warning in all four languages.
 - Sanity guard (stage 5): a total cost **above 10%** or **below 0%** is treated as a data error: the
-  offer isn't ranked but listed for checking. Can be raised per corridor (e.g. EGP/RSD) if needed.
+  offer isn't ranked but listed for checking.
 
 Still open:
 - Whether to automate any bank rate page later.

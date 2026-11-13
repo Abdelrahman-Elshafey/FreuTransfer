@@ -11,7 +11,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 2 | Core engine | ✅ Done (2026-11-10) | `Money`/`Rate` value objects, fee strategies, `computeCost`, rounding, golden + property tests | 2 real calculator results reproduced to the cent ✅ (third skipped by the owner) |
 | 3 | v0.1 end-to-end | ✅ Done (2026-11-12): 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ✅ (3e-1 images · 3e-2 CI · 3e-3 first deploy · 3e-4 backups) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
 | 4 | Mid-market + pipeline | ✅ Done (2026-11-13): 4a database ✅ · 4b collector ✅ · 4c hourly `collect` service ✅ · 4e old-rate warning ✅ · 4d one week ⏳ (verify 20 Nov) | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored (8 working days 3–12 Nov stored; 16–20 Nov to be collected live) |
-| 5 | Provider data | ⏭️ Next | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
+| 5 | Provider data | 🟡 **In progress**: 5-0 scope ✅ · 5a guard + limits · 5b withdrawing a provider · 5c EUR→CHF data · 5e corridor choice | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ⬜ Not started | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
 | 7 | Polish | ⬜ Not started | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes |
 | 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts | — |
@@ -217,3 +217,14 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   server holds rates for 8 working days (3–12 Nov), but all were fetched in one go by the 10-day
   window; that the hourly runs keep working day after day is the open check 4d (every working day
   16–20 Nov collected by itself, all runs succeeded; verify on 20 Nov). It doesn't block stage 5.
+- **2026-11-13:** Stage 5 planned. Owner decisions (ADR 0008): v1 = **CHF→EUR and EUR→CHF** only
+  (CHF→GBP/EGP/RSD dropped); **Western Union added for CHF→EUR** (manual, its own calculator; not
+  EUR→CHF, its price depends on the sending country); PayPal and Migros Bank not added; Wise's
+  comparison page only as a cross-check (ADR 0003: Wise's terms). Research EUR→CHF: Yuh 0.95% both
+  ways; Revolut's allowance is CHF 1ʼ250 whichever direction; PostFinance buy column; Wise 1.69 EUR
+  + 0.4301% on top, derived from three calculator readings; Wise CHF→EUR re-confirmed at 100 and
+  5,000 CHF; Western Union's shown 1.0540 is rounded, 1.054014 reproduces 100/1,000/4,700 CHF.
+  **5-0:** currencies CHF and EUR only, the collector's sources only the ECB, data files `ecb` only,
+  the Egyptian/Serbian bank names removed from the four catalogs; tests that used GBP/EGP/RSD as
+  stand-ins now use EUR→CHF (the opposite direction of the same pair, a sharper leak test); the
+  API refuses GBP (400). Plan, CLAUDE.md, README, ADR 0003, feasibility study updated.

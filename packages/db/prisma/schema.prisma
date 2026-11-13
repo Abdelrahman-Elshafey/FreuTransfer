@@ -59,13 +59,13 @@ model Corridor {
   @@map("corridors")
 }
 
-/// Official reference rates (ECB, CBE, NBS via Frankfurter). 1 base = rate × quote.
+/// Official reference rates (the ECB, via Frankfurter; ADR 0008). 1 base = rate × quote.
 model MidMarketRate {
   id               BigInt          @id @default(autoincrement())
   base             String          @db.Char(3)
   quote            String          @db.Char(3)
   rate             Decimal         @db.Decimal(20, 10)
-  /// "ecb", "cbe" or "nbs"
+  /// "ecb"
   source           String
   /// The publication date of the reference rate.
   asOf             DateTime        @map("as_of") @db.Date

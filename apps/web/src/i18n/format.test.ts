@@ -22,8 +22,6 @@ describe("formatterFor", () => {
   });
 
   it("shows exactly the decimals it is given, so the page never rounds money again", () => {
-    // RSD's CLDR default is 0 decimals; the API sends 2 (ISO 4217), and 2 are shown.
-    expect(de.money({ amount: "1044.75", currency: "RSD" })).toBe(`RSD${NBSP}1'044.75`);
     // A rate keeps all 10 decimals; a whole amount shows none.
     expect(fr.decimal("1.0803802939")).toBe("1,0803802939");
     expect(de.decimal("1000")).toBe("1'000");
