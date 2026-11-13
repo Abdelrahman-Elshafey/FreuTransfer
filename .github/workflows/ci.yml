@@ -17,6 +17,11 @@ on:
 permissions:
   contents: read
 
+env:
+  # The public address (ADR 0004). Also in the collector's User-Agent
+  # (packages/collectors/src/frankfurter.ts); deploy/versions.test.ts keeps the two equal.
+  SITE_URL: https://freutransfer.aelshafey.com
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -94,7 +99,7 @@ jobs:
     # only jobs that name it can read its secrets.
     environment:
       name: production
-      url: https://freutransfer.aelshafey.com
+      url: ${{ env.SITE_URL }}
     steps:
       # SECURITY: the server's host key is pinned (DEPLOY_KNOWN_HOSTS), never fetched with
       # ssh-keyscan at run time: that would trust whatever machine answers on that address.
@@ -113,4 +118,4 @@ jobs:
 
       # From outside, through Cloudflare and the tunnel, the way a visitor reaches the site.
       - name: Check from outside
-        run: curl -fsS --retry 10 --retry-all-errors --retry-delay 3 https://freutransfer.aelshafey.com/health
+        run: curl -fsS --retry 10 --retry-all-errors --retry-delay 3 "$SITE_URL/health"

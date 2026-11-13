@@ -43,6 +43,7 @@ export const fr: Messages = {
     no_reference_rate: "pas de taux de référence pour le jour où le taux a été relevé",
     amount_not_supported:
       "les frais dépassent ce montant, ou il est hors des limites du prestataire",
+    implausible_cost: "ses données de prix semblent erronées et sont en cours de vérification",
   },
   errors: {
     unreachable: "Le service est injoignable pour le moment. Veuillez réessayer plus tard.",

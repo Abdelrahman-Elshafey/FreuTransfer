@@ -4,9 +4,10 @@ What **actually arrives** when you send money between **Switzerland and the euro
 and EUR → CHF), and how much of the cost is hidden in the exchange rate. In English,
 German, French and Italian.
 
-> 🚧 Early development: roadmap step 3 (first end-to-end version: database, `/v1/compare`, results
-> page; deploy to the VPS next). The full README (diagrams, maths, decisions, screenshots) comes in
-> step 7. Plan: [`Project Plan.md`](Project%20Plan.md).
+> 🚧 In development, live at https://freutransfer.aelshafey.com: stages 0–4 done (comparison in four
+> languages, reference rate collected every hour, backups); stage 5, provider data, in progress. The
+> full README (diagrams, maths, decisions, screenshots) comes in stage 7.
+> Plan: [`Project Plan.md`](Project%20Plan.md).
 
 ## Quick start
 
@@ -39,10 +40,10 @@ Roadmap status, updated after every stage: [`docs/progress.md`](docs/progress.md
 |---|---|
 | `packages/core` | Pure domain: money, rates, cost engine, ports (no I/O) |
 | `packages/db` | Prisma schema, migrations, repositories (return core types) |
-| `packages/collectors` | Data collectors: the daily reference rate from Frankfurter (`pnpm collect`) |
+| `packages/collectors` | Data collectors: the reference rate from Frankfurter, every hour in production (`pnpm collect`) |
 | `apps/api` | Express 5 HTTP API; `src/contract.ts` is the response shape the page imports |
 | `apps/web` | React + Vite frontend; `src/i18n` holds the four languages (ADR 0005) |
 | `compose.prod.yml`, `apps/*/Dockerfile` | The production stack; runbook in [`docs/deploy.md`](docs/deploy.md) |
 | `scripts/deploy.sh`, `deploy/backup` | Deploying one commit on the server; database backups and their off-site copies |
-| `data/manual` | Reviewed provider prices and reference rates, each with source link and date (ADR 0003) |
+| `data/manual` | Reviewed provider prices, each with source link and date (ADR 0003); the two reference rates read by hand before the collector |
 | `docs/adr` | Architecture Decision Records |

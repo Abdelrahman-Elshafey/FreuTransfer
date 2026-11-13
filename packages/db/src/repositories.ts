@@ -32,9 +32,11 @@ type OfferRow = {
   percent_fee: DbDecimal;
   min_fee: DbDecimal | null;
   max_fee: DbDecimal | null;
+  max_amount: DbDecimal | null;
   fx_markup: DbDecimal | null;
   fx_markup_tier_up_to: DbDecimal | null;
   fx_markup_above: DbDecimal | null;
+  fx_markup_tier_currency: string | null;
   provider_rate: DbDecimal | null;
   rate_captured_at: Date | null;
   source_url: string;
@@ -56,8 +58,8 @@ export class PrismaOfferRepository implements OfferRepository {
         fs.provider_id, p.name AS provider_name, p.kind::text AS provider_kind,
         c.source_currency, c.target_currency,
         fs.source_kind::text AS source_kind, fs.fee_mode::text AS fee_mode,
-        fs.fixed_fee, fs.percent_fee, fs.min_fee, fs.max_fee,
-        fs.fx_markup, fs.fx_markup_tier_up_to, fs.fx_markup_above,
+        fs.fixed_fee, fs.percent_fee, fs.min_fee, fs.max_fee, fs.max_amount,
+        fs.fx_markup, fs.fx_markup_tier_up_to, fs.fx_markup_above, fs.fx_markup_tier_currency,
         fs.provider_rate, fs.rate_captured_at,
         fs.source_url, fs.checked_at
       FROM fee_schedules fs
@@ -126,7 +128,12 @@ function toFeeModel(row: OfferRow, currency: CurrencyCode): FeeModel {
   if (row.fee_mode !== "deducted" && row.fee_mode !== "on_top") {
     throw new Error(`Unknown fee mode "${row.fee_mode}"`);
   }
-  return { kind: row.fee_mode, rule };
+  const model: Extract<FeeModel, { kind: "deducted" | "on_top" }> =
+    row.fee_mode === "deducted" ? { kind: "deducted", rule } : { kind: "on_top", rule };
+  // A maximum amount is a single fee tier: above it no tier applies, so core reports the offer as
+  // "not available for this amount" (AmountNotSupportedError).
+  if (row.max_amount === null) return model;
+  return { kind: "tiered", tiers: [{ upTo: Money.of(dec(row.max_amount), currency), model }] };
 }
 
 function toPricing(row: OfferRow, source: CurrencyCode, target: CurrencyCode): Pricing {
@@ -137,7 +144,13 @@ function toPricing(row: OfferRow, source: CurrencyCode, target: CurrencyCode): P
       row.fx_markup_tier_up_to !== null && row.fx_markup_above !== null
         ? {
             tier: {
-              upTo: Money.of(dec(row.fx_markup_tier_up_to), source),
+              // In its own currency when one is stored (Revolut: CHF also for EUR→CHF).
+              upTo: Money.of(
+                dec(row.fx_markup_tier_up_to),
+                row.fx_markup_tier_currency === null
+                  ? source
+                  : currency(row.fx_markup_tier_currency),
+              ),
               markupAbove: dec(row.fx_markup_above),
             },
           }

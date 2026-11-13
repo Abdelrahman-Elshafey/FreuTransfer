@@ -3,8 +3,8 @@ import type { Money } from "./money.ts";
 import type { Rate } from "./rate.ts";
 
 /**
- * The three amounts every comparison needs. The full stored quote (capture time, source,
- * countries, mid rate used) comes with the collector pipeline in stage 4 and wraps these amounts.
+ * The three amounts every comparison needs. Computed on every request, never stored; the result
+ * row around them (`ComparisonRow`) adds the offer's source and dates and the reference rate used.
  */
 export type QuoteAmounts = {
   /** Everything that leaves the sender's account (sender currency). */

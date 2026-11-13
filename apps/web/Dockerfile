@@ -15,6 +15,7 @@ COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 COPY packages/core/package.json packages/core/
 COPY packages/db/package.json packages/db/
+COPY packages/collectors/package.json packages/collectors/
 # Only the page's own dependencies: from the API it imports just src/contract.ts, whose one import
 # from core is a type (erased by the build), so the API's server libraries are not installed.
 RUN --mount=type=cache,id=pnpm,target=/root/.cache/pnpm \
@@ -22,7 +23,10 @@ RUN --mount=type=cache,id=pnpm,target=/root/.cache/pnpm \
 COPY tsconfig.base.json ./
 COPY apps/api/src/contract.ts apps/api/src/
 COPY apps/web apps/web
-RUN pnpm --filter @freu-transfer/web build
+# verify-deps-before-run off: pnpm would re-check the install against its default store, while the
+# install above used the cache-mount store; it then prints ERR_PNPM_UNEXPECTED_STORE and carries on.
+# The install right above already used --frozen-lockfile, so the re-check adds nothing.
+RUN pnpm --config.verify-deps-before-run=false --filter @freu-transfer/web build
 
 # SECURITY: the "unprivileged" nginx image runs as a normal user (not root) and listens on 8080.
 FROM nginxinc/nginx-unprivileged:1.30.6-alpine

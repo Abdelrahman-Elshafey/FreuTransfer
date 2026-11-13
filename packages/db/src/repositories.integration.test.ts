@@ -384,3 +384,81 @@ describe("collector pipeline rules (stage 4)", () => {
     expect(rate.rawObservation?.runId).toBe(run.id);
   });
 });
+
+describe("limits (stage 5a)", () => {
+  const checkedAt = new Date("2026-11-13T08:25:00Z");
+
+  it("turns a maximum amount into the offer's only fee tier, in the source currency", async () => {
+    await db.provider.create({
+      data: {
+        id: "wu",
+        name: "Western Union",
+        kind: "money_transfer_operator",
+        website: "https://www.westernunion.com",
+      },
+    });
+    await db.feeSchedule.create({
+      data: {
+        providerId: "wu",
+        corridorId: "CHF-EUR",
+        sourceKind: "manual",
+        feeMode: "deducted",
+        providerRate: "1.054014",
+        rateCapturedAt: checkedAt,
+        maxAmount: "4700",
+        sourceUrl: "https://example.test/wu",
+        checkedAt,
+      },
+    });
+    const wu = (await new PrismaOfferRepository(db).latestOffers("CHF", "EUR")).find(
+      (o) => o.providerId === "wu",
+    );
+    expect(wu?.fees.kind).toBe("tiered");
+    const tier = wu?.fees.kind === "tiered" ? wu.fees.tiers[0] : undefined;
+    expect(tier?.upTo?.toString()).toBe("4700.00 CHF");
+    expect(tier?.model.kind).toBe("deducted");
+  });
+
+  it("reads a tier limit in its own currency (Revolut EUR→CHF: CHF 1'250)", async () => {
+    await db.feeSchedule.create({
+      data: {
+        providerId: "revolut",
+        corridorId: "EUR-CHF",
+        sourceKind: "rule_based",
+        feeMode: "deducted",
+        fxMarkup: "0",
+        fxMarkupTierUpTo: "1250",
+        fxMarkupAbove: "0.01",
+        fxMarkupTierCurrency: "CHF",
+        sourceUrl: "https://example.test/revolut-eur-chf",
+        checkedAt,
+      },
+    });
+    const revolut = (await new PrismaOfferRepository(db).latestOffers("EUR", "CHF")).find(
+      (o) => o.providerId === "revolut",
+    );
+    const tier = revolut?.pricing.kind === "markup" ? revolut.pricing.tier : undefined;
+    expect(tier?.upTo.toString()).toBe("1250.00 CHF"); // not EUR, the corridor's source
+  });
+
+  it("refuses a maximum amount of 0 and a tier currency without a tier", async () => {
+    const base = {
+      providerId: "yuh",
+      corridorId: "CHF-EUR",
+      sourceKind: "rule_based" as const,
+      feeMode: "deducted" as const,
+      fxMarkup: "0.0095",
+      sourceUrl: "https://example.test",
+    };
+    await expect(
+      db.feeSchedule.create({
+        data: { ...base, maxAmount: "0", checkedAt: new Date("2026-11-13T09:00:00Z") },
+      }),
+    ).rejects.toThrow(/fee_schedules_max_amount_check/);
+    await expect(
+      db.feeSchedule.create({
+        data: { ...base, fxMarkupTierCurrency: "CHF", checkedAt: new Date("2026-11-13T09:01:00Z") },
+      }),
+    ).rejects.toThrow(/fee_schedules_markup_tier_currency_check/);
+  });
+});

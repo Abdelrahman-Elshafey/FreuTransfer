@@ -137,6 +137,92 @@ describe("reference rate age (MID_RATE_MAX_AGE_DAYS = 5)", () => {
   });
 });
 
+describe("sanity guard: total cost above 10% or below 0% is listed as implausible", () => {
+  // mid 1 CHF = 1.0893 EUR, 1,000 CHF paid, no fee.
+  const check = (o: ProviderOffer, at = now) => rankOffers([o], mid, Money.of("1000", "CHF"), at);
+
+  it("ranks a cost of exactly 10%", () => {
+    // markup 10%: received = 1000 × 1.0893 × 0.9 = 980.37 EUR (exact)
+    // worth 980.37 / 1.0893 = 900.00 CHF → cost 100.00 CHF = exactly 10%
+    const result = check(offer("ten", markup("0.10")));
+    expect(result.ranked[0]?.cost.totalCostPct.toString()).toBe("0.1");
+    expect(result.unavailable).toEqual([]);
+  });
+
+  it("lists a cost just above 10% instead of ranking it", () => {
+    // markup 10.01%: received = 1000 × 1.0893 × 0.8999 = 980.26107 → 980.26 EUR
+    // worth 980.26 / 1.0893 = 899.899017… CHF → cost 100.100982… CHF = 10.01% > 10%
+    const o = offer("over", markup("0.1001"));
+    const result = check(o);
+    expect(result.ranked).toEqual([]);
+    expect(result.unavailable).toEqual([{ offer: o, reason: "implausible_cost" }]);
+  });
+
+  it("lists a negative cost (a rate better than the reference rate)", () => {
+    // A manual rate of 1.10 EUR per CHF, better than mid 1.0893: received 1,100.00 EUR,
+    // worth 1100 / 1.0893 = 1009.8228… CHF → cost −9.82 CHF < 0
+    const o = offer("typo", { kind: "rate", rate: Rate.of("CHF", "EUR", "1.10"), capturedAt: now });
+    expect(check(o).unavailable).toEqual([{ offer: o, reason: "implausible_cost" }]);
+  });
+
+  it("ranks a free provider whose payout rounding leaves a fraction of a cent below 0", () => {
+    // Found by the API test (2026-11-09 case): mid 1.0937, no fee, no markup, pay 1,000.50 CHF:
+    //   received = 1000.50 × 1.0937 = 1094.24685 → 1094.25 EUR (rounded up)
+    //   worth 1094.25 / 1.0937 = 1000.50288… CHF → exact cost −0.00288… CHF, rounded 0.00
+    const free = offer("free", markup("0"));
+    const at1_0937 = { ...mid, rate: Rate.of("CHF", "EUR", "1.0937") };
+    const result = rankOffers([free], at1_0937, Money.of("1000.50", "CHF"), now);
+    expect(result.unavailable).toEqual([]);
+    expect(result.ranked[0]?.quote.received.toString()).toBe("1094.25 EUR");
+  });
+
+  it("ranks a cost of exactly 0% (Revolut within its allowance)", () => {
+    // markup 0: received = 1000 × 1.0893 = 1089.30 EUR, worth exactly 1,000 CHF → cost 0
+    expect(check(offer("zero", markup("0"))).ranked).toHaveLength(1);
+  });
+
+  it("also guards offers that are no longer re-checked", () => {
+    const old = offer("old", markup("0.1001"), "0", new Date("2026-09-01T00:00:00Z"));
+    const result = check(old);
+    expect(result.stale).toEqual([]);
+    expect(result.unavailable[0]?.reason).toBe("implausible_cost");
+  });
+});
+
+describe("markup tier with its limit in the target currency (Revolut EUR→CHF, CHF 1'250)", () => {
+  // mid 1 EUR = 0.92 CHF; you pay in EUR, the allowance is stated in CHF.
+  const eurMid: MidRateObservation = { ...mid, rate: Rate.of("EUR", "CHF", "0.92") };
+  const revolutEur: ProviderOffer = {
+    ...offer("revolut", markup("0")),
+    sourceCurrency: "EUR",
+    targetCurrency: "CHF",
+    fees: { kind: "deducted", rule: feeRule("EUR", {}) },
+    pricing: {
+      kind: "markup",
+      markup: new Decimal("0"),
+      tier: { upTo: Money.of("1250", "CHF"), markupAbove: new Decimal("0.01") },
+    },
+  };
+  const rowFor = (amount: string) =>
+    rankOffers([revolutEur], eurMid, Money.of(amount, "EUR"), now).ranked[0];
+
+  it("is free while the francs stay within the allowance", () => {
+    // 1,000 EUR = 920 CHF at mid ≤ 1,250 CHF → markup 0 → received 920.00 CHF, cost 0
+    expect(rowFor("1000")?.quote.received.toString()).toBe("920.00 CHF");
+    expect(rowFor("1000")?.cost.totalCost.toString()).toBe("0.00 EUR");
+  });
+
+  it("charges 1% only on the francs above the allowance", () => {
+    // 2,000 EUR = 1,840 CHF at mid; above the allowance: 1,840 − 1,250 = 590 CHF
+    // 1% of 590 = 5.90 CHF less → received 1840 − 5.90 = 1,834.10 CHF
+    // (in source terms: limit 1250 / 0.92 = 1358.6956… EUR, blended markup 0.01 × 641.3043… / 2000)
+    // worth 1834.10 / 0.92 = 1993.5869565… EUR → cost 6.4130434… → 6.41 EUR
+    const row = rowFor("2000");
+    expect(row?.quote.received.toString()).toBe("1834.10 CHF");
+    expect(row?.cost.totalCost.toString()).toBe("6.41 EUR");
+  });
+});
+
 describe("markup tier (Revolut-style allowance: 0% up to 1,250 CHF, 1% above)", () => {
   const revolut = offer("revolut", {
     kind: "markup",

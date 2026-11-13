@@ -2,7 +2,7 @@
   "name": "freu-transfer",
   "version": "0.0.0",
   "private": true,
-  "description": "Money transfer cost comparer for Switzerland ⇄ Europe: what actually arrives, and where the hidden FX cost is.",
+  "description": "Money transfer cost comparer for Switzerland ⇄ euro area (CHF→EUR, EUR→CHF): what actually arrives, and where the hidden FX cost is.",
   "type": "module",
   "packageManager": "pnpm@12.16.1",
   "engines": {

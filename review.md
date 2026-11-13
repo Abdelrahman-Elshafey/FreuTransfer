@@ -74,6 +74,44 @@ Add an entry to the log below and to `docs/progress.md`.
 
 ## Review log
 
+### 2026-11-13 (branch `step-5/guard`, after stage 4 and the scope change, ADR 0008)
+Asked by the owner: find everything still written for an old rule and bring it to how the project
+works now. Machines: `pnpm check` green; `pnpm audit` the same 2 moderate findings (Testcontainers,
+tests only); updates for Biome, Vite, plugin-react and knip are 2–4 days old (skipped, next review);
+no leftovers. No error found in the money calculations.
+
+**Fixed**
+1. **CLAUDE.md promised what the code doesn't do:** "every quote carries … sender/recipient
+   country". Quotes are computed per request and never stored, and in v1 the countries follow from
+   the corridor. Rule rewritten to what every result really carries (source link, check date,
+   capture time, reference rate with source and day); `quote.ts` and Plan §5 no longer announce
+   "stored quotes → `latest_quotes`" (an assumption from before ADR 0003).
+2. **"Daily" and "nightly" after ADR 0006/0007:** README, Plan §7/§9, ADR 0003, a schema comment and
+   the reference-rate notes now say hourly / every 24 h and before deploys.
+3. **README status two stages behind** ("step 3, deploy next"); `package.json` still said
+   "Switzerland ⇄ Europe".
+4. **The production address in three places** (CI twice, the collector's User-Agent): now once in CI
+   (`SITE_URL`); a test keeps the collector's copy equal (fails when changed).
+5. **A build error printed and ignored on every web build** (`ERR_PNPM_UNEXPECTED_STORE`: pnpm's
+   re-check before `build` looks in another store than the cache-mounted install). Switched off with
+   a written reason; the web Dockerfile also lacked the collectors manifest. A test checks that both
+   Dockerfiles copy every workspace manifest (fails when one is missing).
+
+**For the owner (not changed)**
+1. The `minimumReleaseAge` gate that CLAUDE.md mentions isn't configured in this repo (no
+   `pnpm-workspace.yaml` or `.npmrc` entry; `pnpm config get minimum-release-age` → undefined).
+   Whether pnpm 12 applies a built-in default wasn't confirmed; fresh releases are skipped by hand.
+   Set it explicitly (e.g. 7 days) so the rule is enforced, not remembered?
+2. Still open from earlier: pin GitHub Actions to commit ids before v1.0; no alert when the
+   collector or a backup fails (the page warns after 5 days); security headers and a request limit
+   (stage 7).
+
+**Checked and fine**
+Every ADR (0001–0008) and owner decision searched for its old assumption in code, comments and docs
+(only dated logs and the original research keep old wording, as history); one source for the site
+address, versions and limits; the API refuses dropped currencies; unknown rate sources fall back to
+their code on the page; seed still accepts the data files after the note changes.
+
 ### 2026-11-11 (branch `step-3/deploy-images`, before the first deploy)
 Earlier reviews: 2026-11-05 (5 bugs, 5 pieces of unneeded code → the 16 rules), 2026-11-09 (twice).
 No error found in the money calculations.

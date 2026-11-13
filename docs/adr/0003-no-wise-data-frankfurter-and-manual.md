@@ -12,7 +12,7 @@ weeks or never come, and the project shouldn't wait on it.
 ## Decision
 - **Mid-market rate:** Frankfurter v2 only, pinned per source (ECB, CBE for EGP, NBS for RSD; since ADR 0008
   only the ECB: v1 is CHF⇄EUR). It is
-  the only automated data source in v1, fetched daily after the ECB publishes.
+  the only automated data source in v1, fetched after the ECB publishes (every hour since ADR 0007).
 - **Provider prices:**
   - **Rule-based** where the provider publishes its pricing (Revolut, Yuh, Wise's public pricing page):
     rate = mid × (1 − markup), plus the published fees. No timing gap with the mid rate.

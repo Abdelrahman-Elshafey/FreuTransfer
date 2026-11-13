@@ -23,6 +23,7 @@ Run everything on the VPS with **Docker Compose**:
   `Europe/Zurich`, so the daily ECB-aligned snapshot is DST-safe. *(Superseded by ADR 0007: an
   hourly `collect` service in Docker Compose.)*
 - **Backups:** a nightly `pg_dump` kept on the VPS and copied off the server (target chosen at deploy).
+  *(Built in ADR 0006: every 24 hours and before each deploy, copied to Cloudflare R2.)*
 - **CI** stays on GitHub Actions. A deploy job (SSH to the VPS, pull, `docker compose up -d`) is added
   once the server is prepared.
 
