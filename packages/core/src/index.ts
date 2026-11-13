@@ -24,5 +24,15 @@ export type {
   ProviderOffer,
   SourceKind,
 } from "./offer.ts";
-export type { MidRateRepository, OfferRepository } from "./ports.ts";
+export type {
+  CollectorRunId,
+  CollectorStore,
+  CorridorPair,
+  CorridorRepository,
+  MidRateConflict,
+  MidRateRepository,
+  OfferRepository,
+  RawObservationId,
+  SaveMidRatesResult,
+} from "./ports.ts";
 export { Rate } from "./rate.ts";

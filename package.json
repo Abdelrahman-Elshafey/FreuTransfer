@@ -17,6 +17,7 @@
     "db:generate": "pnpm --filter @freu-transfer/db generate",
     "db:migrate": "pnpm --filter @freu-transfer/db migrate:deploy",
     "db:seed": "pnpm --filter @freu-transfer/db seed",
+    "collect": "pnpm --filter @freu-transfer/collectors collect",
     "check": "pnpm db:generate && pnpm lint && pnpm knip && pnpm typecheck && pnpm test",
     "db:up": "docker compose up -d --wait db",
     "db:down": "docker compose down",

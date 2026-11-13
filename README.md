@@ -39,6 +39,7 @@ Roadmap status, updated after every stage: [`docs/progress.md`](docs/progress.md
 |---|---|
 | `packages/core` | Pure domain: money, rates, cost engine, ports (no I/O) |
 | `packages/db` | Prisma schema, migrations, repositories (return core types) |
+| `packages/collectors` | Data collectors: the daily reference rate from Frankfurter (`pnpm collect`) |
 | `apps/api` | Express 5 HTTP API; `src/contract.ts` is the response shape the page imports |
 | `apps/web` | React + Vite frontend; `src/i18n` holds the four languages (ADR 0005) |
 | `compose.prod.yml`, `apps/*/Dockerfile` | The production stack; runbook in [`docs/deploy.md`](docs/deploy.md) |
