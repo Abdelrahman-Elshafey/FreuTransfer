@@ -38,5 +38,6 @@ left out of that corridor.
 | Alpian | Owner's choice: not in v1 | owner, 2026-11-10 |
 
 ## Reference rates
-Frankfurter v2, pinned per source: ECB (EUR, GBP, CHF), CBE (EGP), NBS (RSD). Stage 4 automates the
-daily fetch; until then the rates in `data/manual/mid-rates.json` were read by hand.
+Frankfurter v2, pinned per source: ECB (EUR, GBP, CHF), CBE (EGP), NBS (RSD). Since stage 4
+(2026-11-13) the `collect` service fetches them every hour (ADR 0007); the two rates in
+`data/manual/mid-rates.json` were read by hand before that and match Frankfurter exactly.
