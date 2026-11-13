@@ -10,7 +10,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 1 | Setup | ✅ Done (`d555741`) | Monorepo, Biome, TypeScript, Docker Postgres, CI, `CLAUDE.md`, ADR 0001; renamed to FreuTransfer + OVH hosting (ADR 0002) | CI green on GitHub ✅ |
 | 2 | Core engine | ✅ Done (2026-11-10) | `Money`/`Rate` value objects, fee strategies, `computeCost`, rounding, golden + property tests | 2 real calculator results reproduced to the cent ✅ (third skipped by the owner) |
 | 3 | v0.1 end-to-end | ✅ Done (2026-11-12): 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ✅ (3e-1 images · 3e-2 CI · 3e-3 first deploy · 3e-4 backups) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
-| 4 | Mid-market + pipeline | 🟡 **In progress**: 4a database ✅ · 4b collector ✅ · 4c production ⏭️ · 4d one week | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored |
+| 4 | Mid-market + pipeline | 🟡 **In progress**: 4a database ✅ · 4b collector ✅ · 4c production 🟡 · 4d one week · 4e old-rate warning | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored |
 | 5 | Provider data | ⬜ Not started | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ⬜ Not started | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
 | 7 | Polish | ⬜ Not started | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes |
@@ -191,4 +191,13 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   negative minimum/maximum fees refused. Checked on a database with data: upgrade, seed, API, and
   `pg_restore` with and without `--clean` (counts equal). Open for the owner: a maximum age for the
   reference rate now that it is collected hourly.
-
+- **2026-11-13:** Reviewed `dev` after the phone session (PR #12: no TRUNCATE on append-only tables,
+  unique fee schedules, no drafts in production, plain decimals): nothing to change in the plan
+  except three corrections found by reading the code, all fixed in 4c. Owner decision: option A,
+  a warning when the reference rate is older than 5 days (sub-step 4e). **4c:** the collector is in
+  the API image (it was in none); `collect` service in `compose.prod.yml` (hourly loop, waits for
+  `seed`); its health check switched off: without it the container turned unhealthy after 30 s and
+  `up --wait` failed (tried on purpose), which would have failed every deploy; `deploy/compose.test.ts`
+  now checks this on the configuration as Docker Compose reads it (fails without the switch-off). Local production
+  stack: `up --wait` exit 0, first run stored 6 new days, the site's rate went from 1.0937
+  (6 Nov) to 1.0832 (12 Nov), repeated runs stored nothing. Runbook section "Collector".

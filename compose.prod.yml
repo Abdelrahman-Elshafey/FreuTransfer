@@ -9,7 +9,8 @@
 # reachable only inside this project's private network, by service name (api:3000, db:5432).
 # Order on every start: db healthy → migrate (schema) → seed (provider data) → api → web.
 # Backups (docs/deploy.md, "Backups"): `backup` dumps the database every 24 hours, `offsite`
-# copies the dumps to Cloudflare R2 every 6 hours.
+# copies the dumps to Cloudflare R2 every 6 hours. `collect` fetches the reference rates every
+# hour (ADR 0007).
 
 # Its own project name: never mixes with the dev database (docker-compose.yml, project
 # "freutransfer") or UrConnections' containers on the server.
@@ -71,6 +72,30 @@ services:
       DATABASE_URL: *database-url
     depends_on:
       migrate:
+        condition: service_completed_successfully
+
+  # The reference rates from Frankfurter: one run now, then every hour (ADR 0007;
+  # packages/collectors). Each run asks for the last 10 days, so a missed hour or day repairs
+  # itself. A failed run is recorded in collector_runs and retried the next hour.
+  collect:
+    build: *api-build
+    image: *api-image
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    # Each round starts Node anew, so it always runs the code of the current image.
+    command:
+      [
+        "while true; do node packages/collectors/src/collect-cli.ts || echo 'collect: next try in 1 hour' >&2; sleep 3600; done",
+      ]
+    environment:
+      DATABASE_URL: *database-url
+    # The image's health check asks the API on port 3000, which doesn't run here: without this,
+    # the container counts as unhealthy and every deploy (`up --wait`) fails.
+    healthcheck:
+      disable: true
+    depends_on:
+      # The corridors (what to collect) come from the seed.
+      seed:
         condition: service_completed_successfully
 
   api:

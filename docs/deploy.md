@@ -19,6 +19,7 @@ Cloudflare ──tunnel──▶ web (nginx) ─┬─ /v1/*, /health ─▶ api
 | `api` | `freutransfer-api` | always; Express on port 3000 inside the network |
 | `web` | `freutransfer-web` | always; nginx on 8080 inside the network: the page + routing (`apps/web/nginx.conf`) |
 | `tunnel` | `cloudflare/cloudflared` | always on the server (profile `tunnel`); dials out to Cloudflare |
+| `collect` | `freutransfer-api` | always; the reference rates from Frankfurter now and every hour (ADR 0007) |
 | `backup` | `postgres:18.6` | always; a database dump now and every 24 hours, kept 14 days in the `backups` volume |
 | `offsite` | `rclone/rclone` | always on the server (profile `offsite`); copies the dumps to Cloudflare R2 every 6 hours, kept 30 days |
 
@@ -147,6 +148,28 @@ Then check the page in all four languages, and that UrConnections is still healt
 - **Database shell:** `dc exec db psql -U freu -d freu_transfer`.
 - Every start re-runs `migrate` and `seed`; both are safe to repeat (no new migration = nothing to
   do; already stored rows are skipped, an edited history row stops the seed with an error).
+
+## Collector (stage 4)
+
+`collect` runs `packages/collectors/src/collect-cli.ts` at start and then every hour (ADR 0007).
+Each run asks Frankfurter for the last 10 days of every corridor's reference rate (source pinned:
+ECB for EUR), stores the response as received, then the new days. A missed hour, or a server
+outage of up to 10 days, repairs itself on the next run.
+
+```sh
+dc logs --since 24h collect     # collect: CHF→EUR (ecb): 1 new, 7 already stored · run 42 succeeded
+dc exec db psql -U freu -d freu_transfer -c "select id, status, started_at, error from collector_runs order by id desc limit 5"
+dc exec db psql -U freu -d freu_transfer -c "select as_of, rate, source from mid_market_rates order by as_of desc limit 10"
+dc exec collect node packages/collectors/src/collect-cli.ts      # one run now
+```
+
+- **A failed run** (`collect: FAILED …`, status `failed` with the reason) changes nothing that was
+  stored and is retried the next hour. Nothing alerts yet: look at the logs after each deploy.
+- **"the ecb rate of … changed from … to …"**: Frankfurter now reports a different value for a day
+  already stored. The stored value is kept (append-only) and every run fails until someone looks:
+  compare both raw responses (`raw_observations`) and decide.
+- `collect` has no health check: the image's check asks the API on port 3000, which doesn't run
+  there, and an unhealthy container would make every deploy fail (`up --wait`).
 
 ## Backups (stage 3e-4)
 
