@@ -164,6 +164,42 @@ describe("database rules", () => {
     await expect(db.feeSchedule.deleteMany({})).rejects.toThrow(/append-only/);
   });
 
+  it("refuses TRUNCATE on every append-only table (it fires no row trigger)", async () => {
+    const before = await db.feeSchedule.count();
+    await expect(db.$executeRaw`TRUNCATE mid_market_rates`).rejects.toThrow(
+      /mid_market_rates is append-only: TRUNCATE/,
+    );
+    await expect(db.$executeRaw`TRUNCATE fee_schedules`).rejects.toThrow(
+      /fee_schedules is append-only: TRUNCATE/,
+    );
+    // These two are referenced by foreign keys, so a plain TRUNCATE is already refused; CASCADE
+    // would empty the tables that point at them too. The triggers must stop that as well.
+    await expect(db.$executeRaw`TRUNCATE raw_observations CASCADE`).rejects.toThrow(
+      /is append-only: TRUNCATE/,
+    );
+    await expect(db.$executeRaw`TRUNCATE collector_runs CASCADE`).rejects.toThrow(
+      /is append-only: TRUNCATE/,
+    );
+    expect(await db.feeSchedule.count()).toBe(before);
+  });
+
+  it("refuses a second fee schedule for the same corridor, provider and check time", async () => {
+    // Same key as the newer Yuh row of beforeAll (CHF-EUR, yuh, 2026-11-03 10:00Z), other markup.
+    await expect(
+      db.feeSchedule.create({
+        data: {
+          providerId: "yuh",
+          corridorId: "CHF-EUR",
+          sourceKind: "rule_based",
+          feeMode: "deducted",
+          fxMarkup: "0.02",
+          sourceUrl: "https://example.test/yuh-again",
+          checkedAt: new Date("2026-11-03T10:00:00Z"),
+        },
+      }),
+    ).rejects.toThrow(/Unique constraint/);
+  });
+
   it("refuses a rule-based fee schedule without a markup", async () => {
     await expect(
       db.feeSchedule.create({

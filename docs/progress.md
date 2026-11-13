@@ -182,3 +182,13 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   broken connection while reading the body counted as "unexpected" (stopping other corridors):
   fixed and tested. Real run against Frankfurter (local DB): 7 new days, the 2 hand-entered days
   matched exactly; second run stored nothing.
+- **2026-11-13:** Review fixes still open on `dev` (the other findings of the 2026-11-12 review were
+  already fixed there). Migration `unique_schedule_no_truncate`: one fee schedule per corridor ×
+  provider × check time (unique key, replaces the index), and `TRUNCATE` refused on all four
+  append-only tables (it fires no row trigger; without this, `TRUNCATE collector_runs CASCADE`
+  emptied runs, raw responses and rates). `pnpm db:seed --include-drafts` refused in production and
+  unknown arguments refused. `Money.of` accepts plain decimals only (no "0x10", "1e3", "1_000");
+  negative minimum/maximum fees refused. Checked on a database with data: upgrade, seed, API, and
+  `pg_restore` with and without `--clean` (counts equal). Open for the owner: a maximum age for the
+  reference rate now that it is collected hourly.
+

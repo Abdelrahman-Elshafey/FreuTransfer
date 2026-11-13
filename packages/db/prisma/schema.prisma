@@ -110,7 +110,9 @@ model FeeSchedule {
   provider Provider @relation(fields: [providerId], references: [id])
   corridor Corridor @relation(fields: [corridorId], references: [id])
 
-  @@index([corridorId, providerId, checkedAt(sort: Desc)])
+  /// One row per corridor × provider × check time: no run can store the same check twice.
+  /// Also the index for "newest row per provider" (Postgres reads it backwards for DESC).
+  @@unique([corridorId, providerId, checkedAt])
   @@map("fee_schedules")
 }
 

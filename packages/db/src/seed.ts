@@ -101,8 +101,14 @@ async function seedInTransaction(
   let feeSchedules = 0;
   for (const entry of loadable) {
     const row = toRow(entry);
-    const existing = await db.feeSchedule.findFirst({
-      where: { providerId: row.providerId, corridorId: row.corridorId, checkedAt: row.checkedAt },
+    const existing = await db.feeSchedule.findUnique({
+      where: {
+        corridorId_providerId_checkedAt: {
+          corridorId: row.corridorId,
+          providerId: row.providerId,
+          checkedAt: row.checkedAt,
+        },
+      },
     });
     if (existing) {
       const changed = differences(existing, row);

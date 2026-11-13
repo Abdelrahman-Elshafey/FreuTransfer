@@ -51,6 +51,8 @@ export function feeRule(currency: CurrencyCode, input: FeeRuleInput): FeeRule {
     ...(input.max === undefined ? {} : { max: Money.of(input.max, currency) }),
   };
   if (rule.fixed.isNegative()) throw new MoneyError("Fixed fee cannot be negative");
+  if (rule.min?.isNegative()) throw new MoneyError("Minimum fee cannot be negative");
+  if (rule.max?.isNegative()) throw new MoneyError("Maximum fee cannot be negative");
   if (rule.min && rule.max && rule.min.compareTo(rule.max) > 0) {
     throw new MoneyError("Minimum fee is larger than maximum fee");
   }

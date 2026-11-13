@@ -19,7 +19,11 @@ describe("Money", () => {
   it("rejects JS numbers, invalid strings, infinity and unknown currencies", () => {
     expect(() => Money.of(0.1 as unknown as string, "CHF")).toThrow(/string or Decimal/);
     expect(() => Money.of("abc", "CHF")).toThrow(MoneyError);
-    expect(() => Money.of("Infinity", "CHF")).toThrow(/finite/);
+    // Notations decimal.js would read (as 16, 3, 1000, 1000, …) but that are not plain decimals.
+    for (const odd of ["0x10", "0b11", "1_000", "1e3", " 12", "+5", ".5", "5.", "Infinity"]) {
+      expect(() => Money.of(odd, "CHF"), odd).toThrow(/not a valid number/);
+    }
+    expect(() => Money.of(new Decimal("Infinity"), "CHF")).toThrow(/finite/);
     expect(() => Money.of("1", "XYZ" as "CHF")).toThrow(/Unsupported currency/);
   });
 
