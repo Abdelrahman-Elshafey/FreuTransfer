@@ -10,7 +10,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 1 | Setup | ✅ Done (`d555741`) | Monorepo, Biome, TypeScript, Docker Postgres, CI, `CLAUDE.md`, ADR 0001; renamed to FreuTransfer + OVH hosting (ADR 0002) | CI green on GitHub ✅ |
 | 2 | Core engine | ✅ Done (2026-11-10) | `Money`/`Rate` value objects, fee strategies, `computeCost`, rounding, golden + property tests | 2 real calculator results reproduced to the cent ✅ (third skipped by the owner) |
 | 3 | v0.1 end-to-end | ✅ Done (2026-11-12): 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ✅ (3e-1 images · 3e-2 CI · 3e-3 first deploy · 3e-4 backups) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
-| 4 | Mid-market + pipeline | 🟡 **In progress**: 4a database ✅ · 4b collector ⏭️ · 4c production · 4d one week | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored |
+| 4 | Mid-market + pipeline | 🟡 **In progress**: 4a database ✅ · 4b collector ✅ · 4c production ⏭️ · 4d one week | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored |
 | 5 | Provider data | ⬜ Not started | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ⬜ Not started | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
 | 7 | Polish | ⬜ Not started | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes |
@@ -171,3 +171,14 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   (append-only, belongs to a run), `mid_market_rates.raw_observation_id` (empty for hand-entered
   rates). 7 new database tests; removing two of the rules on purpose made their tests fail. Applied
   locally to a production database with data: existing rates kept, seed, API and backup work.
+- **2026-11-13:** 4a deployed (`6dcb4f4`): migration applied on the server, the 2 rates kept, backup
+  taken before it. **4b:** `packages/collectors` with the Frankfurter adapter: per corridor the last
+  10 days with the source pinned (`SOURCE_FOR_QUOTE`, typed over every currency), raw response
+  stored before parsing, rates read from the JSON source text (never JS numbers), wrong pair /
+  dates outside the window / impossible or repeated dates / zero, negative, exponent or too many
+  decimals refused; a changed stored day is kept and fails the run. `PrismaCollectorStore`,
+  `PrismaCorridorRepository`, `pnpm collect`. 24 collector + 6 database tests; reading plain numbers
+  and parsing before saving the raw response each fail 2 tests on purpose. Self-review found a
+  broken connection while reading the body counted as "unexpected" (stopping other corridors):
+  fixed and tested. Real run against Frankfurter (local DB): 7 new days, the 2 hand-entered days
+  matched exactly; second run stored nothing.

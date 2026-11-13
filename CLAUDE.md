@@ -104,7 +104,7 @@ Each rule names the mistake it prevents.
 - Node **26.13.0 LTS** (`.node-version`), pnpm **12.16.1** (`packageManager`), TypeScript 7.
 - TypeScript runs natively in Node (type stripping): use only erasable syntax (no `enum`,
   `namespace` or parameter properties) and import local files **with the `.ts` extension**.
-- Commands: `pnpm install` · `pnpm check` (generates the Prisma client first; DB tests need Docker running) · `pnpm knip` (unused files, exports, dependencies) · `pnpm lint:fix` · `pnpm db:up` / `pnpm db:down` · `pnpm db:migrate` · `pnpm db:generate`
+- Commands: `pnpm install` · `pnpm check` (generates the Prisma client first; DB tests need Docker running) · `pnpm knip` (unused files, exports, dependencies) · `pnpm lint:fix` · `pnpm db:up` / `pnpm db:down` · `pnpm db:migrate` · `pnpm db:generate` · `pnpm collect` (one Frankfurter run)
   · `pnpm dev:api` (http://localhost:3000) · `pnpm dev:web` (http://localhost:5173).
 - Windows host: the repo forces LF line endings (`.gitattributes`).
 - Local DB = Docker container on **127.0.0.1:5434**. Port 5432 is the owner's native PostgreSQL

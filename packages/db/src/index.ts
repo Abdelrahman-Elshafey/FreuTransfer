@@ -3,5 +3,6 @@
  * speaks core types (CLAUDE.md, architecture rules). Seeding runs inside the package (`pnpm db:seed`).
  */
 export { createPrismaClient } from "./client.ts";
+export { PrismaCollectorStore, PrismaCorridorRepository } from "./collector-store.ts";
 export { databaseUrlFromEnv } from "./local-dev.ts";
 export { PrismaMidRateRepository, PrismaOfferRepository } from "./repositories.ts";
