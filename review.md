@@ -98,7 +98,7 @@ No error found in the money calculations.
    amount typed the Swiss way added; README layout table lists the production files.
 
 **For the owner (not changed)**
-1. **The reference rate has no age limit.** The newest stored rate is from 2026-11-06, read by hand.
+1. *(Resolved 2026-11-13: hourly collector, stage 4; warning above 5 days, 4e.)* **The reference rate has no age limit.** The newest stored rate is from 2026-11-06, read by hand.
    The cost in % stays right (markups are relative), but "what arrives" in EUR is computed from an
    old rate until stage 4 fetches it daily. Options: do stage 4 right after the deploy; or show a
    warning when the rate is older than a few days.

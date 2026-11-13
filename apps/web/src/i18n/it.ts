@@ -36,6 +36,8 @@ export const it: Messages = {
   results: {
     midRate: (p) =>
       `Confrontato con il tasso medio di mercato 1 ${p.from} = ${p.rate} ${p.to} (${p.bank}, ${p.day}); i tassi manuali con quello del giorno in cui sono stati letti.`,
+    midRateTooOld: (p) =>
+      `Il tasso di riferimento è del ${p.day}, cioè di oltre ${p.days} giorni fa: al momento non arrivano nuovi tassi, quindi questi risultati potrebbero non essere aggiornati.`,
     none: "Ancora nessun dato verificato.",
     staleHeading: (days) => `Non ricontrollati da oltre ${days} giorni`,
     unavailableHeading: "Non disponibile per questo importo",

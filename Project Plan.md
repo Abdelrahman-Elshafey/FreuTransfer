@@ -120,6 +120,9 @@ Decided by the owner (2026-11-06):
 - (2026-11-10) Production at `freutransfer.aelshafey.com`; deploys and backups as in ADR 0006
   (CI images, first deploy by hand then approved automatic deploys, nightly backups to Cloudflare R2).
 - Languages (2026-11-09): English, German, French and Italian from v1; Swiss number formatting in all.
+- (2026-11-12) The collector runs as an hourly Compose service (ADR 0007).
+- (2026-11-13) A reference rate published **more than 5 days** ago (`MID_RATE_MAX_AGE_DAYS` in core)
+  is too old: the comparison is still shown, with a warning in all four languages.
 - Sanity guard (stage 5): a total cost **above 10%** or **below 0%** is treated as a data error: the
   offer isn't ranked but listed for checking. Can be raised per corridor (e.g. EGP/RSD) if needed.
 

@@ -164,7 +164,9 @@ dc exec collect node packages/collectors/src/collect-cli.ts      # one run now
 ```
 
 - **A failed run** (`collect: FAILED …`, status `failed` with the reason) changes nothing that was
-  stored and is retried the next hour. Nothing alerts yet: look at the logs after each deploy.
+  stored and is retried the next hour. Nothing alerts you by message, but once the newest rate is
+  more than 5 days old the page shows every visitor a warning (`MID_RATE_MAX_AGE_DAYS`): look at
+  the `collect` logs then.
 - **"the ecb rate of … changed from … to …"**: Frankfurter now reports a different value for a day
   already stored. The stored value is kept (append-only) and every run fails until someone looks:
   compare both raw responses (`raw_observations`) and decide.

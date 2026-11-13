@@ -9,6 +9,7 @@
 export {
   type ComparisonRow,
   compareProviders,
+  MID_RATE_MAX_AGE_DAYS,
   NoMidRateError,
   RECHECK_DAYS,
   type UnavailableReason,

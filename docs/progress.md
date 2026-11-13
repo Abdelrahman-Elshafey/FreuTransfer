@@ -10,7 +10,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 1 | Setup | ✅ Done (`d555741`) | Monorepo, Biome, TypeScript, Docker Postgres, CI, `CLAUDE.md`, ADR 0001; renamed to FreuTransfer + OVH hosting (ADR 0002) | CI green on GitHub ✅ |
 | 2 | Core engine | ✅ Done (2026-11-10) | `Money`/`Rate` value objects, fee strategies, `computeCost`, rounding, golden + property tests | 2 real calculator results reproduced to the cent ✅ (third skipped by the owner) |
 | 3 | v0.1 end-to-end | ✅ Done (2026-11-12): 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ✅ (3e-1 images · 3e-2 CI · 3e-3 first deploy · 3e-4 backups) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
-| 4 | Mid-market + pipeline | 🟡 **In progress**: 4a database ✅ · 4b collector ✅ · 4c production 🟡 · 4d one week · 4e old-rate warning | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored |
+| 4 | Mid-market + pipeline | 🟡 **In progress**: 4a database ✅ · 4b collector ✅ · 4c production 🟡 · 4e old-rate warning ✅ · 4d one week | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored |
 | 5 | Provider data | ⬜ Not started | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ⬜ Not started | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
 | 7 | Polish | ⬜ Not started | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes |
@@ -201,3 +201,11 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   now checks this on the configuration as Docker Compose reads it (fails without the switch-off). Local production
   stack: `up --wait` exit 0, first run stored 6 new days, the site's rate went from 1.0937
   (6 Nov) to 1.0832 (12 Nov), repeated runs stored nothing. Runbook section "Collector".
+- **2026-11-13:** **4e (option A):** `MID_RATE_MAX_AGE_DAYS = 5` in core (Easter is the longest normal
+  gap: Thursday's rate is the newest until Tuesday afternoon); `Comparison.midTooOld` counts calendar
+  days in Zurich; the API sends `midRateTooOld` and `midRateMaxAgeDays`; the page shows a warning
+  (role "alert") in EN/DE/FR/IT and still shows the results. Tests: the Easter 2027 gap (computed:
+  Easter Sunday 28 March), a Zurich/UTC day boundary, the API flag both ways, the four sentences.
+  Real run in headless Edge: with only the seeded rate (6 Nov, 7 days old) the warning shows in all
+  four languages with the right date format; with the collected rate (12 Nov) none. Branch built on
+  4c (both touch this file): merge 4c first.

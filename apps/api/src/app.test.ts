@@ -53,6 +53,22 @@ describe("GET /health", () => {
 });
 
 describe("GET /v1/compare", () => {
+  it("says whether the reference rate is too old, with the limit, and still compares", async () => {
+    // The rate is from 2026-11-05 (Thursday). Wednesday 11 Nov 12:00 Zurich (11:00 UTC):
+    // 11 − 5 = 6 days > 5 → too old. Tuesday 10 Nov: 10 − 5 = 5 days → not too old.
+    const at = (iso: string) => createApp(deps({ now: () => new Date(iso) }));
+    const old = await request(at("2026-11-11T11:00:00Z")).get(
+      "/v1/compare?from=CHF&to=EUR&amount=1000",
+    );
+    expect(old.body).toMatchObject({ midRateTooOld: true, midRateMaxAgeDays: 5 });
+    expect(old.body.results).toHaveLength(1);
+
+    const fine = await request(at("2026-11-10T11:00:00Z")).get(
+      "/v1/compare?from=CHF&to=EUR&amount=1000",
+    );
+    expect(fine.body).toMatchObject({ midRateTooOld: false, midRateMaxAgeDays: 5 });
+  });
+
   it("returns ranked results with money as strings", async () => {
     const res = await request(createApp(deps())).get("/v1/compare?from=chf&to=EUR&amount=1000");
     expect(res.status).toBe(200);

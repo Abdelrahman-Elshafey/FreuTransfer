@@ -33,6 +33,8 @@ export const de: Messages = {
   results: {
     midRate: (p) =>
       `Verglichen mit dem Mittelkurs 1 ${p.from} = ${p.rate} ${p.to} (${p.bank}, ${p.day}); manuelle Kurse mit dem Kurs des Tages, an dem sie abgelesen wurden.`,
+    midRateTooOld: (p) =>
+      `Der Referenzkurs ist vom ${p.day}, also über ${p.days} Tage alt: Zurzeit kommen keine neuen Kurse an, die Ergebnisse können deshalb veraltet sein.`,
     none: "Noch keine geprüften Anbieterdaten.",
     staleHeading: (days) => `Seit über ${days} Tagen nicht mehr überprüft`,
     unavailableHeading: "Für diesen Betrag nicht verfügbar",
