@@ -24,6 +24,10 @@ class SeedConflictError extends Error {
  * instead of silently ignoring the change: a correction must be a new entry with a new `checkedAt`
  * (or `asOf`).
  *
+ * Nothing stored can be removed by deleting it from the files: a stored fee schedule that is no
+ * longer in fee-schedules.json also stops the seed (a provider is taken off the site with a
+ * withdrawal entry, stage 5b).
+ *
  * Only `verified` fee schedules are loaded, unless `includeDrafts` is set for a local preview
  * (never in production). `needs_input` entries are never loaded.
  *
@@ -125,6 +129,25 @@ async function seedInTransaction(
     feeSchedules++;
   }
 
+  // Any status counts: a draft stored for a local preview may later become verified.
+  const keyOf = (corridorId: string, providerId: string, checkedAt: Date) =>
+    `${corridorId}|${providerId}|${checkedAt.getTime()}`;
+  const inFiles = new Set(
+    data.feeSchedules.map((fs) => keyOf(fs.corridorId, fs.providerId, new Date(fs.checkedAt))),
+  );
+  const stored = await db.feeSchedule.findMany({
+    select: { corridorId: true, providerId: true, checkedAt: true },
+  });
+  const missing = stored.find((r) => !inFiles.has(keyOf(r.corridorId, r.providerId, r.checkedAt)));
+  if (missing) {
+    throw new SeedConflictError(
+      `${missing.providerId} ${missing.corridorId} checked at ${missing.checkedAt.toISOString()} ` +
+        "is stored but no longer in fee-schedules.json. Stored history can't be removed: put the " +
+        'entry back, and to take the provider off the site add a withdrawal ("withdrawn": true) ' +
+        "with a new checkedAt.",
+    );
+  }
+
   return {
     providers: data.providers.filter((p) => !knownProviders.has(p.id)).length,
     corridors,
@@ -149,6 +172,7 @@ function same(stored: DbValue, wanted: DbValue): boolean {
 }
 
 const COMPARED_FIELDS = [
+  "withdrawn",
   "sourceKind",
   "feeMode",
   "fixedFee",
@@ -173,9 +197,25 @@ function differences(stored: Record<string, unknown>, wanted: Record<string, unk
 }
 
 function toRow(entry: FeeScheduleEntry) {
+  if (entry.withdrawn === true) {
+    // No prices (CHECK constraint); the fee columns default to 0, and `differences` compares them.
+    return {
+      providerId: entry.providerId,
+      corridorId: entry.corridorId,
+      withdrawn: true,
+      sourceKind: null,
+      feeMode: null,
+      fixedFee: "0",
+      percentFee: "0",
+      sourceUrl: entry.sourceUrl,
+      checkedAt: new Date(entry.checkedAt),
+      note: entry.note,
+    };
+  }
   const common = {
     providerId: entry.providerId,
     corridorId: entry.corridorId,
+    withdrawn: false,
     sourceKind: entry.sourceKind,
     feeMode: entry.feeMode,
     fixedFee: entry.fixedFee,

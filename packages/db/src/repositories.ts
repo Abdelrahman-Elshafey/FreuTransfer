@@ -52,21 +52,26 @@ export class PrismaOfferRepository implements OfferRepository {
 
   async latestOffers(source: CurrencyCode, target: CurrencyCode): Promise<ProviderOffer[]> {
     // DISTINCT ON keeps the newest row per provider (rows are append-only; the newest wins).
-    // Tagged $queryRaw: values are sent as parameters, never pasted into the SQL text.
+    // Withdrawals are dropped only after that: filtering them first would bring back the price
+    // row before a withdrawal. Tagged $queryRaw: values are parameters, never pasted into the SQL.
     const rows = await this.#db.$queryRaw<OfferRow[]>`
-      SELECT DISTINCT ON (fs.provider_id)
-        fs.provider_id, p.name AS provider_name, p.kind::text AS provider_kind,
-        c.source_currency, c.target_currency,
-        fs.source_kind::text AS source_kind, fs.fee_mode::text AS fee_mode,
-        fs.fixed_fee, fs.percent_fee, fs.min_fee, fs.max_fee, fs.max_amount,
-        fs.fx_markup, fs.fx_markup_tier_up_to, fs.fx_markup_above, fs.fx_markup_tier_currency,
-        fs.provider_rate, fs.rate_captured_at,
-        fs.source_url, fs.checked_at
-      FROM fee_schedules fs
-      JOIN providers p ON p.id = fs.provider_id
-      JOIN corridors c ON c.id = fs.corridor_id
-      WHERE c.source_currency = ${source} AND c.target_currency = ${target}
-      ORDER BY fs.provider_id, fs.checked_at DESC, fs.id DESC`;
+      SELECT * FROM (
+        SELECT DISTINCT ON (fs.provider_id)
+          fs.withdrawn, fs.provider_id, p.name AS provider_name, p.kind::text AS provider_kind,
+          c.source_currency, c.target_currency,
+          fs.source_kind::text AS source_kind, fs.fee_mode::text AS fee_mode,
+          fs.fixed_fee, fs.percent_fee, fs.min_fee, fs.max_fee, fs.max_amount,
+          fs.fx_markup, fs.fx_markup_tier_up_to, fs.fx_markup_above, fs.fx_markup_tier_currency,
+          fs.provider_rate, fs.rate_captured_at,
+          fs.source_url, fs.checked_at
+        FROM fee_schedules fs
+        JOIN providers p ON p.id = fs.provider_id
+        JOIN corridors c ON c.id = fs.corridor_id
+        WHERE c.source_currency = ${source} AND c.target_currency = ${target}
+        ORDER BY fs.provider_id, fs.checked_at DESC, fs.id DESC
+      ) newest
+      WHERE NOT newest.withdrawn
+      ORDER BY newest.provider_id`;
     return rows.map(toOffer);
   }
 }

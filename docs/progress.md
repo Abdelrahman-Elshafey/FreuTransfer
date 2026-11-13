@@ -11,7 +11,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 2 | Core engine | ✅ Done (2026-11-10) | `Money`/`Rate` value objects, fee strategies, `computeCost`, rounding, golden + property tests | 2 real calculator results reproduced to the cent ✅ (third skipped by the owner) |
 | 3 | v0.1 end-to-end | ✅ Done (2026-11-12): 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ✅ (3e-1 images · 3e-2 CI · 3e-3 first deploy · 3e-4 backups) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
 | 4 | Mid-market + pipeline | ✅ Done (2026-11-13): 4a database ✅ · 4b collector ✅ · 4c hourly `collect` service ✅ · 4e old-rate warning ✅ · 4d one week ⏳ (verify 20 Nov) | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored (8 working days 3–12 Nov stored; 16–20 Nov to be collected live) |
-| 5 | Provider data | 🟡 **In progress**: 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider · 5c EUR→CHF data · 5e corridor choice | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
+| 5 | Provider data | 🟡 **In progress**: 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider ✅ · 5c EUR→CHF data · 5e corridor choice | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ⬜ Not started | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
 | 7 | Polish | ⬜ Not started | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes |
 | 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts | — |
@@ -248,3 +248,16 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   13 new; breaking the 10% boundary, the negative check, the limit conversion, the seed comparison
   and the repository mapping each fails a test. Local production stack: migration on existing
   data, comparison and GBP → 400 as expected.
+- **2026-11-13:** **5b: withdrawing a provider** (owner chose withdrawal entries, ADR 0009). An entry
+  `"withdrawn": true` in `fee-schedules.json` (provider × corridor, date, link, required reason, no
+  prices) is stored as a `fee_schedules` row; while it is the newest row the provider isn't shown in
+  that direction, and a newer price brings it back. The seed now refuses a stored entry deleted from
+  the files (before, that was silently ignored and the provider stayed live). Migration
+  `withdrawn_fee_schedule` (`source_kind`/`fee_mode` empty only on withdrawals; the CHECK spells out
+  `IS NOT NULL`, since a CHECK passes on NULL). Found by the tests: priced rows lacked
+  `withdrawn: false`, so every stored row (the 5 in production too) would have stopped the seed.
+  Tests: 22 new; each rule broken on purpose (filter before "newest", no missing-row check, CHECK
+  without the reason / max amount / source kind, loader not strict / no reason / needs_input /
+  `withdrawn` on a priced entry) fails a test. Run for real on a throwaway Postgres 18.6 with the API:
+  Yuh withdrawn → gone from CHF→EUR, second seed inserts nothing, Wise deleted from the file →
+  seed stops with the message. Real files on the local database: seed clean.

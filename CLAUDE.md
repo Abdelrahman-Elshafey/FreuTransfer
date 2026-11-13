@@ -94,7 +94,8 @@ Each rule names the mistake it prevents.
   and backups ADR 0006. Versions copied into Docker files are kept equal by `deploy/versions.test.ts`.
 - Append-only data: never update or delete observations, rates or quotes (database triggers enforce
   it). The one exception: a `collector_runs` row is finished exactly once (status, finish time,
-  error), so a run that crashes stays visible as `running`.
+  error), so a run that crashes stays visible as `running`. A provider is taken off the site with a
+  withdrawal entry in `fee-schedules.json` (ADR 0009); the seed refuses entries deleted from the files.
 - SQL: Prisma TypedSQL or tagged `$queryRaw` only, **never `$queryRawUnsafe`**.
 - Data sourcing: respect ToS and robots.txt. No automated access to sources that disallow it
   (e.g. Revolut `/api/`); use rule-based or manual adapters instead.

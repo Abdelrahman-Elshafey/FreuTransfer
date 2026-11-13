@@ -140,7 +140,7 @@ No error found in the money calculations.
    The cost in % stays right (markups are relative), but "what arrives" in EUR is computed from an
    old rate until stage 4 fetches it daily. Options: do stage 4 right after the deploy; or show a
    warning when the rate is older than a few days.
-2. **A provider can't be withdrawn once it is in production.** Fee schedules are never deleted, so
+2. *(Resolved 2026-11-13: withdrawal entries, ADR 0009, 5b.)* **A provider can't be withdrawn once it is in production.** Fee schedules are never deleted, so
    removing a provider from the files (as with UBS and Alpian this week) would leave it on the live
    site; after 30 days it only moves to "not re-checked". Production is still empty, so nothing is
    wrong today. Suggestion for stage 5: a `retired` date on providers (they are reference data, not
