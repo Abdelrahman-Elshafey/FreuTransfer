@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareProviders, NoMidRateError, rankOffers } from "./compare.ts";
+import { compareProviders, MID_RATE_MAX_AGE_DAYS, NoMidRateError, rankOffers } from "./compare.ts";
 import { Decimal } from "./decimal.ts";
 import { CurrencyMismatchError } from "./errors.ts";
 import { feeRule } from "./fees.ts";
@@ -104,6 +104,36 @@ describe("rankOffers", () => {
     expect(() => rankOffers([broken], mid, Money.of("1000", "CHF"), now)).toThrow(
       CurrencyMismatchError,
     );
+  });
+});
+
+describe("reference rate age (MID_RATE_MAX_AGE_DAYS = 5)", () => {
+  /** Whether a rate published on `asOf` counts as too old at `at`. */
+  const tooOld = (asOf: string, at: string) =>
+    rankOffers([], { ...mid, asOf }, Money.of("1000", "CHF"), new Date(at)).midTooOld;
+
+  it("is 5", () => {
+    expect(MID_RATE_MAX_AGE_DAYS).toBe(5);
+  });
+
+  it("allows the Easter gap: Thursday's rate is still fine on Tuesday", () => {
+    // Easter 2027: Thursday 25 March is the last rate before Good Friday and Easter Monday.
+    // Tuesday 30 March 14:00 Zurich (12:00 UTC, CEST), before the new rate: 30 − 25 = 5 days, not > 5.
+    expect(tooOld("2027-03-25", "2027-03-30T12:00:00Z")).toBe(false);
+    // Wednesday 31 March without a newer rate: 31 − 25 = 6 days > 5, the collector has stopped.
+    expect(tooOld("2027-03-25", "2027-03-31T12:00:00Z")).toBe(true);
+  });
+
+  it("counts days in Zurich, not in UTC", () => {
+    // Rate of Thursday 12 Nov. 2026-11-17T23:30Z is already Wednesday 18 Nov 00:30 in Zurich (CET,
+    // UTC+1): 18 − 12 = 6 days > 5. Counted in UTC it would be 17 − 12 = 5 days, not too old.
+    expect(tooOld("2026-11-12", "2026-11-17T23:30:00Z")).toBe(true);
+    // One hour earlier, 2026-11-17T22:30Z = Tuesday 17 Nov 23:30 in Zurich: 17 − 12 = 5 days.
+    expect(tooOld("2026-11-12", "2026-11-17T22:30:00Z")).toBe(false);
+  });
+
+  it("is fine on the day of publication", () => {
+    expect(tooOld("2026-11-12", "2026-11-12T16:00:00Z")).toBe(false);
   });
 });
 

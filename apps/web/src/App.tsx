@@ -98,6 +98,11 @@ function Results({ data }: { data: ComparisonDto }) {
   const { t, f } = useI18n();
   return (
     <>
+      {data.midRateTooOld && (
+        <p className="warning" role="alert">
+          {t.results.midRateTooOld({ day: f.day(data.midRate.asOf), days: data.midRateMaxAgeDays })}
+        </p>
+      )}
       <p className="note">
         {t.results.midRate({
           from: data.from,

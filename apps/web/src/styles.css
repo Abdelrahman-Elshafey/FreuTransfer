@@ -37,6 +37,12 @@ td {
 .error {
   color: #b91c1c;
 }
+.warning {
+  border-left: 4px solid #b45309;
+  background: #fffbeb;
+  color: #78350f;
+  padding: 0.5rem 0.75rem;
+}
 input {
   width: 8rem;
 }

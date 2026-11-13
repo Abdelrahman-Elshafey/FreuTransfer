@@ -41,6 +41,8 @@ export const en = {
   results: {
     midRate: (p: { from: string; to: string; rate: string; bank: string; day: string }) =>
       `Compared with the mid-market rate 1 ${p.from} = ${p.rate} ${p.to} (${p.bank}, ${p.day}); manual rates with the rate of the day they were read.`,
+    midRateTooOld: (p: { day: string; days: number }) =>
+      `The reference rate is from ${p.day}, more than ${p.days} days ago: new rates are not arriving right now, so these results may be out of date.`,
     none: "No verified provider data yet.",
     staleHeading: (days: number) => `Not re-checked for over ${days} days`,
     unavailableHeading: "Not available for this amount",

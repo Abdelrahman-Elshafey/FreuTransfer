@@ -71,6 +71,10 @@ export type ComparisonDto = {
   readonly amount: MoneyDto;
   /** The newest reference rate (used for rule-based providers). */
   readonly midRate: MidRateDto;
+  /** True when `midRate` was published more than `midRateMaxAgeDays` days ago: new rates aren't
+   * arriving, so the page warns that the results may be out of date. */
+  readonly midRateTooOld: boolean;
+  readonly midRateMaxAgeDays: number;
   /** Data older than this many days is in `stale`, not ranked. */
   readonly recheckDays: number;
   /** Cheapest first. */

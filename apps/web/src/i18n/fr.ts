@@ -37,6 +37,8 @@ export const fr: Messages = {
   results: {
     midRate: (p) =>
       `Comparé au taux moyen du marché 1 ${p.from} = ${p.rate} ${p.to} (${p.bank}, ${p.day}) ; les taux manuels avec le taux du jour où ils ont été relevés.`,
+    midRateTooOld: (p) =>
+      `Le taux de référence date du ${p.day}, il y a plus de ${p.days} jours : les nouveaux taux n'arrivent pas en ce moment, ces résultats peuvent donc être dépassés.`,
     none: "Pas encore de données vérifiées.",
     staleHeading: (days) => `Pas revérifié depuis plus de ${days} jours`,
     unavailableHeading: "Indisponible pour ce montant",

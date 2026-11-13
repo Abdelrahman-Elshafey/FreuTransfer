@@ -48,6 +48,16 @@ describe("catalogs", () => {
     expect(withEszett).toEqual([]);
   });
 
+  it.each(LOCALE_CODES)(
+    "%s warns about an old reference rate with its day and the limit",
+    (code) => {
+      const text = localeInfo(code).messages.results.midRateTooOld({ day: "12.11.2026", days: 5 });
+      expect(text).toContain("12.11.2026");
+      expect(text).toContain("5");
+      expect(text).not.toMatch(/undefined|\[object/);
+    },
+  );
+
   it("every language formats numbers and dates the Swiss way (ADR 0005)", () => {
     for (const code of LOCALE_CODES) {
       expect(localeInfo(code).format).toBe(`${code}-CH`);

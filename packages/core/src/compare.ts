@@ -9,6 +9,13 @@ import { type QuoteAmounts, quoteFromRule } from "./quote.ts";
 
 /** Manual and rule-based data older than this is shown separately, not ranked (Project Plan §4). */
 export const RECHECK_DAYS = 30;
+/**
+ * A reference rate published more than this many days ago is "too old" (owner, 2026-11-13): the
+ * ECB publishes on working days only, and the longest normal gap is Easter (Thursday's rate is the
+ * newest until Tuesday afternoon, 5 days). Older means the collector has stopped. The comparison
+ * is still shown, with a warning (Project Plan §4: every number shows its source and date).
+ */
+export const MID_RATE_MAX_AGE_DAYS = 5;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type ComparisonRow = {
@@ -33,6 +40,8 @@ export type Comparison = {
   readonly amount: Money;
   /** The newest reference rate (used for rule-based providers). */
   readonly mid: MidRateObservation;
+  /** True when `mid` was published more than MID_RATE_MAX_AGE_DAYS days ago (in Zurich). */
+  readonly midTooOld: boolean;
   /** Fresh offers, cheapest (lowest total cost) first. */
   readonly ranked: readonly ComparisonRow[];
   /** Offers whose data is older than RECHECK_DAYS: shown, but not ranked. */
@@ -150,5 +159,14 @@ export function rankOffers(
     a.cost.totalCost.compareTo(b.cost.totalCost) ||
     (a.offer.providerId < b.offer.providerId ? -1 : 1);
 
-  return { amount, mid, ranked: fresh.sort(byCost), stale: stale.sort(byCost), unavailable };
+  // Calendar days from the publication day to today, both in Zurich (the rate's own time zone).
+  const midAgeDays = (Date.parse(zurichDay(now)) - Date.parse(mid.asOf)) / DAY_MS;
+  return {
+    amount,
+    mid,
+    midTooOld: midAgeDays > MID_RATE_MAX_AGE_DAYS,
+    ranked: fresh.sort(byCost),
+    stale: stale.sort(byCost),
+    unavailable,
+  };
 }
