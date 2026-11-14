@@ -58,6 +58,17 @@ describe("catalogs", () => {
     },
   );
 
+  it.each(LOCALE_CODES)("%s writes every caveat with its amount", (code) => {
+    const { caveats } = localeInfo(code).messages;
+    for (const text of [
+      caveats.monthly_allowance("CHF 1'250.00"),
+      caveats.amount_limit("CHF 1'250.00"),
+    ]) {
+      expect(text).toContain("CHF 1'250.00");
+      expect(text).not.toMatch(/undefined|\[object/);
+    }
+  });
+
   it("every language formats numbers and dates the Swiss way (ADR 0005)", () => {
     for (const code of LOCALE_CODES) {
       expect(localeInfo(code).format).toBe(`${code}-CH`);

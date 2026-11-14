@@ -42,12 +42,19 @@ export const fr: Messages = {
     none: "Pas encore de données vérifiées.",
     staleHeading: (days) => `Pas revérifié depuis plus de ${days} jours`,
     unavailableHeading: "Absents de cette comparaison",
+    notIncluded:
+      "Non inclus : les éventuels frais de la banque du bénéficiaire pour un paiement entrant.",
   },
   unavailable: {
     no_reference_rate: "pas de taux de référence pour le jour où le taux a été relevé",
     amount_not_supported:
       "les frais dépassent ce montant, ou il est hors des limites du prestataire",
     implausible_cost: "ses données de prix semblent erronées et sont en cours de vérification",
+  },
+  caveats: {
+    monthly_allowance: (amount) =>
+      `Aucune majoration sur les premiers ${amount} changés par mois ; les changes effectués plus tôt dans le mois en sont déduits.`,
+    amount_limit: (amount) => `Au maximum ${amount} par virement.`,
   },
   errors: {
     unreachable: "Le service est injoignable pour le moment. Veuillez réessayer plus tard.",

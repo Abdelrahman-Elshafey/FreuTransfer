@@ -7,6 +7,7 @@
  * Only what other packages use is exported (knip checks this with `includeEntryExports`).
  */
 export {
+  type Caveat,
   type ComparisonRow,
   compareProviders,
   MID_RATE_MAX_AGE_DAYS,

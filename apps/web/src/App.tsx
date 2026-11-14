@@ -1,9 +1,9 @@
-import type { ComparisonDto, ResultRowDto } from "@freu-transfer/api/contract";
+import type { CaveatDto, ComparisonDto, ResultRowDto } from "@freu-transfer/api/contract";
 import { type FormEvent, useState } from "react";
 import { type CompareError, DIRECTIONS, fetchComparison } from "./api.ts";
 import { useI18n } from "./i18n/context.tsx";
 import type { Messages } from "./i18n/en.ts";
-import { parseAmount } from "./i18n/format.ts";
+import { type Formatter, parseAmount } from "./i18n/format.ts";
 import { LOCALE_CODES, type Locale, localeInfo } from "./i18n/locales.ts";
 import { cheapestIds } from "./results.ts";
 
@@ -37,6 +37,15 @@ function bankName(t: Messages, source: string): string {
   return Object.hasOwn(t.rateSources, source)
     ? t.rateSources[source as keyof Messages["rateSources"]]
     : source.toUpperCase();
+}
+
+function caveatText(t: Messages, f: Formatter, caveat: CaveatDto): string {
+  switch (caveat.code) {
+    case "monthly_allowance":
+      return t.caveats.monthly_allowance(f.money(caveat.allowance));
+    case "amount_limit":
+      return t.caveats.amount_limit(f.money(caveat.max));
+  }
 }
 
 const card = "rounded-3xl bg-card p-5 sm:p-6";
@@ -87,6 +96,13 @@ function Source({ row }: { row: Row }) {
             f.day(row.measuredAgainst.asOf),
           )}
         </div>
+      )}
+      {row.caveats.length > 0 && (
+        <ul className="mt-2 space-y-1 text-ink">
+          {row.caveats.map((c) => (
+            <li key={c.code}>{caveatText(t, f, c)}</li>
+          ))}
+        </ul>
       )}
     </div>
   );
@@ -228,6 +244,7 @@ function Results({ data }: { data: ComparisonDto }) {
       ) : (
         <p className={card}>{t.results.none}</p>
       )}
+      <p className={`${note} mt-4`}>{t.results.notIncluded}</p>
       {data.stale.length > 0 && (
         <>
           <h2 className={heading}>{t.results.staleHeading(data.recheckDays)}</h2>

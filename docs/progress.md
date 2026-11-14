@@ -2,7 +2,7 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0–5 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 in progress:** 6a design foundation (ADR 0011) and 6b breakdown built. **Next: 6c**, caveat codes.
+**Now:** stages 0–5 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 in progress:** 6a design foundation (ADR 0011), 6b breakdown and 6c caveats built. **Next: 6d**, my bank vs best. Open for the owner: Revolut's weekend markup (confirm in its Swiss fee document).
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
@@ -12,7 +12,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 3 | v0.1 end-to-end | ✅ Done (2026-11-12): 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ✅ (3e-1 images · 3e-2 CI · 3e-3 first deploy · 3e-4 backups) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
 | 4 | Mid-market + pipeline | ✅ Done (2026-11-13): 4a database ✅ · 4b collector ✅ · 4c hourly `collect` service ✅ · 4e old-rate warning ✅ · 4d one week ⏳ (verify 20 Nov) | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored (8 working days 3–12 Nov stored; 16–20 Nov to be collected live) |
 | 5 | Provider data | ✅ Done (2026-11-14): 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider ✅ · 5c EUR→CHF data ✅ · 5d manual rates at today's reference rate ✅ · 5e corridor choice ✅ | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
-| 6 | Frontend | 🟡 **In progress**: 6a design foundation ✅ · 6b breakdown ✅ · 6c caveat codes · 6d my bank vs best · 6e charts | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
+| 6 | Frontend | 🟡 **In progress**: 6a design foundation ✅ · 6b breakdown ✅ · 6c caveat codes ✅ · 6d my bank vs best · 6e charts | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
 | 7 | Polish | ⬜ Not started | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes |
 | 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts | — |
 
@@ -321,3 +321,12 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   test. Headless Chrome: phone and desktop, light and dark, all four languages, no horizontal
   scrolling. Noticed: Italian writes 4-digit amounts without a thousands separator (€ 1079.20,
   but € 10'079.20): ICU's rule for Italian, unchanged since 3f.
+- **2026-11-14:** **6c: caveat codes** (owner's choice: what follows from stored data now, the weekend
+  markup later as data). Core gives every row `caveats`: `monthly_allowance` with its amount when
+  the price has an allowance tier (Revolut, CHF 1'250 a month, priced as unused) and `amount_limit`
+  with the maximum (Western Union, CHF 4'700); the API sends codes and amounts as strings, the page
+  writes them in four languages. A page-wide note: fees of the recipient's bank are not included.
+  Tests per rule (allowance, limit, open-ended fee tiers are no limit, stale rows keep theirs, API
+  shape, every language includes the amount). Local API and headless Chrome, all four languages,
+  phone and desktop. Not verifiable today: Revolut's weekend markup (its Swiss fee PDF stores text
+  as glyph codes, its help centre answers 403 to automated reading); waits for the owner.

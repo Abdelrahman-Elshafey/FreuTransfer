@@ -1,4 +1,5 @@
 import {
+  type Caveat,
   type ComparisonRow,
   type CurrencyCode,
   compareProviders,
@@ -14,7 +15,13 @@ import {
 } from "@freu-transfer/core";
 import { type RequestHandler, Router } from "express";
 import { z } from "zod";
-import { type ComparisonDto, isAmount, PROBLEM_TYPES, type ResultRowDto } from "./contract.ts";
+import {
+  type CaveatDto,
+  type ComparisonDto,
+  isAmount,
+  PROBLEM_TYPES,
+  type ResultRowDto,
+} from "./contract.ts";
 import { sendProblem } from "./problem.ts";
 
 const currency = z.string().transform((s, ctx): CurrencyCode => {
@@ -98,6 +105,15 @@ function toMidDto(mid: MidRateObservation): ResultRowDto["midRate"] {
   return { rate: mid.rate.value.toString(), source: mid.source, asOf: mid.asOf };
 }
 
+function toCaveatDto(caveat: Caveat): CaveatDto {
+  switch (caveat.code) {
+    case "monthly_allowance":
+      return { code: caveat.code, allowance: caveat.allowance.toJSON() };
+    case "amount_limit":
+      return { code: caveat.code, max: caveat.max.toJSON() };
+  }
+}
+
 /** Money and percentages as strings, never JSON numbers. */
 function toDto(row: ComparisonRow): ResultRowDto {
   const { offer, quote, cost } = row;
@@ -117,6 +133,7 @@ function toDto(row: ComparisonRow): ResultRowDto {
     midRate: toMidDto(row.mid),
     rateCapturedAt: pricing.kind === "rate" ? pricing.capturedAt.toISOString() : null,
     measuredAgainst: row.measuredAgainst === null ? null : toMidDto(row.measuredAgainst),
+    caveats: row.caveats.map(toCaveatDto),
     checkedAt: offer.checkedAt.toISOString(),
     sourceUrl: offer.sourceUrl,
   };

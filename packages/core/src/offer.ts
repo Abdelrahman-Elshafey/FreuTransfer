@@ -13,7 +13,8 @@ export type SourceKind = "rule_based" | "manual";
  * How the provider's exchange rate is known:
  * - `markup`: a published markup over mid-market (rule-based); the rate follows the mid exactly.
  *   With `tier`, `markup` applies to the converted amount up to `tier.upTo` and `tier.markupAbove`
- *   to the part above it (e.g. Revolut: 0% within the monthly allowance, 1% beyond).
+ *   to the part above it: a monthly allowance (Revolut: 0% up to CHF 1'250 a month, 1% beyond),
+ *   priced as if none of it was used yet (the "monthly_allowance" caveat says so).
  * - `rate`: a rate read by hand at a known time (manual); its distance from that day's mid is
  *   applied to today's mid (ADR 0010).
  */
