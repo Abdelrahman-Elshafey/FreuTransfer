@@ -1,6 +1,8 @@
 import type { CaveatDto, ComparisonDto, ResultRowDto } from "@freu-transfer/api/contract";
 import { type FormEvent, useState } from "react";
-import { type CompareError, DIRECTIONS, fetchComparison } from "./api.ts";
+import { type CompareError, DIRECTIONS, fetchComparison, fetchComparisons } from "./api.ts";
+import { CostChart } from "./CostChart.tsx";
+import { CHART_AMOUNTS } from "./chart-data.ts";
 import { useI18n } from "./i18n/context.tsx";
 import type { Messages } from "./i18n/en.ts";
 import { type Formatter, parseAmount } from "./i18n/format.ts";
@@ -354,20 +356,27 @@ export function App() {
   const [data, setData] = useState<ComparisonDto | null>(null);
   const [error, setError] = useState<PageError | null>(null);
   const [loading, setLoading] = useState(false);
+  /** The "cost by amount" chart: comparisons at CHART_AMOUNTS, or "failed" (shown as a note). */
+  const [chart, setChart] = useState<readonly ComparisonDto[] | "failed" | null>(null);
 
   async function compare(event: FormEvent) {
     event.preventDefault();
     const parsed = parseAmount(amount);
     if (parsed === null) {
       setData(null);
+      setChart(null);
       setError({ kind: "invalidAmount" });
       return;
     }
     setLoading(true);
     try {
-      const outcome = await fetchComparison(direction, parsed);
+      const [outcome, byAmount] = await Promise.all([
+        fetchComparison(direction, parsed),
+        fetchComparisons(direction, CHART_AMOUNTS),
+      ]);
       setData(outcome.ok ? outcome.data : null);
       setError(outcome.ok ? null : outcome.error);
+      setChart(byAmount.ok ? byAmount.data : "failed");
     } finally {
       setLoading(false); // also after an unexpected error, so the button never stays disabled
     }
@@ -398,7 +407,9 @@ export function App() {
               disabled={loading} // an answer still on its way is for the direction it asked
               onChange={(e) => {
                 setDirectionIndex(Number(e.target.value));
-                setData(null); // results of the other direction must not stay under the new choice
+                // results of the other direction must not stay under the new choice
+                setData(null);
+                setChart(null);
               }}
               className={`${field} text-ink`}
             >
@@ -439,6 +450,12 @@ export function App() {
           </p>
         )}
         {data && <Results data={data} />}
+        {data &&
+          (chart === "failed" ? (
+            <p className={`${note} mt-10`}>{t.chart.unavailable}</p>
+          ) : (
+            chart && <CostChart comparisons={chart} currency={direction.from} />
+          ))}
       </main>
 
       <footer className={`${note} mt-16`}>{t.disclaimer}</footer>

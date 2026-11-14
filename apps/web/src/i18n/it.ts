@@ -58,6 +58,15 @@ export const it: Messages = {
     difference: (p) =>
       `Con ${p.mine} paga ${p.extraCost} in più che con ${p.best} (arrivano ${p.lessReceived} in meno): ${p.perYear} all’anno se invia questo importo ogni mese.`,
   },
+  chart: {
+    costTitle: "Costo secondo l’importo",
+    costSubtitle: (from, to) =>
+      `Costo totale rispetto all’importo pagato, da ${from} a ${to}. Un’interruzione: non disponibile per quell’importo.`,
+    amount: "Importo",
+    notAvailable: "non disponibile",
+    showTable: "Mostra come tabella",
+    unavailable: "Il grafico «Costo secondo l’importo» non può essere mostrato al momento.",
+  },
   caveats: {
     monthly_allowance: (amount) =>
       `Nessuna maggiorazione sui primi ${amount} cambiati ogni mese; i cambi effettuati prima nel mese ne vengono detratti.`,

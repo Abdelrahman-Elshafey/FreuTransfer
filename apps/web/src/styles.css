@@ -19,6 +19,17 @@
   --warn-bg: #fffbeb;
   --warn-ink: #78350f;
   --warn-line: #b45309;
+  /*
+   * Chart series, one fixed slot per provider (chart-data.ts). The categorical order from the
+   * dataviz reference palette, validated on our cards (2026-11-14): CVD and normal-vision
+   * separation pass in both themes. In light, slots 3-5 are below 3:1 on the card, so every chart
+   * has a legend and a table view (tokens.test.ts).
+   */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -34,6 +45,11 @@
     --warn-bg: #2b2109;
     --warn-ink: #fcd34d;
     --warn-line: #d97706;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
   }
 }
 

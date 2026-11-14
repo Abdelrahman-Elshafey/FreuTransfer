@@ -53,6 +53,27 @@ export async function fetchComparison(
   return failed({ kind: "http", status: res.status });
 }
 
+/**
+ * One comparison per amount (the "cost by amount" chart), asked in parallel. All or nothing: the
+ * first failure is returned, so a chart is never drawn from a partial set.
+ */
+export async function fetchComparisons(
+  direction: Direction,
+  amounts: readonly string[],
+  fetchFn: typeof fetch = fetch,
+): Promise<
+  | { readonly ok: true; readonly data: readonly ComparisonDto[] }
+  | { readonly ok: false; readonly error: CompareError }
+> {
+  const outcomes = await Promise.all(amounts.map((a) => fetchComparison(direction, a, fetchFn)));
+  const data: ComparisonDto[] = [];
+  for (const outcome of outcomes) {
+    if (!outcome.ok) return outcome;
+    data.push(outcome.data);
+  }
+  return { ok: true, data };
+}
+
 const failed = (error: CompareError): CompareOutcome => ({ ok: false, error });
 
 const NOT_JSON = Symbol("not JSON");

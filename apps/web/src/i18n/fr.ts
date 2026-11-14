@@ -58,6 +58,15 @@ export const fr: Messages = {
     difference: (p) =>
       `Avec ${p.mine}, vous payez ${p.extraCost} de plus qu’avec ${p.best} (${p.lessReceived} de moins à l’arrivée) : ${p.perYear} par an si vous envoyez ce montant chaque mois.`,
   },
+  chart: {
+    costTitle: "Coût selon le montant",
+    costSubtitle: (from, to) =>
+      `Coût total par rapport au montant payé, de ${from} à ${to}. Une interruption : non disponible pour ce montant.`,
+    amount: "Montant",
+    notAvailable: "non disponible",
+    showTable: "Afficher sous forme de tableau",
+    unavailable: "Le graphique « Coût selon le montant » ne peut pas être affiché pour le moment.",
+  },
   caveats: {
     monthly_allowance: (amount) =>
       `Aucune majoration sur les premiers ${amount} changés par mois ; les changes effectués plus tôt dans le mois en sont déduits.`,
