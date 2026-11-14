@@ -4,6 +4,7 @@ import type { Messages } from "./en.ts";
 export const it: Messages = {
   title: "FreuTransfer — Confronto dei costi",
   language: "Lingua",
+  headline: "Che cosa arriva davvero?",
   intro:
     "Invia denaro tra la Svizzera e l’area dell’euro? Scopra quanto arriva davvero e quanto è nascosto nel tasso di cambio.",
   form: {

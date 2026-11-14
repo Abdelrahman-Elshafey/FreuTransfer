@@ -6,11 +6,13 @@ import type { Messages } from "./i18n/en.ts";
 import { parseAmount } from "./i18n/format.ts";
 import { LOCALE_CODES, type Locale, localeInfo } from "./i18n/locales.ts";
 
-// v0.1 page: deliberately plain. The real design comes in stage 6 (docs/design-inspiration.md).
+// Design: docs/adr/0011 and docs/design-inspiration.md §7 (tokens in styles.css).
 // Every visible word comes from the catalogs in ./i18n (docs/adr/0005).
 
 /** Errors are kept as codes, so switching the language also translates a message already shown. */
 type PageError = CompareError | { readonly kind: "invalidAmount" };
+
+type Row = ResultRowDto & { readonly rank?: number };
 
 function errorText(t: Messages, error: PageError, example: string): string {
   switch (error.kind) {
@@ -36,74 +38,143 @@ function bankName(t: Messages, source: string): string {
     : source.toUpperCase();
 }
 
-function ResultsTable({
-  rows,
-  ranked,
-}: {
-  rows: readonly (ResultRowDto & { rank?: number })[];
-  ranked: boolean;
-}) {
+const card = "rounded-3xl bg-card p-5 sm:p-6";
+const note = "text-sm text-muted";
+
+/** Where a row's price comes from and when it was checked: the same in the table and the cards. */
+function Source({ row }: { row: Row }) {
   const { t, f } = useI18n();
   return (
-    <table>
-      <thead>
-        <tr>
-          {ranked && <th>{t.table.rank}</th>}
-          <th>{t.table.provider}</th>
-          <th className="num">{t.table.arrives}</th>
-          <th className="num">{t.table.fee}</th>
-          <th className="num">{t.table.hidden}</th>
-          <th className="num">{t.table.totalCost}</th>
-          <th>{t.table.source}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => (
-          <tr key={r.providerId}>
-            {ranked && <td>{r.rank}</td>}
-            <td>{r.providerName}</td>
-            <td className="num strong">{f.money(r.received)}</td>
-            <td className="num">{f.money(r.visibleFee)}</td>
-            <td className="num">{f.money(r.fxMarkup)}</td>
-            <td className="num">
-              {f.money(r.totalCost)} ({f.percent(r.totalCostPercent)})
-            </td>
-            <td>
-              <a href={r.sourceUrl} target="_blank" rel="noreferrer">
-                {r.sourceKind === "rule_based"
-                  ? t.source.ruleBased
-                  : r.approximate
-                    ? t.source.manualApproximate
-                    : t.source.manual}
-              </a>
-              <div className="note">{t.source.checked(f.instant(r.checkedAt))}</div>
-              {r.measuredAgainst && (
-                <div className="note">
-                  {t.source.measuredAgainst(
-                    f.decimal(r.measuredAgainst.rate),
-                    bankName(t, r.measuredAgainst.source),
-                    f.day(r.measuredAgainst.asOf),
-                  )}
-                </div>
-              )}
-            </td>
+    <div className={note}>
+      <a href={row.sourceUrl} target="_blank" rel="noreferrer" className="text-ink">
+        {row.sourceKind === "rule_based"
+          ? t.source.ruleBased
+          : row.approximate
+            ? t.source.manualApproximate
+            : t.source.manual}
+      </a>
+      <div>{t.source.checked(f.instant(row.checkedAt))}</div>
+      {row.measuredAgainst && (
+        <div>
+          {t.source.measuredAgainst(
+            f.decimal(row.measuredAgainst.rate),
+            bankName(t, row.measuredAgainst.source),
+            f.day(row.measuredAgainst.asOf),
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** From 768px up: one table, the amounts in aligned columns. */
+function ResultsTable({ rows, ranked }: { rows: readonly Row[]; ranked: boolean }) {
+  const { t, f } = useI18n();
+  const th = "px-4 py-3 text-left text-sm font-medium text-muted";
+  const td = "border-t border-line px-4 py-4 align-top";
+  const num = "text-right tabular-nums whitespace-nowrap";
+  return (
+    // The wrapper rounds the corners: a table with collapsed borders can't.
+    <div className="hidden overflow-hidden rounded-3xl bg-card md:block">
+      <table className="w-full">
+        <thead>
+          <tr>
+            {ranked && <th className={th}>{t.table.rank}</th>}
+            <th className={th}>{t.table.provider}</th>
+            <th className={`${th} text-right`}>{t.table.arrives}</th>
+            <th className={`${th} text-right`}>{t.table.fee}</th>
+            <th className={`${th} text-right`}>{t.table.hidden}</th>
+            <th className={`${th} text-right`}>{t.table.totalCost}</th>
+            <th className={th}>{t.table.source}</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.providerId}>
+              {ranked && <td className={`${td} tabular-nums`}>{r.rank}</td>}
+              <td className={`${td} font-medium`}>{r.providerName}</td>
+              <td className={`${td} ${num} text-lg font-semibold`}>{f.money(r.received)}</td>
+              <td className={`${td} ${num}`}>{f.money(r.visibleFee)}</td>
+              <td className={`${td} ${num}`}>{f.money(r.fxMarkup)}</td>
+              <td className={`${td} ${num}`}>
+                {f.money(r.totalCost)}
+                <div className={note}>{f.percent(r.totalCostPercent)}</div>
+              </td>
+              <td className={td}>
+                <Source row={r} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** Below 768px: one card per provider, what arrives as the biggest number. */
+function ResultCards({ rows, ranked }: { rows: readonly Row[]; ranked: boolean }) {
+  const { t, f } = useI18n();
+  return (
+    <ol className="space-y-3 md:hidden">
+      {rows.map((r) => (
+        <li key={r.providerId} className={card}>
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="font-medium">
+              {ranked && <span className="mr-2 text-muted tabular-nums">{r.rank}</span>}
+              {r.providerName}
+            </span>
+            <span className="text-sm text-muted tabular-nums">{f.percent(r.totalCostPercent)}</span>
+          </div>
+          <div className="mt-1 text-sm text-muted">{t.table.arrives}</div>
+          <div className="text-3xl font-semibold tracking-tight tabular-nums">
+            {f.money(r.received)}
+          </div>
+          <dl className="mt-4 grid grid-cols-3 gap-2 text-sm">
+            {(
+              [
+                [t.table.fee, r.visibleFee],
+                [t.table.hidden, r.fxMarkup],
+                [t.table.totalCost, r.totalCost],
+              ] as const
+            ).map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-muted">{label}</dt>
+                <dd className="tabular-nums">{f.money(value)}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="mt-4 border-t border-line pt-3">
+            <Source row={r} />
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function ResultList(props: { rows: readonly Row[]; ranked: boolean }) {
+  return (
+    <>
+      <ResultsTable {...props} />
+      <ResultCards {...props} />
+    </>
   );
 }
 
 function Results({ data }: { data: ComparisonDto }) {
   const { t, f } = useI18n();
+  const heading = "mt-10 mb-3 text-xl font-medium tracking-tight";
   return (
-    <>
+    <section className="mt-8">
       {data.midRateTooOld && (
-        <p className="warning" role="alert">
+        <p
+          className="mb-4 rounded-lg border-l-4 border-warn-line bg-warn-bg px-4 py-3 text-warn-ink"
+          role="alert"
+        >
           {t.results.midRateTooOld({ day: f.day(data.midRate.asOf), days: data.midRateMaxAgeDays })}
         </p>
       )}
-      <p className="note">
+      <p className={`${note} mb-4`}>
         {t.results.midRate({
           from: data.from,
           to: data.to,
@@ -113,38 +184,45 @@ function Results({ data }: { data: ComparisonDto }) {
         })}
       </p>
       {data.results.length > 0 ? (
-        <ResultsTable rows={data.results} ranked />
+        <ResultList rows={data.results} ranked />
       ) : (
-        <p>{t.results.none}</p>
+        <p className={card}>{t.results.none}</p>
       )}
       {data.stale.length > 0 && (
         <>
-          <h2>{t.results.staleHeading(data.recheckDays)}</h2>
-          <ResultsTable rows={data.stale} ranked={false} />
+          <h2 className={heading}>{t.results.staleHeading(data.recheckDays)}</h2>
+          <ResultList rows={data.stale} ranked={false} />
         </>
       )}
       {data.unavailable.length > 0 && (
         <>
-          <h2>{t.results.unavailableHeading}</h2>
-          <ul>
+          <h2 className={heading}>{t.results.unavailableHeading}</h2>
+          <ul className={`${card} space-y-1`}>
             {data.unavailable.map((u) => (
               <li key={u.providerId}>
-                {u.providerName}: {t.unavailable[u.reason]}
+                <span className="font-medium">{u.providerName}</span>
+                <span className="text-muted">: {t.unavailable[u.reason]}</span>
               </li>
             ))}
           </ul>
         </>
       )}
-    </>
+    </section>
   );
 }
+
+const field = "rounded-lg border border-line bg-card px-3 py-2.5";
 
 function LanguageSwitcher() {
   const { locale, setLocale, t } = useI18n();
   return (
-    <label className="language">
-      {t.language}{" "}
-      <select value={locale} onChange={(e) => setLocale(e.target.value as Locale)}>
+    <label className="flex items-center gap-2 text-sm text-muted">
+      {t.language}
+      <select
+        value={locale}
+        onChange={(e) => setLocale(e.target.value as Locale)}
+        className={`${field} py-1.5 text-ink`}
+      >
         {LOCALE_CODES.map((code) => (
           // The language's own name, so readers find theirs whatever is selected now.
           <option key={code} value={code} lang={code}>
@@ -183,49 +261,75 @@ export function App() {
     }
   }
 
+  const label = "flex flex-col gap-1.5 text-sm text-muted";
   return (
-    <main>
-      <LanguageSwitcher />
-      <h1>FreuTransfer</h1>
-      <p>{t.intro}</p>
+    <div className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
+      <header className="flex items-center justify-between gap-4 py-5">
+        <span className="text-lg font-semibold tracking-tight">FreuTransfer</span>
+        <LanguageSwitcher />
+      </header>
 
-      <form onSubmit={compare}>
-        <label>
-          {t.form.direction}{" "}
-          <select
-            value={directionIndex}
-            disabled={loading} // an answer still on its way is for the direction it asked
-            onChange={(e) => {
-              setDirectionIndex(Number(e.target.value));
-              setData(null); // results of the other direction must not stay under the new choice
-            }}
+      <main>
+        <h1 className="mt-6 max-w-3xl text-4xl leading-tight font-normal tracking-tight sm:mt-12 sm:text-6xl">
+          {t.headline}
+        </h1>
+        <p className="mt-4 max-w-xl text-lg text-muted">{t.intro}</p>
+
+        <form
+          onSubmit={compare}
+          className={`${card} mt-8 flex flex-col gap-4 sm:flex-row sm:items-end`}
+        >
+          <label className={label}>
+            {t.form.direction}
+            <select
+              value={directionIndex}
+              disabled={loading} // an answer still on its way is for the direction it asked
+              onChange={(e) => {
+                setDirectionIndex(Number(e.target.value));
+                setData(null); // results of the other direction must not stay under the new choice
+              }}
+              className={`${field} text-ink`}
+            >
+              {DIRECTIONS.map((d, i) => (
+                <option key={`${d.from}-${d.to}`} value={i}>
+                  {d.from} → {d.to}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={`${label} sm:flex-1`}>
+            {t.form.iPay}
+            <span
+              className={`${field} flex items-center gap-2 text-ink focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ink`}
+            >
+              <input
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                inputMode="decimal"
+                aria-label={t.form.amountLabel(direction.from)}
+                className="w-full min-w-0 bg-transparent text-lg tabular-nums outline-none"
+              />
+              <span className="text-muted">{direction.from}</span>
+            </span>
+          </label>
+          <button
+            type="submit"
+            disabled={loading}
+            className="h-12 rounded-full bg-ink px-8 font-medium text-page transition active:scale-[0.98] disabled:opacity-60"
           >
-            {DIRECTIONS.map((d, i) => (
-              <option key={`${d.from}-${d.to}`} value={i}>
-                {d.from} → {d.to}
-              </option>
-            ))}
-          </select>
-        </label>{" "}
-        <label>
-          {t.form.iPay}{" "}
-          <input
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            inputMode="decimal"
-            aria-label={t.form.amountLabel(direction.from)}
-          />{" "}
-          {direction.from}
-        </label>{" "}
-        <button type="submit" disabled={loading}>
-          {loading ? t.form.comparing : t.form.compare}
-        </button>
-      </form>
+            {loading ? t.form.comparing : t.form.compare}
+          </button>
+        </form>
 
-      {error && <p className="error">{errorText(t, error, f.decimal("1000.50"))}</p>}
-      {data && <Results data={data} />}
+        {error && (
+          <p className="mt-4 text-danger" role="alert">
+            {errorText(t, error, f.decimal("1000.50"))}
+          </p>
+        )}
+        {data && <Results data={data} />}
+      </main>
 
-      <p className="note">{t.disclaimer}</p>
-    </main>
+      <footer className={`${note} mt-16`}>{t.disclaimer}</footer>
+    </div>
   );
 }
