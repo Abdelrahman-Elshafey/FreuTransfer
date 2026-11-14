@@ -2,6 +2,7 @@ import {
   Decimal,
   feeRule,
   type MidRateObservation,
+  Money,
   type ProviderOffer,
   Rate,
 } from "@freu-transfer/core";
@@ -53,6 +54,44 @@ describe("GET /health", () => {
 });
 
 describe("GET /v1/compare", () => {
+  it("sends caveats as codes with their amounts as strings, never sentences", async () => {
+    // Revolut-style allowance (0% up to CHF 1'250 a month) and a Western Union-style limit.
+    const revolut: ProviderOffer = {
+      ...yuh,
+      providerId: "revolut",
+      providerName: "Revolut",
+      pricing: {
+        kind: "markup",
+        markup: new Decimal("0"),
+        tier: { upTo: Money.of("1250", "CHF"), markupAbove: new Decimal("0.01") },
+      },
+    };
+    const limited: ProviderOffer = {
+      ...yuh,
+      providerId: "wu",
+      providerName: "WU",
+      fees: {
+        kind: "tiered",
+        tiers: [
+          { upTo: Money.of("4700", "CHF"), model: { kind: "deducted", rule: feeRule("CHF", {}) } },
+        ],
+      },
+    };
+    const app = createApp(deps({ offers: { latestOffers: async () => [yuh, revolut, limited] } }));
+    const res = await request(app).get("/v1/compare?from=CHF&to=EUR&amount=1000");
+    const caveats = Object.fromEntries(
+      res.body.results.map((r: { providerId: string; caveats: unknown }) => [
+        r.providerId,
+        r.caveats,
+      ]),
+    );
+    expect(caveats).toEqual({
+      yuh: [],
+      revolut: [{ code: "monthly_allowance", allowance: { amount: "1250.00", currency: "CHF" } }],
+      wu: [{ code: "amount_limit", max: { amount: "4700.00", currency: "CHF" } }],
+    });
+  });
+
   it("says whether the reference rate is too old, with the limit, and still compares", async () => {
     // The rate is from 2026-11-05 (Thursday). Wednesday 11 Nov 12:00 Zurich (11:00 UTC):
     // 11 − 5 = 6 days > 5 → too old. Tuesday 10 Nov: 10 − 5 = 5 days → not too old.

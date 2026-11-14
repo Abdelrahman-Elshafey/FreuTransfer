@@ -42,6 +42,17 @@ type MidRateDto = {
   readonly asOf: string;
 };
 
+/**
+ * What the reader should know that a row's numbers can't show (core's `Caveat`): a code with its
+ * amounts; the page writes the sentence.
+ * - `monthly_allowance`: no markup on the first `allowance` exchanged per month; earlier exchanges
+ *   that month use it up (the price assumes none was used).
+ * - `amount_limit`: the provider accepts at most `max` per transfer.
+ */
+export type CaveatDto =
+  | { readonly code: "monthly_allowance"; readonly allowance: MoneyDto }
+  | { readonly code: "amount_limit"; readonly max: MoneyDto };
+
 export type ResultRowDto = {
   readonly providerId: string;
   readonly providerName: string;
@@ -64,6 +75,7 @@ export type ResultRowDto = {
    * from it is applied to `midRate`, so `received` is an estimate at today's rate (ADR 0010).
    */
   readonly measuredAgainst: MidRateDto | null;
+  readonly caveats: readonly CaveatDto[];
   /** ISO 8601, UTC. */
   readonly checkedAt: string;
   readonly sourceUrl: string;

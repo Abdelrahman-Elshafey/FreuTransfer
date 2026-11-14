@@ -15,8 +15,11 @@ provider prices rule-based or manual, no Wise API data). The values themselves l
 | PostFinance | bank | manual | Rate sheet "electronic payments" / currency converter (rate read by the owner) | ✅ verified 2026-11-06 (golden test 2) |
 | Western Union | money transfer operator | manual | Its own calculator, westernunion.com/ch (bank transfer in, bank account out): fee 0.00 CHF, rate 1.054014 (displayed rounded as 1.0540; derived from 100 → 105.40, 1,000 → 1,054.01 and 4,700 → 4,953.87 EUR), online limit 4,700 CHF; same rate to Italy and Spain | ✅ read by the owner 2026-11-13 09:25 (added by ADR 0008); in the data since 5c |
 
-**Not modelled yet** (stage 6 shows them to the reader as caveats): weekend markups (Revolut 1%), Revolut's allowance being per month (we assume it is unused), intermediary bank fees
-for non-SEPA payments.
+**Not modelled in the prices:** Revolut's allowance being per month (priced as unused; shown as
+a caveat since 6c); a provider's maximum per transfer (shown as a caveat since 6c); fees the
+recipient's bank may charge (a page-wide "not included" note since 6c); **weekend markups (Revolut
+1%): open**, waiting for the owner to confirm the wording and hours in Revolut's Swiss fee document
+(owner, 2026-11-14), then added as data.
 
 ## EUR→CHF (stage 5, researched 2026-11-13)
 

@@ -1,4 +1,4 @@
-import type { ComparisonDto } from "@freu-transfer/api/contract";
+import type { CaveatDto, ComparisonDto } from "@freu-transfer/api/contract";
 
 type UnavailableReason = ComparisonDto["unavailable"][number]["reason"];
 
@@ -50,6 +50,7 @@ export const en = {
     none: "No verified provider data yet.",
     staleHeading: (days: number) => `Not re-checked for over ${days} days`,
     unavailableHeading: "Not in this comparison",
+    notIncluded: "Not included: any fee the recipient's bank charges for an incoming payment.",
   },
   unavailable: {
     no_reference_rate: "no reference rate for the day its rate was read",
@@ -57,6 +58,12 @@ export const en = {
       "the fees are higher than this amount, or it is outside the provider's limits",
     implausible_cost: "its price data looks wrong and is being checked",
   } satisfies Record<UnavailableReason, string>,
+  /** The API's caveat codes (`CaveatDto`); `amount` arrives formatted, e.g. "CHF 1'250.00". */
+  caveats: {
+    monthly_allowance: (amount: string) =>
+      `No markup on the first ${amount} you exchange each month; exchanges earlier this month use it up.`,
+    amount_limit: (amount: string) => `At most ${amount} per transfer.`,
+  } satisfies Record<CaveatDto["code"], (amount: string) => string>,
   errors: {
     unreachable: "The service can't be reached right now. Please try again later.",
     notJson: (status: number) =>

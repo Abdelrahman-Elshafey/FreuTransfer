@@ -42,12 +42,19 @@ export const it: Messages = {
     none: "Ancora nessun dato verificato.",
     staleHeading: (days) => `Non ricontrollati da oltre ${days} giorni`,
     unavailableHeading: "Non in questo confronto",
+    notIncluded:
+      "Non inclusi: eventuali costi della banca del beneficiario per un pagamento in entrata.",
   },
   unavailable: {
     no_reference_rate: "nessun tasso di riferimento per il giorno in cui è stato letto il tasso",
     amount_not_supported:
       "le commissioni superano questo importo, oppure è fuori dai limiti del fornitore",
     implausible_cost: "i suoi dati di prezzo sembrano errati e sono in verifica",
+  },
+  caveats: {
+    monthly_allowance: (amount) =>
+      `Nessuna maggiorazione sui primi ${amount} cambiati ogni mese; i cambi effettuati prima nel mese ne vengono detratti.`,
+    amount_limit: (amount) => `Al massimo ${amount} per bonifico.`,
   },
   errors: {
     unreachable: "Il servizio non è raggiungibile al momento. Riprovi più tardi.",

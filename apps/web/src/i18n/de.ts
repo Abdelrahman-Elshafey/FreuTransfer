@@ -42,12 +42,19 @@ export const de: Messages = {
     none: "Noch keine geprüften Anbieterdaten.",
     staleHeading: (days) => `Seit über ${days} Tagen nicht mehr überprüft`,
     unavailableHeading: "Nicht in diesem Vergleich",
+    notIncluded:
+      "Nicht enthalten: allfällige Gebühren der Empfängerbank für eine eingehende Zahlung.",
   },
   unavailable: {
     no_reference_rate: "kein Referenzkurs für den Tag, an dem der Kurs abgelesen wurde",
     amount_not_supported:
       "die Gebühren sind höher als dieser Betrag, oder er liegt ausserhalb der Limiten des Anbieters",
     implausible_cost: "seine Preisdaten sehen fehlerhaft aus und werden überprüft",
+  },
+  caveats: {
+    monthly_allowance: (amount) =>
+      `Kein Aufschlag auf die ersten ${amount}, die Sie pro Monat wechseln; frühere Wechsel in diesem Monat zählen mit.`,
+    amount_limit: (amount) => `Höchstens ${amount} pro Überweisung.`,
   },
   errors: {
     unreachable: "Der Dienst ist im Moment nicht erreichbar. Bitte versuchen Sie es später erneut.",

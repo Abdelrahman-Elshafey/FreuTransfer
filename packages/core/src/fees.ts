@@ -108,6 +108,11 @@ function clamp(fee: Money, rule: FeeRule): Money {
   return result;
 }
 
+/** The most a provider accepts per transfer: the last tier's limit, or null when there is none. */
+export function maxAmount(model: FeeModel): Money | null {
+  return model.kind === "tiered" ? (model.tiers.at(-1)?.upTo ?? null) : null;
+}
+
 function pickTier(totalPaid: Money, tiers: readonly FeeTier[]): SimpleFeeModel {
   for (const tier of tiers) {
     if (tier.upTo === null || totalPaid.compareTo(tier.upTo) <= 0) return tier.model;

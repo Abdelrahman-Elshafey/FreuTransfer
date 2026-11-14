@@ -402,3 +402,73 @@ describe("compareProviders", () => {
     ).rejects.toThrow(NoMidRateError);
   });
 });
+
+// Stage 6c (owner, 2026-11-14): caveats that follow from an offer's own data, as codes with values.
+describe("caveats", () => {
+  const rowFor = (o: ProviderOffer, amount = "1000") =>
+    rankOffers([o], mid, Money.of(amount, "CHF"), now).ranked[0];
+
+  it("rule 1: an allowance tier is a monthly allowance, with its amount", () => {
+    const revolut = offer("revolut", {
+      kind: "markup",
+      markup: new Decimal("0"),
+      tier: { upTo: Money.of("1250", "CHF"), markupAbove: new Decimal("0.01") },
+    });
+    expect(rowFor(revolut)?.caveats).toEqual([
+      { code: "monthly_allowance", allowance: Money.of("1250", "CHF") },
+    ]);
+  });
+
+  it("rule 2: a maximum amount is a limit per transfer, with its amount", () => {
+    // Western Union-style: no fee up to 4,700 CHF, nothing above (a single fee tier).
+    const limited: ProviderOffer = {
+      ...offer("wu", markup("0.02")),
+      fees: {
+        kind: "tiered",
+        tiers: [
+          {
+            upTo: Money.of("4700", "CHF"),
+            model: { kind: "deducted", rule: feeRule("CHF", {}) },
+          },
+        ],
+      },
+    };
+    expect(rowFor(limited)?.caveats).toEqual([
+      { code: "amount_limit", max: Money.of("4700", "CHF") },
+    ]);
+    // Above the limit it stays "not available", not a ranked row with a caveat.
+    const above = rankOffers([limited], mid, Money.of("4700.01", "CHF"), now);
+    expect(above.unavailable).toEqual([{ offer: limited, reason: "amount_not_supported" }]);
+  });
+
+  it("rule 2: fee tiers whose last one has no limit are not a limit", () => {
+    const open: ProviderOffer = {
+      ...offer("bank", markup("0.01")),
+      fees: {
+        kind: "tiered",
+        tiers: [
+          { upTo: Money.of("1000", "CHF"), model: { kind: "deducted", rule: feeRule("CHF", {}) } },
+          { upTo: null, model: { kind: "deducted", rule: feeRule("CHF", { fixed: "5" }) } },
+        ],
+      },
+    };
+    expect(rowFor(open, "2000")?.caveats).toEqual([]);
+  });
+
+  it("an offer without tier or limit has no caveats; stale rows keep theirs", () => {
+    expect(rowFor(offer("plain", markup("0.01")))?.caveats).toEqual([]);
+    const old = new Date("2026-09-01T00:00:00Z");
+    const staleTier = offer(
+      "old",
+      {
+        kind: "markup",
+        markup: new Decimal("0"),
+        tier: { upTo: Money.of("1250", "CHF"), markupAbove: new Decimal("0.01") },
+      },
+      "0",
+      old,
+    );
+    const [row] = rankOffers([staleTier], mid, Money.of("1000", "CHF"), now).stale;
+    expect(row?.caveats.map((c) => c.code)).toEqual(["monthly_allowance"]);
+  });
+});

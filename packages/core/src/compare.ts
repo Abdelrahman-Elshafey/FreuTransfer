@@ -2,6 +2,7 @@ import { type CostBreakdown, computeCost } from "./cost.ts";
 import type { CurrencyCode } from "./currency.ts";
 import { Decimal } from "./decimal.ts";
 import { AmountNotSupportedError } from "./errors.ts";
+import { maxAmount } from "./fees.ts";
 import type { Money } from "./money.ts";
 import type { MidRateObservation, ProviderOffer } from "./offer.ts";
 import type { MidRateRepository, OfferRepository } from "./ports.ts";
@@ -38,7 +39,31 @@ export type ComparisonRow = {
   readonly measuredAgainst: MidRateObservation | null;
   /** True for manual rates: an estimate from a rate read on another day or at another time. */
   readonly approximate: boolean;
+  /** What the reader should know that the numbers can't show (caveatsFor). */
+  readonly caveats: readonly Caveat[];
 };
+
+/**
+ * Something about a row that its numbers can't show (Project Plan §4). A code with its values, not
+ * a sentence: the page writes it in the reader's language (docs/adr/0005).
+ * - `monthly_allowance`: the markup-free part is a monthly allowance; exchanges earlier in the
+ *   month use it up, and the price shown assumes none of it was used.
+ * - `amount_limit`: the provider accepts at most `max` per transfer.
+ */
+export type Caveat =
+  | { readonly code: "monthly_allowance"; readonly allowance: Money }
+  | { readonly code: "amount_limit"; readonly max: Money };
+
+/** The caveats that follow from an offer's own data. */
+function caveatsFor(offer: ProviderOffer): Caveat[] {
+  const caveats: Caveat[] = [];
+  if (offer.pricing.kind === "markup" && offer.pricing.tier) {
+    caveats.push({ code: "monthly_allowance", allowance: offer.pricing.tier.upTo });
+  }
+  const max = maxAmount(offer.fees);
+  if (max) caveats.push({ code: "amount_limit", max });
+  return caveats;
+}
 
 /**
  * Why an offer can't be compared for this amount. A code, not a sentence: the page shows it in
@@ -184,6 +209,7 @@ export function rankOffers(
       mid,
       measuredAgainst,
       approximate: pricing.kind === "rate",
+      caveats: caveatsFor(offer),
     };
     const ageDays = (now.getTime() - offer.checkedAt.getTime()) / DAY_MS;
     (ageDays > RECHECK_DAYS ? stale : fresh).push(row);
