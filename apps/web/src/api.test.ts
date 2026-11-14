@@ -1,6 +1,6 @@
 import { PROBLEM_TYPES } from "@freu-transfer/api/contract";
 import { describe, expect, it } from "vitest";
-import { DIRECTIONS, fetchComparison } from "./api.ts";
+import { DIRECTIONS, fetchComparison, fetchComparisons } from "./api.ts";
 
 const respond = (status: number, body: unknown): typeof fetch =>
   (async () => new Response(JSON.stringify(body), { status })) as typeof fetch;
@@ -87,6 +87,38 @@ describe("fetchComparison", () => {
     expect(await fetchComparison(CHF_EUR, "1", page)).toEqual({
       ok: false,
       error: { kind: "notJson", status: 200 },
+    });
+  });
+});
+
+describe("fetchComparisons", () => {
+  it("asks for every amount in the chosen direction and keeps their order", async () => {
+    const asked: string[] = [];
+    const spy = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      asked.push(url);
+      return new Response(
+        JSON.stringify({ amount: new URL(url, "http://x").searchParams.get("amount") }),
+      );
+    }) as typeof fetch;
+    const outcome = await fetchComparisons(EUR_CHF, ["100", "500"], spy);
+    expect(asked).toEqual([
+      "/v1/compare?from=EUR&to=CHF&amount=100",
+      "/v1/compare?from=EUR&to=CHF&amount=500",
+    ]);
+    expect(
+      outcome.ok && outcome.data.map((d) => (d as unknown as { amount: string }).amount),
+    ).toEqual(["100", "500"]);
+  });
+
+  it("fails as a whole with the first error, never a partial set", async () => {
+    const second = (async (input: RequestInfo | URL) =>
+      String(input).includes("amount=500")
+        ? new Response("oops", { status: 502 })
+        : new Response("{}")) as typeof fetch;
+    expect(await fetchComparisons(CHF_EUR, ["100", "500", "1000"], second)).toEqual({
+      ok: false,
+      error: { kind: "http", status: 502 },
     });
   });
 });

@@ -58,6 +58,15 @@ export const de: Messages = {
     difference: (p) =>
       `Mit ${p.mine} zahlen Sie ${p.extraCost} mehr als mit ${p.best} (es kommen ${p.lessReceived} weniger an): ${p.perYear} pro Jahr, wenn Sie diesen Betrag jeden Monat senden.`,
   },
+  chart: {
+    costTitle: "Kosten nach Betrag",
+    costSubtitle: (from, to) =>
+      `Gesamtkosten im Verhältnis zum bezahlten Betrag, von ${from} bis ${to}. Eine Lücke: für diesen Betrag nicht verfügbar.`,
+    amount: "Betrag",
+    notAvailable: "nicht verfügbar",
+    showTable: "Als Tabelle anzeigen",
+    unavailable: "Die Grafik «Kosten nach Betrag» kann gerade nicht angezeigt werden.",
+  },
   caveats: {
     monthly_allowance: (amount) =>
       `Kein Aufschlag auf die ersten ${amount}, die Sie pro Monat wechseln; frühere Wechsel in diesem Monat zählen mit.`,

@@ -60,6 +60,21 @@ describe("colour tokens", () => {
     });
   }
 
+  // Chart lines are graphics: WCAG 2.2 SC 1.4.11 asks 3:1 against what is next to them (the card).
+  it("dark: every chart series has 3:1 against the card", () => {
+    for (const slot of [1, 2, 3, 4, 5]) {
+      expect(
+        contrast(dark.get(`series-${slot}`) ?? "", dark.get("card") ?? ""),
+      ).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("light: series 1 and 2 have 3:1; 3-5 don't, so charts carry a legend and a table view", () => {
+    const card = light.get("card") ?? "";
+    const ratios = [1, 2, 3, 4, 5].map((slot) => contrast(light.get(`series-${slot}`) ?? "", card));
+    expect(ratios.map((r) => r >= 3)).toEqual([true, true, false, false, false]);
+  });
+
   it("the contrast formula matches WCAG's known values", () => {
     // Black on white is exactly 21:1; #767676 on white is the classic AA threshold, 4.54:1.
     expect(contrast("#000000", "#ffffff")).toBeCloseTo(21, 5);

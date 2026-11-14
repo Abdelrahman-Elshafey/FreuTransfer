@@ -72,6 +72,15 @@ export const en = {
     }) =>
       `With ${p.mine} you pay ${p.extraCost} more than with ${p.best} (${p.lessReceived} less arrives): ${p.perYear} a year if you send this amount every month.`,
   },
+  chart: {
+    costTitle: "Cost by amount",
+    costSubtitle: (from: string, to: string) =>
+      `Total cost as a share of what you pay, from ${from} to ${to}. A gap: not available for that amount.`,
+    amount: "Amount",
+    notAvailable: "not available",
+    showTable: "Show as table",
+    unavailable: "The cost-by-amount chart can't be shown right now.",
+  },
   caveats: {
     monthly_allowance: (amount: string) =>
       `No markup on the first ${amount} you exchange each month; exchanges earlier this month use it up.`,
