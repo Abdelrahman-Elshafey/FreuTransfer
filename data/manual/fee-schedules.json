@@ -69,5 +69,91 @@
     "sourceUrl": "https://www.postfinance.ch/en/support/services/tools-calculator/currency-converter.html",
     "checkedAt": "2026-11-06T17:58:00Z",
     "note": "Owner screenshot of the PostFinance currency converter, 2026-11-06 18:58 ('latest update 06.11.2026', rate for electronic payments): CHF 1 = EUR 1.08038 / EUR 1 = CHF 0.9256. Stored as 1 / 0.9256 = 1.0803802939 (the converter uses exactly this inverse)."
+  },
+  {
+    "providerId": "wise",
+    "corridorId": "CHF-EUR",
+    "status": "verified",
+    "sourceKind": "rule_based",
+    "feeMode": "on_top",
+    "fixedFee": "1.21",
+    "percentFee": "0.0023",
+    "fxMarkup": "0",
+    "sourceUrl": "https://wise.com/gb/send-money/?sourceCurrency=CHF&targetCurrency=EUR&sourceAmount=5000",
+    "checkedAt": "2026-11-13T07:56:00Z",
+    "note": "Re-check, owner screenshots 2026-11-13 08:56 (wise.com/gb) and 09:21–09:22 (Wise pricing page): 100 CHF → fee 1.44 CHF, 5,000 CHF → fee 12.68 CHF. The stored model (1.21 CHF + 0.23% on top) gives both to the cent: unchanged since 2026-11-05."
+  },
+  {
+    "providerId": "wise",
+    "corridorId": "EUR-CHF",
+    "status": "verified",
+    "sourceKind": "rule_based",
+    "feeMode": "on_top",
+    "fixedFee": "1.69",
+    "percentFee": "0.004301",
+    "fxMarkup": "0",
+    "sourceUrl": "https://wise.com/gb/send-money/?sourceCurrency=EUR&targetCurrency=CHF&sourceAmount=1000",
+    "checkedAt": "2026-11-13T07:55:00Z",
+    "note": "Owner screenshots of the Wise calculator, 2026-11-13 08:44–08:55, re-read 09:22 on the pricing page: 100 EUR → fee 2.11, 1,000 → 5.97, 5,000 → 23.10 EUR. Wise shows only \"Our fee\", no split; 1.69 EUR + 0.4301% of the converted amount (on top) gives all three to the cent (0.43% would give 23.09). Converts at the mid-market rate. Delivered to a Swiss account."
+  },
+  {
+    "providerId": "yuh",
+    "corridorId": "EUR-CHF",
+    "status": "verified",
+    "sourceKind": "rule_based",
+    "feeMode": "deducted",
+    "fixedFee": "0",
+    "percentFee": "0",
+    "fxMarkup": "0.0095",
+    "sourceUrl": "https://www.yuh.com/en/pricing/",
+    "checkedAt": "2026-11-06T17:46:00Z",
+    "note": "Same pricing page as CHF→EUR (owner, 2026-11-06 18:46): one currency exchange fee, mid-market rate plus 0.95%, charged whenever a currency is exchanged, with no difference by direction (confirmed by the owner 2026-11-13). Bank transfers in Switzerland and Liechtenstein: free."
+  },
+  {
+    "providerId": "revolut",
+    "corridorId": "EUR-CHF",
+    "status": "verified",
+    "sourceKind": "rule_based",
+    "feeMode": "deducted",
+    "fixedFee": "0",
+    "percentFee": "0",
+    "fxMarkup": "0",
+    "markupTier": {
+      "upTo": "1250",
+      "markupAbove": "0.01",
+      "currency": "CHF"
+    },
+    "sourceUrl": "https://cdn.revolut.com/terms_and_conditions/pdf/personal_fees_standard_for_swiss_clients_of_revolut_bank_uab_59eb6320_2.1.0_1763725496_en.pdf",
+    "checkedAt": "2026-11-10T07:38:00Z",
+    "note": "Same Swiss fee document as CHF→EUR (read 2026-11-10; confirmed for this direction by the owner 2026-11-13): \"Exchange limit of CHF 1'250 per month\" (stated in CHF, whichever direction), 1% fair usage fee above; \"Local payments … in your base currency … to an account in your country\": free. Weekend markup not modelled. Revolut's UK page (owner screenshot 2026-11-05 21:29) shows a EUR 1.20 fee for a EUR→CHF bank transfer: that is the UK offer, not the Swiss terms."
+  },
+  {
+    "providerId": "postfinance",
+    "corridorId": "EUR-CHF",
+    "status": "verified",
+    "sourceKind": "manual",
+    "feeMode": "deducted",
+    "fixedFee": "0",
+    "percentFee": "0",
+    "providerRate": "0.9068",
+    "rateCapturedAt": "2026-11-05T20:35:00Z",
+    "sourceUrl": "https://www.postfinance.ch/en/private/paying-saving/convert-currency-foreign-exchange/currency-overview.html",
+    "checkedAt": "2026-11-05T20:35:00Z",
+    "note": "The same reading as CHF→EUR (owner, 2026-11-05 21:35, filter \"Rate Electronic payments; limit up to 50,000 CHF\"): the bank buys euros at 0.9068 CHF per EUR (sells at 0.9288). Confirmed as the EUR→CHF rate by the owner 2026-11-13."
+  },
+  {
+    "providerId": "western-union",
+    "corridorId": "CHF-EUR",
+    "status": "verified",
+    "sourceKind": "manual",
+    "feeMode": "deducted",
+    "fixedFee": "0",
+    "percentFee": "0",
+    "maxAmount": "4700",
+    "providerRate": "1.054014",
+    "rateCapturedAt": "2026-11-13T08:25:00Z",
+    "sourceUrl": "https://www.westernunion.com/ch/en/web/send-money/start?ReceiveCountry=IT&ISOCurrency=EUR&SendAmount=100.00&FundsOut=BA&FundsIn=WUPay",
+    "checkedAt": "2026-11-13T08:25:00Z",
+    "note": "Owner screenshots of Western Union's own calculator, 2026-11-13 09:25, paid by bank transfer (WU Pay), delivered to a bank account, to Italy and Spain (same rate): 100 CHF → 105.40, 1,000 → 1,054.01, 4,700 → 4,953.87 EUR, fee 0.00 CHF, \"Send up to 4,700.00 CHF\". The shown rate 1.0540 is rounded; 1.054014 gives all three to the cent."
   }
 ]
