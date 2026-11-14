@@ -99,7 +99,8 @@ These make the site recognisable. Borrow the ideas, not the exact look.
   after checking the current version.
 - **Restraint:** no video or artwork needed. Our "content" is the comparison table.
 
-## 8. Still open (decide in stage 6)
-- Final font (Inter or Geist) and accent colour, checked for contrast (WCAG AA).
-- Dark mode: bejamas has none; ours should probably follow the system setting.
-- Mobile layout of the comparison table (cards on phones, table on desktop).
+## 8. Decided (stage 6a, ADR 0011)
+- Tailwind CSS v4; Inter (self-hosted) + JetBrains Mono for bracket labels; lime `#befc65` only as
+  the "best" badge background with dark text; dark mode follows the system setting, checked for
+  WCAG AA contrast by `apps/web/src/tokens.test.ts`.
+- Mobile layout: one card per provider on phones, a table from 768px up.

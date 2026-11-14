@@ -2,7 +2,7 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0–5 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Next: stage 6**, the frontend.
+**Now:** stages 0–5 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 in progress:** 6a design foundation (ADR 0011) built. **Next: 6b**, the breakdown with bracket labels and the "best" badge.
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
@@ -12,7 +12,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 3 | v0.1 end-to-end | ✅ Done (2026-11-12): 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ✅ (3e-1 images · 3e-2 CI · 3e-3 first deploy · 3e-4 backups) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
 | 4 | Mid-market + pipeline | ✅ Done (2026-11-13): 4a database ✅ · 4b collector ✅ · 4c hourly `collect` service ✅ · 4e old-rate warning ✅ · 4d one week ⏳ (verify 20 Nov) | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored (8 working days 3–12 Nov stored; 16–20 Nov to be collected live) |
 | 5 | Provider data | ✅ Done (2026-11-14): 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider ✅ · 5c EUR→CHF data ✅ · 5d manual rates at today's reference rate ✅ · 5e corridor choice ✅ | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
-| 6 | Frontend | ⏭️ Next | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
+| 6 | Frontend | 🟡 **In progress**: 6a design foundation ✅ · 6b breakdown · 6c caveat codes · 6d my bank vs best · 6e charts | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
 | 7 | Polish | ⬜ Not started | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes |
 | 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts | — |
 
@@ -303,3 +303,11 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   currency paid; switching clears the results of the other direction; the intro no longer assumes
   francs (four languages). Headless Chrome: both directions ranked from the local API (EUR→CHF
   without Western Union), results cleared on switching, French texts. Stage 5 done.
+- **2026-11-14:** **Stage 6 started; 6a: design foundation** (ADR 0011, the owner's choices):
+  Tailwind CSS 4.3.5, Inter self-hosted (no font CDN), dark mode following the system, a lime
+  "best" badge (added with it in 6b, like JetBrains Mono for the bracket labels). Header, headline
+  ("What really arrives?", four languages), form card with pill button; results as one card per
+  provider on phones, a table from 768px. `tokens.test.ts` checks every text/background pair
+  against WCAG AA (4.5:1) in both themes, from `styles.css` itself (fails on purpose with a lighter
+  grey: 2.57:1). Biome parses Tailwind's directives. Headless Chrome at 390px and 1280px, light and
+  dark: no horizontal scrolling, every row with its source.

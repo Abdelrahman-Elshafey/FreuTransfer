@@ -11,6 +11,7 @@ type UnavailableReason = ComparisonDto["unavailable"][number]["reason"];
 export const en = {
   title: "FreuTransfer — Cost Comparer",
   language: "Language",
+  headline: "What really arrives?",
   intro:
     "Sending money between Switzerland and the euro area? Find out what really arrives, and how much is hidden in the exchange rate.",
   form: {

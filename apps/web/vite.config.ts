@@ -1,8 +1,9 @@
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   server: {
     // In development, /v1/* goes to the Express API on its default port (apps/api/src/main.ts),
     // the same path production forwards to the API (docs/adr/0004), so the page uses one URL.

@@ -1,51 +1,59 @@
-/* v0.1: just enough to read the table. Real design in stage 6. */
-body {
-  margin: 0;
-  background: #f3f3f4;
-  color: #131314;
-  font-family: system-ui, sans-serif;
+@import "tailwindcss";
+
+/*
+ * Design tokens (docs/adr/0011, docs/design-inspiration.md §7): a near-monochrome page. Light and
+ * dark follow the reader's system setting. Hex values, so tokens.test.ts can check every text/background
+ * pair against WCAG AA in both themes.
+ */
+:root {
+  color-scheme: light dark;
+  --page: #f3f3f4;
+  --card: #ffffff;
+  --ink: #131314;
+  --muted: #66646d;
+  --line: #dfe3e6;
+  --danger: #b91c1c;
+  --warn-bg: #fffbeb;
+  --warn-ink: #78350f;
+  --warn-line: #b45309;
 }
-main {
-  max-width: 64rem;
-  margin: 2rem auto;
-  padding: 0 1rem;
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #0f0f11;
+    --card: #1a1a1d;
+    --ink: #ededee;
+    --muted: #a3a1aa;
+    --line: #2e2e34;
+    --danger: #f87171;
+    --warn-bg: #2b2109;
+    --warn-ink: #fcd34d;
+    --warn-line: #d97706;
+  }
 }
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
+
+@theme inline {
+  --color-page: var(--page);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-danger: var(--danger);
+  --color-warn-bg: var(--warn-bg);
+  --color-warn-ink: var(--warn-ink);
+  --color-warn-line: var(--warn-line);
+  /* Self-hosted variable font (main.tsx imports it). */
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
 }
-th,
-td {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid #dfe3e6;
-  text-align: left;
-  vertical-align: top;
-}
-.num {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.strong {
-  font-weight: 600;
-}
-.note {
-  color: #66646d;
-  font-size: 0.8rem;
-}
-.error {
-  color: #b91c1c;
-}
-.warning {
-  border-left: 4px solid #b45309;
-  background: #fffbeb;
-  color: #78350f;
-  padding: 0.5rem 0.75rem;
-}
-input {
-  width: 8rem;
-}
-.language {
-  float: right;
+
+@layer base {
+  body {
+    @apply bg-page font-sans text-ink antialiased;
+  }
+  a {
+    @apply underline decoration-line underline-offset-2 hover:decoration-ink;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ink;
+  }
 }
