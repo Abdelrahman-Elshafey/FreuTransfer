@@ -5,8 +5,9 @@ export const fr: Messages = {
   title: "FreuTransfer — Comparateur de coûts",
   language: "Langue",
   intro:
-    "Vous envoyez des francs. Découvrez ce qui arrive vraiment, et combien est caché dans le taux de change.",
+    "Vous envoyez de l’argent entre la Suisse et la zone euro ? Découvrez ce qui arrive vraiment, et combien est caché dans le taux de change.",
   form: {
+    direction: "Sens",
     iPay: "Je paie",
     amountLabel: (currency) => `Montant en ${currency}`,
     compare: "Comparer",

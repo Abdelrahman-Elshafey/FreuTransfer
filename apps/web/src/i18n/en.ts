@@ -12,8 +12,9 @@ export const en = {
   title: "FreuTransfer — Cost Comparer",
   language: "Language",
   intro:
-    "You send francs. Find out what really arrives, and how much is hidden in the exchange rate.",
+    "Sending money between Switzerland and the euro area? Find out what really arrives, and how much is hidden in the exchange rate.",
   form: {
+    direction: "Direction",
     iPay: "I pay",
     amountLabel: (currency: string) => `Amount in ${currency}`,
     compare: "Compare",

@@ -1,6 +1,6 @@
 import type { ComparisonDto, ResultRowDto } from "@freu-transfer/api/contract";
 import { type FormEvent, useState } from "react";
-import { type CompareError, fetchComparison } from "./api.ts";
+import { type CompareError, DIRECTIONS, fetchComparison } from "./api.ts";
 import { useI18n } from "./i18n/context.tsx";
 import type { Messages } from "./i18n/en.ts";
 import { parseAmount } from "./i18n/format.ts";
@@ -158,6 +158,8 @@ function LanguageSwitcher() {
 
 export function App() {
   const { t, f } = useI18n();
+  const [directionIndex, setDirectionIndex] = useState(0);
+  const direction = DIRECTIONS[directionIndex] ?? DIRECTIONS[0];
   const [amount, setAmount] = useState("1000");
   const [data, setData] = useState<ComparisonDto | null>(null);
   const [error, setError] = useState<PageError | null>(null);
@@ -173,7 +175,7 @@ export function App() {
     }
     setLoading(true);
     try {
-      const outcome = await fetchComparison(parsed);
+      const outcome = await fetchComparison(direction, parsed);
       setData(outcome.ok ? outcome.data : null);
       setError(outcome.ok ? null : outcome.error);
     } finally {
@@ -189,14 +191,31 @@ export function App() {
 
       <form onSubmit={compare}>
         <label>
+          {t.form.direction}{" "}
+          <select
+            value={directionIndex}
+            disabled={loading} // an answer still on its way is for the direction it asked
+            onChange={(e) => {
+              setDirectionIndex(Number(e.target.value));
+              setData(null); // results of the other direction must not stay under the new choice
+            }}
+          >
+            {DIRECTIONS.map((d, i) => (
+              <option key={`${d.from}-${d.to}`} value={i}>
+                {d.from} → {d.to}
+              </option>
+            ))}
+          </select>
+        </label>{" "}
+        <label>
           {t.form.iPay}{" "}
           <input
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             inputMode="decimal"
-            aria-label={t.form.amountLabel("CHF")}
+            aria-label={t.form.amountLabel(direction.from)}
           />{" "}
-          CHF → EUR
+          {direction.from}
         </label>{" "}
         <button type="submit" disabled={loading}>
           {loading ? t.form.comparing : t.form.compare}

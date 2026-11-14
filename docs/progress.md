@@ -2,7 +2,7 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0–4 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 in progress:** scope (ADR 0008), sanity guard and limits, withdrawing a provider (ADR 0009) built. 5c the EUR→CHF data and Western Union built. 5d a manual rate's "arrives" at today's reference rate (ADR 0010) built. **Next: 5e**, choosing the direction on the page.
+**Now:** stages 0–5 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Next: stage 6**, the frontend.
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
@@ -11,8 +11,8 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 2 | Core engine | ✅ Done (2026-11-10) | `Money`/`Rate` value objects, fee strategies, `computeCost`, rounding, golden + property tests | 2 real calculator results reproduced to the cent ✅ (third skipped by the owner) |
 | 3 | v0.1 end-to-end | ✅ Done (2026-11-12): 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ✅ (3e-1 images · 3e-2 CI · 3e-3 first deploy · 3e-4 backups) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
 | 4 | Mid-market + pipeline | ✅ Done (2026-11-13): 4a database ✅ · 4b collector ✅ · 4c hourly `collect` service ✅ · 4e old-rate warning ✅ · 4d one week ⏳ (verify 20 Nov) | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored (8 working days 3–12 Nov stored; 16–20 Nov to be collected live) |
-| 5 | Provider data | 🟡 **In progress**: 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider ✅ · 5c EUR→CHF data ✅ · 5d manual rates at today's reference rate ✅ · 5e corridor choice | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
-| 6 | Frontend | ⬜ Not started | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
+| 5 | Provider data | ✅ Done (2026-11-14): 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider ✅ · 5c EUR→CHF data ✅ · 5d manual rates at today's reference rate ✅ · 5e corridor choice ✅ | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
+| 6 | Frontend | ⏭️ Next | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
 | 7 | Polish | ⬜ Not started | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes |
 | 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts | — |
 
@@ -291,3 +291,15 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   purpose (rounded rate, 0.43%, missing limit, rate above mid, ~12% rate). Local API: both
   directions ranked, Western Union "not available" above 4,700 CHF. For the owner: Revolut's UK page
   shows a EUR 1.20 fee for EUR→CHF transfers; the Swiss terms say local payments are free (used).
+- **2026-11-14:** **5d: a manual rate at today's reference rate** (ADR 0010, the owner's decision of
+  13 Nov). A manual rate keeps its distance from the reference rate of the day it was read, applied
+  to today's (`rate read × today's / that day's`), so what arrives and the ranking agree; every row
+  is compared with today's rate, and a manual one also carries `measuredAgainst` (shown under
+  "Manual · approximate"). Tests per rule (same distance, arrives agrees with rank, both rates
+  carried, a rate better than its day's mid still fails the guard). Local API at 2,500 CHF:
+  PostFinance 2,665.14 EUR in 4th place (before: 2,700.95, more than Wise, yet last). Merged (PR #21).
+- **2026-11-14:** **5e: choosing the direction on the page.** A "Direction" choice (CHF → EUR, the
+  default, or EUR → CHF) from one list in `apps/web/src/api.ts`; the amount is labelled in the
+  currency paid; switching clears the results of the other direction; the intro no longer assumes
+  francs (four languages). Headless Chrome: both directions ranked from the local API (EUR→CHF
+  without Western Union), results cleared on switching, French texts. Stage 5 done.
