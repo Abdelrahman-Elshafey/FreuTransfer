@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 /*
- * Design tokens (docs/adr/0011, docs/design-inspiration.md §7): a near-monochrome page. Light and
- * dark follow the reader's system setting. Hex values, so tokens.test.ts can check every text/background
+ * Design tokens (docs/adr/0011, docs/design-inspiration.md §7): a near-monochrome page with one
+ * accent, the lime "cheapest" badge (only ever a background behind dark text: as text it fails
+ * contrast). Light and dark follow the reader's system setting. Hex values, so tokens.test.ts can check every text/background
  * pair against WCAG AA in both themes.
  */
 :root {
@@ -12,6 +13,8 @@
   --ink: #131314;
   --muted: #66646d;
   --line: #dfe3e6;
+  --accent: #befc65;
+  --accent-ink: #131314;
   --danger: #b91c1c;
   --warn-bg: #fffbeb;
   --warn-ink: #78350f;
@@ -25,6 +28,8 @@
     --ink: #ededee;
     --muted: #a3a1aa;
     --line: #2e2e34;
+    --accent: #befc65;
+    --accent-ink: #131314;
     --danger: #f87171;
     --warn-bg: #2b2109;
     --warn-ink: #fcd34d;
@@ -38,12 +43,15 @@
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
   --color-danger: var(--danger);
   --color-warn-bg: var(--warn-bg);
   --color-warn-ink: var(--warn-ink);
   --color-warn-line: var(--warn-line);
-  /* Self-hosted variable font (main.tsx imports it). */
+  /* Self-hosted variable fonts (main.tsx imports them); mono for the bracket labels. */
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
 }
 
 @layer base {

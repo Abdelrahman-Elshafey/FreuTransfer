@@ -5,6 +5,7 @@ import { useI18n } from "./i18n/context.tsx";
 import type { Messages } from "./i18n/en.ts";
 import { parseAmount } from "./i18n/format.ts";
 import { LOCALE_CODES, type Locale, localeInfo } from "./i18n/locales.ts";
+import { cheapestIds } from "./results.ts";
 
 // Design: docs/adr/0011 and docs/design-inspiration.md §7 (tokens in styles.css).
 // Every visible word comes from the catalogs in ./i18n (docs/adr/0005).
@@ -41,19 +42,43 @@ function bankName(t: Messages, source: string): string {
 const card = "rounded-3xl bg-card p-5 sm:p-6";
 const note = "text-sm text-muted";
 
+/** A small label in brackets, "(Fee)" (docs/design-inspiration.md §7). Brackets in every language. */
+function Label({ children }: { children: string }) {
+  return <span className="font-mono text-xs text-muted">({children})</span>;
+}
+
+/** The one accent on the page: lime behind dark text, never lime text (ADR 0011). */
+function CheapestBadge() {
+  const { t } = useI18n();
+  return (
+    <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium whitespace-nowrap text-accent-ink">
+      {t.results.cheapest}
+    </span>
+  );
+}
+
+type ListProps = {
+  readonly rows: readonly Row[];
+  readonly ranked: boolean;
+  /** Providers that get the badge: the cheapest ranked rows (cheapestIds), none for stale ones. */
+  readonly cheapest: ReadonlySet<string>;
+};
+
 /** Where a row's price comes from and when it was checked: the same in the table and the cards. */
 function Source({ row }: { row: Row }) {
   const { t, f } = useI18n();
   return (
     <div className={note}>
-      <a href={row.sourceUrl} target="_blank" rel="noreferrer" className="text-ink">
+      <a href={row.sourceUrl} target="_blank" rel="noreferrer" className="font-mono text-xs">
+        (
         {row.sourceKind === "rule_based"
           ? t.source.ruleBased
           : row.approximate
             ? t.source.manualApproximate
             : t.source.manual}
+        )
       </a>
-      <div>{t.source.checked(f.instant(row.checkedAt))}</div>
+      <div>{t.source.checked(f.instant(row.checkedAt), f.ago(row.checkedAt, new Date()))}</div>
       {row.measuredAgainst && (
         <div>
           {t.source.measuredAgainst(
@@ -68,7 +93,7 @@ function Source({ row }: { row: Row }) {
 }
 
 /** From 768px up: one table, the amounts in aligned columns. */
-function ResultsTable({ rows, ranked }: { rows: readonly Row[]; ranked: boolean }) {
+function ResultsTable({ rows, ranked, cheapest }: ListProps) {
   const { t, f } = useI18n();
   const th = "px-4 py-3 text-left text-sm font-medium text-muted";
   const td = "border-t border-line px-4 py-4 align-top";
@@ -92,7 +117,14 @@ function ResultsTable({ rows, ranked }: { rows: readonly Row[]; ranked: boolean 
           {rows.map((r) => (
             <tr key={r.providerId}>
               {ranked && <td className={`${td} tabular-nums`}>{r.rank}</td>}
-              <td className={`${td} font-medium`}>{r.providerName}</td>
+              <td className={td}>
+                <div className="font-medium">{r.providerName}</div>
+                {cheapest.has(r.providerId) && (
+                  <div className="mt-1">
+                    <CheapestBadge />
+                  </div>
+                )}
+              </td>
               <td className={`${td} ${num} text-lg font-semibold`}>{f.money(r.received)}</td>
               <td className={`${td} ${num}`}>{f.money(r.visibleFee)}</td>
               <td className={`${td} ${num}`}>{f.money(r.fxMarkup)}</td>
@@ -112,34 +144,42 @@ function ResultsTable({ rows, ranked }: { rows: readonly Row[]; ranked: boolean 
 }
 
 /** Below 768px: one card per provider, what arrives as the biggest number. */
-function ResultCards({ rows, ranked }: { rows: readonly Row[]; ranked: boolean }) {
+function ResultCards({ rows, ranked, cheapest }: ListProps) {
   const { t, f } = useI18n();
   return (
     <ol className="space-y-3 md:hidden">
       {rows.map((r) => (
         <li key={r.providerId} className={card}>
-          <div className="flex items-baseline justify-between gap-3">
+          <div className="flex items-center justify-between gap-3">
             <span className="font-medium">
               {ranked && <span className="mr-2 text-muted tabular-nums">{r.rank}</span>}
               {r.providerName}
             </span>
-            <span className="text-sm text-muted tabular-nums">{f.percent(r.totalCostPercent)}</span>
+            {cheapest.has(r.providerId) && <CheapestBadge />}
           </div>
-          <div className="mt-1 text-sm text-muted">{t.table.arrives}</div>
+          <div className="mt-2">
+            <Label>{t.table.arrives}</Label>
+          </div>
           <div className="text-3xl font-semibold tracking-tight tabular-nums">
             {f.money(r.received)}
           </div>
-          <dl className="mt-4 grid grid-cols-3 gap-2 text-sm">
+          <dl className="mt-4 grid grid-cols-3 gap-x-2 gap-y-1 text-sm">
             {(
               [
-                [t.table.fee, r.visibleFee],
-                [t.table.hidden, r.fxMarkup],
-                [t.table.totalCost, r.totalCost],
+                [t.table.fee, r.visibleFee, null],
+                [t.table.hidden, r.fxMarkup, null],
+                [t.table.totalCost, r.totalCost, r.totalCostPercent],
               ] as const
-            ).map(([label, value]) => (
-              <div key={label}>
-                <dt className="text-muted">{label}</dt>
-                <dd className="tabular-nums">{f.money(value)}</dd>
+            ).map(([label, value, percent]) => (
+              // One shared label row (subgrid): a label that wraps doesn't push its amount down.
+              <div key={label} className="row-span-2 grid grid-rows-subgrid">
+                <dt>
+                  <Label>{label}</Label>
+                </dt>
+                <dd className="tabular-nums">
+                  {f.money(value)}
+                  {percent && <div className="text-muted">{f.percent(percent)}</div>}
+                </dd>
               </div>
             ))}
           </dl>
@@ -152,7 +192,7 @@ function ResultCards({ rows, ranked }: { rows: readonly Row[]; ranked: boolean }
   );
 }
 
-function ResultList(props: { rows: readonly Row[]; ranked: boolean }) {
+function ResultList(props: ListProps) {
   return (
     <>
       <ResultsTable {...props} />
@@ -184,14 +224,14 @@ function Results({ data }: { data: ComparisonDto }) {
         })}
       </p>
       {data.results.length > 0 ? (
-        <ResultList rows={data.results} ranked />
+        <ResultList rows={data.results} ranked cheapest={cheapestIds(data.results)} />
       ) : (
         <p className={card}>{t.results.none}</p>
       )}
       {data.stale.length > 0 && (
         <>
           <h2 className={heading}>{t.results.staleHeading(data.recheckDays)}</h2>
-          <ResultList rows={data.stale} ranked={false} />
+          <ResultList rows={data.stale} ranked={false} cheapest={new Set()} />
         </>
       )}
       {data.unavailable.length > 0 && (

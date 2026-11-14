@@ -32,6 +32,15 @@ export function formatterFor(locale: string) {
       new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "Europe/Zurich" }).format(
         new Date(iso),
       ),
+    /**
+     * How long ago an instant was, in Zurich calendar days: "today", "yesterday", "8 days ago"
+     * ("heute", "vor 8 Tagen"). Calendar days, not 24-hour periods: a check at 00:30 in Zurich is
+     * "today" all day, even though it is still the day before in UTC.
+     */
+    ago: (iso: string, now: Date) => {
+      const days = (Date.parse(zurichDay(now)) - Date.parse(zurichDay(new Date(iso)))) / DAY_MS;
+      return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(-days, "day");
+    },
     /** A calendar day ("2026-11-05", e.g. a reference rate's date) without any time-zone shift. */
     day: (day: string) =>
       new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(
@@ -41,6 +50,14 @@ export function formatterFor(locale: string) {
 }
 
 export type Formatter = ReturnType<typeof formatterFor>;
+
+const DAY_MS = 86_400_000;
+
+/** The calendar day in Zurich as "YYYY-MM-DD" (the en-CA locale writes dates in that order). */
+const zurichDayFormat = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zurich" });
+function zurichDay(instant: Date): string {
+  return zurichDayFormat.format(instant);
+}
 
 /** Digits after the decimal point: "1044.75" → 2, "1000" → 0. */
 function decimals(value: string): number {

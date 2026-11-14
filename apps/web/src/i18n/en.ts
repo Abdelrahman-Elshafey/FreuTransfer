@@ -35,13 +35,14 @@ export const en = {
     ruleBased: "Rule-based",
     manual: "Manual",
     manualApproximate: "Manual · approximate",
-    checked: (date: string) => `checked ${date}`,
+    checked: (date: string, ago: string) => `checked ${date} · ${ago}`,
     measuredAgainst: (rate: string, bank: string, day: string) =>
       `estimated from its gap to mid ${rate} (${bank}, ${day}) when read`,
   },
   /** Who publishes a reference rate (the API's `midRate.source`). */
   rateSources: { ecb: "ECB" },
   results: {
+    cheapest: "Cheapest",
     midRate: (p: { from: string; to: string; rate: string; bank: string; day: string }) =>
       `Compared with the mid-market rate 1 ${p.from} = ${p.rate} ${p.to} (${p.bank}, ${p.day}); manual rates keep their gap to the rate of the day they were read.`,
     midRateTooOld: (p: { day: string; days: number }) =>

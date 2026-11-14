@@ -28,12 +28,13 @@ export const it: Messages = {
     ruleBased: "Secondo le tariffe pubblicate",
     manual: "Manuale",
     manualApproximate: "Manuale · approssimativo",
-    checked: (date) => `verificato il ${date}`,
+    checked: (date, ago) => `verificato il ${date} · ${ago}`,
     measuredAgainst: (rate, bank, day) =>
       `stimato dallo scarto rispetto al tasso medio ${rate} (${bank}, ${day}) al momento della lettura`,
   },
   rateSources: { ecb: "BCE" },
   results: {
+    cheapest: "Il più conveniente",
     midRate: (p) =>
       `Confrontato con il tasso medio di mercato 1 ${p.from} = ${p.rate} ${p.to} (${p.bank}, ${p.day}); i tassi manuali mantengono il loro scarto rispetto al tasso del giorno in cui sono stati letti.`,
     midRateTooOld: (p) =>
