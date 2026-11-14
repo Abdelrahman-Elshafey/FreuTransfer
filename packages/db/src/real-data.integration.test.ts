@@ -106,9 +106,10 @@ describe("data/manual on a fresh database", () => {
   };
 
   // The values in the files, not only the formulas (the golden tests in core): each reading the
-  // owner took from a provider's own calculator comes out to the cent from the stored entry. Wise's
-  // amount received depends on the day's rate, so only its fee is compared; Western Union's rate
-  // is stored, so the amount received is.
+  // owner took from a provider's own calculator comes out to the cent from the stored entry.
+  // Amounts received depend on the day's reference rate, so for Wise only the fee is compared; for
+  // Western Union (no fee) its stored rate is applied as read (the comparison moves it to today's
+  // reference rate, ADR 0010).
   it.each([
     // Wise calculator, 2026-11-05 21:18 and 2026-11-13 08:56–09:22. 1.21 CHF + 0.23% on top:
     //   converted = (total − 1.21) / 1.0023, fee = total − converted
@@ -136,11 +137,17 @@ describe("data/manual on a fresh database", () => {
   ])(
     "%s %s %s: %s %s, as on the provider's calculator",
     async (id, corridor, amount, what, expected) => {
-      const row = [...(await compare(corridor, amount)).ranked].find(
-        (r) => r.offer.providerId === id,
+      if (what === "fee") {
+        const row = (await compare(corridor, amount)).ranked.find((r) => r.offer.providerId === id);
+        expect(row?.quote.visibleFee.toString()).toBe(expected);
+        return;
+      }
+      const [source, target] = pair(corridor);
+      const offer = (await new PrismaOfferRepository(db).latestOffers(source, target)).find(
+        (o) => o.providerId === id,
       );
-      const value = what === "fee" ? row?.quote.visibleFee : row?.quote.received;
-      expect(value?.toString()).toBe(expected);
+      const rate = offer?.pricing.kind === "rate" ? offer.pricing.rate : undefined;
+      expect(rate?.convert(Money.of(amount, source)).round().toString()).toBe(expected);
     },
   );
 

@@ -52,8 +52,8 @@ rates stored as `NUMERIC(20,10)`; timestamps in UTC.
 
 ## 4. Data correctness (the hard parts)
 - **Timing:** the ECB reference rate is set once a day (~14:10 CET); CHF/EUR can move 0.3–0.5% a day.
-  Rule-based providers are computed from the mid, so no gap. Manual entries store their capture time,
-  are compared with that day's rate, and are labelled "approximate".
+  Rule-based providers are computed from the mid, so no gap. Manual entries store their capture time;
+  their distance from that day's rate is applied to today's rate (ADR 0010), labelled "approximate".
 - **Reference source:** always pin Frankfurter's source to the ECB (its unpinned rate is blended across sources).
 - **Price depends on amount, route and method:** sample at 100 / 500 / 1,000 / 2,500 / 5,000. In v1 the
   route follows from the corridor (ADR 0008): you pay from an account at a Swiss provider; CHF→EUR

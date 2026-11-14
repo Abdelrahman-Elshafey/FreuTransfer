@@ -6,7 +6,7 @@ import type { Money } from "./money.ts";
 import type { MidRateObservation, ProviderOffer } from "./offer.ts";
 import type { MidRateRepository, OfferRepository } from "./ports.ts";
 import { type QuoteAmounts, quoteFromRule } from "./quote.ts";
-import type { Rate } from "./rate.ts";
+import { Rate } from "./rate.ts";
 
 /** Manual and rule-based data older than this is shown separately, not ranked (Project Plan §4). */
 export const RECHECK_DAYS = 30;
@@ -29,9 +29,14 @@ export type ComparisonRow = {
   readonly offer: ProviderOffer;
   readonly quote: QuoteAmounts;
   readonly cost: CostBreakdown;
-  /** The reference rate this row was compared with. */
+  /** The reference rate this row was compared with: the newest one, for every row. */
   readonly mid: MidRateObservation;
-  /** True for manual rates: read at another time than the reference rate (~14:10 CET). */
+  /**
+   * Manual rates only: the reference rate of the day the provider's rate was read. The rate's
+   * distance from it is applied to `mid` to estimate today's amount (ADR 0010).
+   */
+  readonly measuredAgainst: MidRateObservation | null;
+  /** True for manual rates: an estimate from a rate read on another day or at another time. */
   readonly approximate: boolean;
 };
 
@@ -91,6 +96,17 @@ function markupFor(
     .amount;
 }
 
+/**
+ * A manual rate moved to today's reference rate (ADR 0010): the same distance from the reference
+ * rate as on the day it was read, so it is comparable with the rule-based offers:
+ *   estimate = rate read × today's reference / that day's reference
+ * A rate read today stays as it is. Not via `withMarkup`: a rate better than its day's reference
+ * (a typo) gives a negative markup, which the sanity guard must see, not an exception.
+ */
+function atTodaysReference(read: Rate, thatDay: Rate, today: Rate): Rate {
+  return Rate.of(read.base, read.quote, read.value.times(today.value).dividedBy(thatDay.value));
+}
+
 /** Use case: compare every provider for "I pay `amount`, the recipient gets `target`". */
 export async function compareProviders(
   ports: { readonly offers: OfferRepository; readonly midRates: MidRateRepository },
@@ -101,7 +117,7 @@ export async function compareProviders(
   if (!mid) throw new NoMidRateError(`No reference rate stored for ${source}→${request.target}`);
   const offers = await ports.offers.latestOffers(source, request.target);
 
-  // A manual rate is compared with the reference rate of the day it was read, not today's.
+  // A manual rate is measured against the reference rate of the day it was read (ADR 0010).
   const midByDay = new Map<string, MidRateObservation | null>();
   for (const offer of offers) {
     if (offer.pricing.kind !== "rate") continue;
@@ -128,23 +144,22 @@ export function rankOffers(
   const stale: ComparisonRow[] = [];
   const unavailable: Unavailable[] = [];
 
+  const midRate = mid.rate;
   for (const offer of offers) {
     const { pricing } = offer;
-    let rowMid = mid;
+    let measuredAgainst: MidRateObservation | null = null;
+    let providerRate: Rate | ((converted: Money) => Rate);
     if (pricing.kind === "rate") {
-      const day = zurichDay(pricing.capturedAt);
-      const found = midOn(day);
-      if (!found) {
+      measuredAgainst = midOn(zurichDay(pricing.capturedAt));
+      if (!measuredAgainst) {
         unavailable.push({ offer, reason: "no_reference_rate" });
         continue;
       }
-      rowMid = found;
+      providerRate = atTodaysReference(pricing.rate, measuredAgainst.rate, midRate);
+    } else {
+      providerRate = (converted: Money) =>
+        midRate.withMarkup(markupFor(pricing, converted, midRate));
     }
-    const midRate = rowMid.rate;
-    const providerRate =
-      pricing.kind === "markup"
-        ? (converted: Money) => midRate.withMarkup(markupFor(pricing, converted, midRate))
-        : pricing.rate;
 
     let quote: QuoteAmounts;
     try {
@@ -155,7 +170,7 @@ export function rankOffers(
       unavailable.push({ offer, reason: "amount_not_supported" });
       continue;
     }
-    const cost = computeCost(quote, rowMid.rate);
+    const cost = computeCost(quote, midRate);
     // "Below 0%" uses the cost rounded to the cent: rounding the payout up can leave a free
     // provider (no fee, no markup) a fraction of a cent "below 0", which is not a data error.
     if (cost.totalCostPct.gt(MAX_PLAUSIBLE_COST) || cost.totalCost.amount.lt(0)) {
@@ -166,7 +181,8 @@ export function rankOffers(
       offer,
       quote,
       cost,
-      mid: rowMid,
+      mid,
+      measuredAgainst,
       approximate: pricing.kind === "rate",
     };
     const ageDays = (now.getTime() - offer.checkedAt.getTime()) / DAY_MS;

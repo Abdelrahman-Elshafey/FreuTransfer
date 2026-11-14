@@ -272,6 +272,69 @@ describe("markup tier (Revolut-style allowance: 0% up to 1,250 CHF, 1% above)", 
   });
 });
 
+// Owner, 2026-11-13 (stage 5d, ADR 0010): a manual rate is an estimate at today's reference rate,
+// keeping the distance from the reference rate measured on the day it was read. Otherwise a rate
+// read when the franc was stronger shows more arriving than a cheaper provider ranked above it.
+describe("manual rate at today's reference rate", () => {
+  // Read on 20 Oct: 1.089 EUR per CHF while that day's reference rate was 1.10, i.e. 1% below it.
+  // Today's reference rate is 1.0893 (mid).
+  const oct20: MidRateObservation = {
+    ...mid,
+    rate: Rate.of("CHF", "EUR", "1.10"),
+    asOf: "2026-10-20",
+  };
+  const manual = offer("bank", {
+    kind: "rate",
+    rate: Rate.of("CHF", "EUR", "1.089"),
+    capturedAt: new Date("2026-10-20T09:00:00Z"),
+  });
+  const rank = (offers: ProviderOffer[]) =>
+    rankOffers(offers, mid, Money.of("1000", "CHF"), now, (day) =>
+      day === "2026-10-20" ? oct20 : null,
+    );
+
+  it("rule 1: applies the same distance from the reference rate to today's", () => {
+    // today's estimate = 1.089 × 1.0893 / 1.10 = 1.078407 (1% below 1.0893)
+    //   received = 1000 × 1.078407 = 1078.407 → 1078.41 EUR (1,089.00 with the rate as read)
+    //   worth 1078.41 / 1.0893 = 990.002754… CHF → cost 9.997246… → 10.00 CHF
+    const [row] = rank([manual]).ranked;
+    expect(row?.quote.received.toString()).toBe("1078.41 EUR");
+    expect(row?.cost.totalCost.toString()).toBe("10.00 CHF");
+    expect(row?.approximate).toBe(true);
+  });
+
+  it("rule 2: what arrives agrees with the ranking", () => {
+    // A rule-based provider 0.5% below mid: 1000 × 1.0893 × 0.995 = 1083.8535 → 1083.85 EUR.
+    // It ranks first (0.5% < 1%), and more arrives with it than with the manual one (1078.41).
+    // With the rate as read the manual one would show 1,089.00 EUR, more than the cheaper one.
+    const ranked = rank([manual, offer("fintech", markup("0.005"))]).ranked;
+    expect(ranked.map((r) => [r.offer.providerId, r.quote.received.toString()])).toEqual([
+      ["fintech", "1083.85 EUR"],
+      ["bank", "1078.41 EUR"],
+    ]);
+  });
+
+  it("rule 3: carries both reference rates: today's (compared) and the reading day's (measured)", () => {
+    const [row] = rank([manual]).ranked;
+    expect(row?.mid).toBe(mid);
+    expect(row?.measuredAgainst).toBe(oct20);
+    const [ruleBased] = rank([offer("fintech", markup("0.005"))]).ranked;
+    expect(ruleBased?.measuredAgainst).toBeNull();
+  });
+
+  it("rule 4: a rate better than its day's reference rate is still a data error", () => {
+    // 1.111 against 1.10 that day = 1% better than mid: estimate 1.111 × 1.0893 / 1.10 = 1.100193
+    // → 1,100.19 EUR, worth 1100.19 / 1.0893 = 1009.997246… CHF → cost −9.997246… → −10.00 CHF < 0
+    // → implausible, not an exception.
+    const better = offer("typo", {
+      kind: "rate",
+      rate: Rate.of("CHF", "EUR", "1.111"),
+      capturedAt: new Date("2026-10-20T09:00:00Z"),
+    });
+    expect(rank([better]).unavailable).toEqual([{ offer: better, reason: "implausible_cost" }]);
+  });
+});
+
 describe("compareProviders", () => {
   it("reads through the ports and ranks", async () => {
     const result = await compareProviders(
@@ -285,7 +348,7 @@ describe("compareProviders", () => {
     expect(result.mid.asOf).toBe("2026-11-05");
   });
 
-  it("compares a manual rate with the reference rate of the day it was read", async () => {
+  it("measures a manual rate against the reference rate of the day it was read", async () => {
     const oldMid: MidRateObservation = {
       ...mid,
       rate: Rate.of("CHF", "EUR", "1.0700"),
@@ -311,9 +374,13 @@ describe("compareProviders", () => {
       { amount: Money.of("1000", "CHF"), target: "EUR", now },
     );
     expect(asked).toEqual([undefined, "2026-10-20"]);
-    // Same rate as that day's mid → no hidden cost. Against today's 1.0893 it would look like 1.8%.
-    expect(result.ranked[0]?.mid.asOf).toBe("2026-10-20");
-    expect(result.ranked[0]?.cost.totalCost.toString()).toBe("0.00 CHF");
+    // Same rate as that day's mid → no markup. Against today's 1.0893 it would look like 1.8%.
+    // Today's estimate: 1000 × 1.0893 × (1.0700 / 1.0700) = 1089.30 EUR, cost 0.
+    const [row] = result.ranked;
+    expect(row?.measuredAgainst?.asOf).toBe("2026-10-20");
+    expect(row?.mid.asOf).toBe("2026-11-05");
+    expect(row?.quote.received.toString()).toBe("1089.30 EUR");
+    expect(row?.cost.totalCost.toString()).toBe("0.00 CHF");
   });
 
   it("marks a manual rate unavailable when no reference rate exists for its day", () => {

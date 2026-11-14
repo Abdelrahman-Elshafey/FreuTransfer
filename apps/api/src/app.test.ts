@@ -91,7 +91,7 @@ describe("GET /v1/compare", () => {
     expect(typeof row.received.amount).toBe("string");
   });
 
-  it("gives every row the reference rate it was compared with, and a manual rate's capture time", async () => {
+  it("gives every row today's reference rate, and a manual rate its capture time and its own day's rate", async () => {
     // A manual rate read on 4 Nov is compared with the 4 Nov reference rate, not the newest (5 Nov).
     const nov4: MidRateObservation = {
       ...mid,
@@ -121,7 +121,16 @@ describe("GET /v1/compare", () => {
     );
     expect(byId.yuh.midRate).toEqual({ rate: "1.0893", source: "ecb", asOf: "2026-11-05" });
     expect(byId.yuh.rateCapturedAt).toBeNull();
-    expect(byId.postfinance.midRate).toEqual({ rate: "1.0712", source: "ecb", asOf: "2026-11-04" });
+    expect(byId.yuh.measuredAgainst).toBeNull();
+    // Compared with today's rate like every row; measured against its own day's (ADR 0010):
+    //   estimate = 1.0512 × 1.0893 / 1.0712 = 1.068962…; 1000 × 1.068962… = 1068.962… → 1068.96 EUR
+    expect(byId.postfinance.midRate).toEqual({ rate: "1.0893", source: "ecb", asOf: "2026-11-05" });
+    expect(byId.postfinance.measuredAgainst).toEqual({
+      rate: "1.0712",
+      source: "ecb",
+      asOf: "2026-11-04",
+    });
+    expect(byId.postfinance.received).toEqual({ amount: "1068.96", currency: "EUR" });
     expect(byId.postfinance.rateCapturedAt).toBe("2026-11-04T09:30:00.000Z");
     expect(res.body.recheckDays).toBe(30);
   });

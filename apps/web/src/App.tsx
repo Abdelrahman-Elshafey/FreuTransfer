@@ -77,12 +77,12 @@ function ResultsTable({
                     : t.source.manual}
               </a>
               <div className="note">{t.source.checked(f.instant(r.checkedAt))}</div>
-              {r.approximate && (
+              {r.measuredAgainst && (
                 <div className="note">
-                  {t.source.comparedWith(
-                    f.decimal(r.midRate.rate),
-                    bankName(t, r.midRate.source),
-                    f.day(r.midRate.asOf),
+                  {t.source.measuredAgainst(
+                    f.decimal(r.measuredAgainst.rate),
+                    bankName(t, r.measuredAgainst.source),
+                    f.day(r.measuredAgainst.asOf),
                   )}
                 </div>
               )}

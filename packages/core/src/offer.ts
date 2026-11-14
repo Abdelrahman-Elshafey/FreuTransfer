@@ -14,7 +14,8 @@ export type SourceKind = "rule_based" | "manual";
  * - `markup`: a published markup over mid-market (rule-based); the rate follows the mid exactly.
  *   With `tier`, `markup` applies to the converted amount up to `tier.upTo` and `tier.markupAbove`
  *   to the part above it (e.g. Revolut: 0% within the monthly allowance, 1% beyond).
- * - `rate`: a rate read by hand at a known time (manual); compared with that day's mid.
+ * - `rate`: a rate read by hand at a known time (manual); its distance from that day's mid is
+ *   applied to today's mid (ADR 0010).
  */
 export type Pricing =
   | {
