@@ -54,6 +54,49 @@ describe("GET /health", () => {
 });
 
 describe("GET /v1/compare", () => {
+  it("gives ranked rows their difference from the cheapest, as strings; stale rows none", async () => {
+    // mid 1.0893, 1,000 CHF. yuh 0.95%: 1000 × 1.0893 × 0.9905 = 1078.95165 → 1078.95 EUR,
+    //   worth 1078.95 / 1.0893 = 990.5 − 0.00165 / 1.0893 = 990.498485… → cost 9.501515… → 9.50 CHF
+    // free (no fee, no markup): 1089.30 EUR, cost 0.00 CHF
+    // yuh vs free: 9.50 CHF more, 1089.30 − 1078.95 = 10.35 EUR less, 9.50 × 12 = 114.00 CHF a year
+    const free: ProviderOffer = {
+      ...yuh,
+      providerId: "free",
+      pricing: { kind: "markup", markup: new Decimal("0") },
+    };
+    const stale: ProviderOffer = {
+      ...yuh,
+      providerId: "old",
+      checkedAt: new Date("2026-09-01T00:00:00Z"),
+    };
+    const app = createApp(deps({ offers: { latestOffers: async () => [yuh, free, stale] } }));
+    const res = await request(app).get("/v1/compare?from=CHF&to=EUR&amount=1000");
+    expect(
+      res.body.results.map((r: { providerId: string; vsCheapest: unknown }) => [
+        r.providerId,
+        r.vsCheapest,
+      ]),
+    ).toEqual([
+      [
+        "free",
+        {
+          extraCost: { amount: "0.00", currency: "CHF" },
+          lessReceived: { amount: "0.00", currency: "EUR" },
+          extraCostPerYear: { amount: "0.00", currency: "CHF" },
+        },
+      ],
+      [
+        "yuh",
+        {
+          extraCost: { amount: "9.50", currency: "CHF" },
+          lessReceived: { amount: "10.35", currency: "EUR" },
+          extraCostPerYear: { amount: "114.00", currency: "CHF" },
+        },
+      ],
+    ]);
+    expect(res.body.stale[0].vsCheapest).toBeNull();
+  });
+
   it("sends caveats as codes with their amounts as strings, never sentences", async () => {
     // Revolut-style allowance (0% up to CHF 1'250 a month) and a Western Union-style limit.
     const revolut: ProviderOffer = {

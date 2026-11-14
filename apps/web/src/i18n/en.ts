@@ -59,6 +59,19 @@ export const en = {
     implausible_cost: "its price data looks wrong and is being checked",
   } satisfies Record<UnavailableReason, string>,
   /** The API's caveat codes (`CaveatDto`); `amount` arrives formatted, e.g. "CHF 1'250.00". */
+  myProvider: {
+    label: "My provider",
+    choose: "Choose…",
+    cheapest: (mine: string) => `${mine} is the cheapest for this amount.`,
+    difference: (p: {
+      mine: string;
+      best: string;
+      extraCost: string;
+      lessReceived: string;
+      perYear: string;
+    }) =>
+      `With ${p.mine} you pay ${p.extraCost} more than with ${p.best} (${p.lessReceived} less arrives): ${p.perYear} a year if you send this amount every month.`,
+  },
   caveats: {
     monthly_allowance: (amount: string) =>
       `No markup on the first ${amount} you exchange each month; exchanges earlier this month use it up.`,

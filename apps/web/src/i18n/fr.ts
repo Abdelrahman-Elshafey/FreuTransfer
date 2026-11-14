@@ -51,6 +51,13 @@ export const fr: Messages = {
       "les frais dépassent ce montant, ou il est hors des limites du prestataire",
     implausible_cost: "ses données de prix semblent erronées et sont en cours de vérification",
   },
+  myProvider: {
+    label: "Mon prestataire",
+    choose: "Choisir…",
+    cheapest: (mine) => `${mine} est le moins cher pour ce montant.`,
+    difference: (p) =>
+      `Avec ${p.mine}, vous payez ${p.extraCost} de plus qu’avec ${p.best} (${p.lessReceived} de moins à l’arrivée) : ${p.perYear} par an si vous envoyez ce montant chaque mois.`,
+  },
   caveats: {
     monthly_allowance: (amount) =>
       `Aucune majoration sur les premiers ${amount} changés par mois ; les changes effectués plus tôt dans le mois en sont déduits.`,

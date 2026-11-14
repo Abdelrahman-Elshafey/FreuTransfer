@@ -472,3 +472,72 @@ describe("caveats", () => {
     expect(row?.caveats.map((c) => c.code)).toEqual(["monthly_allowance"]);
   });
 });
+
+// Stage 6d (Project Plan §1, "Am I overpaying with my bank?"): each ranked row against the cheapest.
+describe("vsCheapest", () => {
+  const amount = Money.of("1000", "CHF");
+
+  it("rule 1: the extra cost per transfer and per year, and how much less arrives", () => {
+    // mid 1.0893. cheap: 0.5% markup → 1000 × 1.0893 × 0.995 = 1083.8535 → 1083.85 EUR,
+    //   worth 1083.85 / 1.0893 = 995 − 0.0035 / 1.0893 = 994.996787… CHF
+    //   cost 1000 − 994.996787… = 5.003213… → 5.00 CHF
+    // bank: 1.7% markup → 1000 × 1.0893 × 0.983 = 1070.7819 → 1070.78 EUR,
+    //   worth 1070.78 / 1.0893 = 983 − 0.0019 / 1.0893 = 982.998256… CHF
+    //   cost 1000 − 982.998256… = 17.001744… → 17.00 CHF
+    // extra cost 17.00 − 5.00 = 12.00 CHF; less arrives 1083.85 − 1070.78 = 13.07 EUR;
+    // per year 12.00 × 12 = 144.00 CHF
+    const { ranked } = rankOffers(
+      [offer("bank", markup("0.017")), offer("cheap", markup("0.005"))],
+      mid,
+      amount,
+      now,
+    );
+    const [best, bank] = ranked;
+    expect(bank?.vsCheapest?.extraCost.toString()).toBe("12.00 CHF");
+    expect(bank?.vsCheapest?.lessReceived.toString()).toBe("13.07 EUR");
+    expect(bank?.vsCheapest?.extraCostPerYear.toString()).toBe("144.00 CHF");
+    // The cheapest compares with itself: zero.
+    expect(best?.vsCheapest?.extraCost.toString()).toBe("0.00 CHF");
+    expect(best?.vsCheapest?.lessReceived.toString()).toBe("0.00 EUR");
+  });
+
+  it("rule 1: the differences of the shown (rounded) amounts, so the page adds up", () => {
+    const { ranked } = rankOffers(
+      [offer("bank", markup("0.017")), offer("cheap", markup("0.005"))],
+      mid,
+      amount,
+      now,
+    );
+    const [best, bank] = ranked;
+    if (!best || !bank?.vsCheapest) throw new Error("expected two ranked rows");
+    expect(best.cost.totalCost.plus(bank.vsCheapest.extraCost).equals(bank.cost.totalCost)).toBe(
+      true,
+    );
+    expect(bank.quote.received.plus(bank.vsCheapest.lessReceived).equals(best.quote.received)).toBe(
+      true,
+    );
+  });
+
+  it("rule 1: rows tied with the cheapest show zero", () => {
+    const { ranked } = rankOffers(
+      [offer("a", markup("0.01")), offer("b", markup("0.01"))],
+      mid,
+      amount,
+      now,
+    );
+    expect(ranked.map((r) => r.vsCheapest?.extraCost.toString())).toEqual(["0.00 CHF", "0.00 CHF"]);
+  });
+
+  it("rule 2: stale rows are not compared", () => {
+    const old = new Date("2026-09-01T00:00:00Z");
+    const result = rankOffers(
+      [offer("fresh", markup("0.005")), offer("old", markup("0.001"), "0", old)],
+      mid,
+      amount,
+      now,
+    );
+    expect(result.stale[0]?.vsCheapest).toBeNull();
+    // The cheaper stale offer isn't "the cheapest": only ranked rows count.
+    expect(result.ranked[0]?.vsCheapest?.extraCost.toString()).toBe("0.00 CHF");
+  });
+});

@@ -51,6 +51,13 @@ export const de: Messages = {
       "die Gebühren sind höher als dieser Betrag, oder er liegt ausserhalb der Limiten des Anbieters",
     implausible_cost: "seine Preisdaten sehen fehlerhaft aus und werden überprüft",
   },
+  myProvider: {
+    label: "Mein Anbieter",
+    choose: "Auswählen…",
+    cheapest: (mine) => `${mine} ist für diesen Betrag am günstigsten.`,
+    difference: (p) =>
+      `Mit ${p.mine} zahlen Sie ${p.extraCost} mehr als mit ${p.best} (es kommen ${p.lessReceived} weniger an): ${p.perYear} pro Jahr, wenn Sie diesen Betrag jeden Monat senden.`,
+  },
   caveats: {
     monthly_allowance: (amount) =>
       `Kein Aufschlag auf die ersten ${amount}, die Sie pro Monat wechseln; frühere Wechsel in diesem Monat zählen mit.`,

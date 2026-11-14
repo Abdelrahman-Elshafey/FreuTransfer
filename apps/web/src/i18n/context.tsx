@@ -1,4 +1,5 @@
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
+import { readSaved, save } from "../storage.ts";
 import type { Messages } from "./en.ts";
 import { type Formatter, formatterFor } from "./format.ts";
 import { type Locale, localeInfo, pickLocale } from "./locales.ts";
@@ -15,29 +16,10 @@ type I18n = {
 const I18nContext = createContext<I18n | null>(null);
 const STORAGE_KEY = "freu-transfer.locale";
 
-/**
- * The reader's language choice is a convenience: storage can be blocked (private mode, site data
- * settings), and then the browser's language is used again. Only that DOMException is caught.
- */
-function readSaved(): string | null {
-  try {
-    return localStorage.getItem(STORAGE_KEY);
-  } catch (error) {
-    if (!(error instanceof DOMException)) throw error;
-    return null;
-  }
-}
-
-function save(locale: Locale): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, locale);
-  } catch (error) {
-    if (!(error instanceof DOMException)) throw error;
-  }
-}
-
 export function I18nProvider({ children }: { readonly children: ReactNode }) {
-  const [locale, setLocale] = useState(() => pickLocale(readSaved(), navigator.languages));
+  const [locale, setLocale] = useState(() =>
+    pickLocale(readSaved(STORAGE_KEY), navigator.languages),
+  );
 
   const value = useMemo<I18n>(() => {
     const info = localeInfo(locale);
@@ -46,7 +28,7 @@ export function I18nProvider({ children }: { readonly children: ReactNode }) {
       t: info.messages,
       f: formatterFor(info.format),
       setLocale: (next) => {
-        save(next);
+        save(STORAGE_KEY, next);
         setLocale(next);
       },
     };
