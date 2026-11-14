@@ -18,5 +18,15 @@
     "fetchedAt": "2026-11-06T17:00:18Z",
     "sourceUrl": "https://api.frankfurter.dev/v2/rates?base=CHF&quotes=EUR&providers=ECB",
     "note": "Read by hand for v0.1 (needed for PostFinance's 06.11 reading), before the collector. Since stage 4 it is fetched every hour; its value for this day matched exactly."
+  },
+  {
+    "base": "EUR",
+    "quote": "CHF",
+    "rate": "0.918",
+    "source": "ecb",
+    "asOf": "2026-11-05",
+    "fetchedAt": "2026-11-13T10:57:03Z",
+    "sourceUrl": "https://api.frankfurter.dev/v2/rates?base=EUR&quotes=CHF&providers=ECB&from=2026-11-04&to=2026-11-06",
+    "note": "Read by Claude from Frankfurter (ECB) for PostFinance EUR→CHF, whose rate was read on 2026-11-05: the hourly collector only looks back 10 days, so a later first run would never fetch this day. 1 / 0.918 = 1.08932, matching the stored CHF→EUR rate of the same day (1.0893)."
   }
 ]

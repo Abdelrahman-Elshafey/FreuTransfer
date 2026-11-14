@@ -1,1 +1,4 @@
-[{ "id": "CHF-EUR", "sourceCurrency": "CHF", "targetCurrency": "EUR" }]
+[
+  { "id": "CHF-EUR", "sourceCurrency": "CHF", "targetCurrency": "EUR" },
+  { "id": "EUR-CHF", "sourceCurrency": "EUR", "targetCurrency": "CHF" }
+]
