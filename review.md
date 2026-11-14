@@ -109,7 +109,7 @@ no leftovers. No error found in the money calculations.
    overlong comment in `compare.ts`.
 
 **For the owner (not changed)**
-1. **"Arrives" isn't comparable between a manual rate and the others.** Seen on the local
+1. *(Resolved 2026-11-14: today's reference rate, ADR 0010, 5d.)* **"Arrives" isn't comparable between a manual rate and the others.** Seen on the local
    production stack (2,500 CHF, reference rate 1.0832 of 12 Nov): PostFinance shows 2,700.95 EUR,
    more than Wise's 2,700.48, yet ranks last with 1.22%. Its rate was read on 6 Nov (reference
    rate 1.0937 that day) and "arrives" is computed with that old rate; the cost % is right (it is

@@ -116,6 +116,7 @@ function toDto(row: ComparisonRow): ResultRowDto {
     approximate: row.approximate,
     midRate: toMidDto(row.mid),
     rateCapturedAt: pricing.kind === "rate" ? pricing.capturedAt.toISOString() : null,
+    measuredAgainst: row.measuredAgainst === null ? null : toMidDto(row.measuredAgainst),
     checkedAt: offer.checkedAt.toISOString(),
     sourceUrl: offer.sourceUrl,
   };

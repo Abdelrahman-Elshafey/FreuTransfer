@@ -26,12 +26,13 @@ export const it: Messages = {
     manual: "Manuale",
     manualApproximate: "Manuale · approssimativo",
     checked: (date) => `verificato il ${date}`,
-    comparedWith: (rate, bank, day) => `vs tasso medio ${rate} (${bank}, ${day})`,
+    measuredAgainst: (rate, bank, day) =>
+      `stimato dallo scarto rispetto al tasso medio ${rate} (${bank}, ${day}) al momento della lettura`,
   },
   rateSources: { ecb: "BCE" },
   results: {
     midRate: (p) =>
-      `Confrontato con il tasso medio di mercato 1 ${p.from} = ${p.rate} ${p.to} (${p.bank}, ${p.day}); i tassi manuali con quello del giorno in cui sono stati letti.`,
+      `Confrontato con il tasso medio di mercato 1 ${p.from} = ${p.rate} ${p.to} (${p.bank}, ${p.day}); i tassi manuali mantengono il loro scarto rispetto al tasso del giorno in cui sono stati letti.`,
     midRateTooOld: (p) =>
       `Il tasso di riferimento è del ${p.day}, cioè di oltre ${p.days} giorni fa: al momento non arrivano nuovi tassi, quindi questi risultati potrebbero non essere aggiornati.`,
     none: "Ancora nessun dato verificato.",

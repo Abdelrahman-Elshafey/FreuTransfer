@@ -53,12 +53,17 @@ export type ResultRowDto = {
   readonly totalCost: MoneyDto;
   /** Percent with 2 decimals, rounded once from the exact value: "0.95" means 0.95%. */
   readonly totalCostPercent: string;
-  /** True for manual rates: read at another time than the reference rate. */
+  /** True for manual rates: an estimate from a rate read on another day or at another time. */
   readonly approximate: boolean;
-  /** The reference rate this row was compared with (a manual rate's own day, not always today's). */
+  /** The reference rate this row was compared with: the newest one, the same for every row. */
   readonly midRate: MidRateDto;
   /** Manual rates only: when the provider's rate was read (ISO 8601, UTC). */
   readonly rateCapturedAt: string | null;
+  /**
+   * Manual rates only: the reference rate of the day the provider's rate was read. Its distance
+   * from it is applied to `midRate`, so `received` is an estimate at today's rate (ADR 0010).
+   */
+  readonly measuredAgainst: MidRateDto | null;
   /** ISO 8601, UTC. */
   readonly checkedAt: string;
   readonly sourceUrl: string;

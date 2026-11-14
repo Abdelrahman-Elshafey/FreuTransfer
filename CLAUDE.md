@@ -73,7 +73,8 @@ Each rule names the mistake it prevents.
   `total_cost = total_paid − received / mid_rate`, `fx_markup = total_cost − visible_fee`,
   `total_cost_% = total_cost / total_paid`.
 - Every result carries its source link and check date, the capture time of a manual rate, and the
-  reference rate it was compared with (source and day). Quotes are computed on every request, not
+  reference rate it was compared with (source and day); a manual rate also the reference rate of the
+  day it was read, whose distance is applied to today's (ADR 0010). Quotes are computed on every request, not
   stored. Sender and recipient countries follow from the corridor in v1 (ADR 0008).
 
 ## Architecture rules

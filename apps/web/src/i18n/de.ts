@@ -27,12 +27,13 @@ export const de: Messages = {
     manual: "Manuell",
     manualApproximate: "Manuell · ungefähr",
     checked: (date) => `geprüft am ${date}`,
-    comparedWith: (rate, bank, day) => `vs. Mittelkurs ${rate} (${bank}, ${day})`,
+    measuredAgainst: (rate, bank, day) =>
+      `geschätzt aus dem Abstand zum Mittelkurs ${rate} (${bank}, ${day}) beim Ablesen`,
   },
   rateSources: { ecb: "EZB" },
   results: {
     midRate: (p) =>
-      `Verglichen mit dem Mittelkurs 1 ${p.from} = ${p.rate} ${p.to} (${p.bank}, ${p.day}); manuelle Kurse mit dem Kurs des Tages, an dem sie abgelesen wurden.`,
+      `Verglichen mit dem Mittelkurs 1 ${p.from} = ${p.rate} ${p.to} (${p.bank}, ${p.day}); manuelle Kurse behalten ihren Abstand zum Kurs des Tages, an dem sie abgelesen wurden.`,
     midRateTooOld: (p) =>
       `Der Referenzkurs ist vom ${p.day}, also über ${p.days} Tage alt: Zurzeit kommen keine neuen Kurse an, die Ergebnisse können deshalb veraltet sein.`,
     none: "Noch keine geprüften Anbieterdaten.",
