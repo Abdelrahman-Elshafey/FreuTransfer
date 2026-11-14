@@ -2,8 +2,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App.tsx";
 import { I18nProvider } from "./i18n/context.tsx";
-// The font is bundled and served by our own nginx: no request to a font CDN (docs/adr/0011).
+// Fonts are bundled and served by our own nginx: no request to a font CDN (docs/adr/0011).
 import "@fontsource-variable/inter";
+import "@fontsource-variable/jetbrains-mono";
 import "./styles.css";
 
 const root = document.getElementById("root");

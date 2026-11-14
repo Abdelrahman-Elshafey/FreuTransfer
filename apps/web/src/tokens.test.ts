@@ -36,6 +36,7 @@ const PAIRS = [
   ["ink", "card"],
   ["muted", "page"],
   ["muted", "card"],
+  ["accent-ink", "accent"],
   ["danger", "page"],
   ["danger", "card"],
   ["warn-ink", "warn-bg"],

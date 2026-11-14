@@ -28,12 +28,13 @@ export const de: Messages = {
     ruleBased: "Regelbasiert",
     manual: "Manuell",
     manualApproximate: "Manuell · ungefähr",
-    checked: (date) => `geprüft am ${date}`,
+    checked: (date, ago) => `geprüft am ${date} · ${ago}`,
     measuredAgainst: (rate, bank, day) =>
       `geschätzt aus dem Abstand zum Mittelkurs ${rate} (${bank}, ${day}) beim Ablesen`,
   },
   rateSources: { ecb: "EZB" },
   results: {
+    cheapest: "Am günstigsten",
     midRate: (p) =>
       `Verglichen mit dem Mittelkurs 1 ${p.from} = ${p.rate} ${p.to} (${p.bank}, ${p.day}); manuelle Kurse behalten ihren Abstand zum Kurs des Tages, an dem sie abgelesen wurden.`,
     midRateTooOld: (p) =>

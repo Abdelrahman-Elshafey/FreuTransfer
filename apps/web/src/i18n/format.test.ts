@@ -44,6 +44,36 @@ describe("formatterFor", () => {
   });
 });
 
+describe("ago", () => {
+  // Expected texts printed from Node 26.13's ICU (Intl.RelativeTimeFormat, numeric "auto").
+  const now = new Date("2026-11-14T10:00:00Z"); // 11:00 in Zurich (CET, UTC+1)
+
+  it.each([
+    // [checked at (UTC), Zurich calendar days before 14 Nov, en-CH]
+    ["2026-11-14T08:00:00Z", "today"], // 09:00 Zurich, 14 Nov
+    ["2026-11-13T23:30:00Z", "today"], // 00:30 Zurich, 14 Nov: still the 13th in UTC
+    ["2026-11-13T22:59:00Z", "yesterday"], // 23:59 Zurich, 13 Nov: under 12 hours ago
+    ["2026-11-12T12:00:00Z", "2 days ago"],
+    ["2026-11-06T07:38:00Z", "8 days ago"],
+  ])("checked %s is %j on 14 Nov 11:00 in Zurich", (checked, expected) => {
+    expect(formatterFor("en-CH").ago(checked, now)).toBe(expected);
+  });
+
+  it("is in the reader's language", () => {
+    const eightDays = "2026-11-06T07:38:00Z";
+    expect(formatterFor("de-CH").ago(eightDays, now)).toBe("vor 8 Tagen");
+    expect(formatterFor("fr-CH").ago(eightDays, now)).toBe("il y a 8 jours");
+    expect(formatterFor("it-CH").ago(eightDays, now)).toBe("8 giorni fa");
+    expect(formatterFor("de-CH").ago("2026-11-12T12:00:00Z", now)).toBe("vorgestern");
+  });
+
+  it("counts calendar days across the switch to summer time (29 Mar 2026, a 23-hour day)", () => {
+    // 28 Mar 12:00 Zurich (CET) to 30 Mar 12:00 Zurich (CEST): 47 hours, 2 calendar days.
+    const after = new Date("2026-03-30T10:00:00Z");
+    expect(formatterFor("en-CH").ago("2026-03-28T11:00:00Z", after)).toBe("2 days ago");
+  });
+});
+
 describe("parseAmount", () => {
   it.each([
     ["1000", "1000"],
