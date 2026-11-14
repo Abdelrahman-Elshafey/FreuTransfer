@@ -23,6 +23,8 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+# Line counts written by the VS Code Counter extension: local reports, not project files
+.VSCodeCounter/
 
 # generated Prisma client (run `pnpm --filter @freu-transfer/db generate`)
 packages/db/src/generated/
