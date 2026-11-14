@@ -22,5 +22,11 @@
     "name": "Wise",
     "kind": "fintech",
     "website": "https://wise.com/ch/"
+  },
+  {
+    "id": "western-union",
+    "name": "Western Union",
+    "kind": "money_transfer_operator",
+    "website": "https://www.westernunion.com/ch/en/"
   }
 ]
