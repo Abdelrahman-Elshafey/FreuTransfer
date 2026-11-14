@@ -11,7 +11,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 2 | Core engine | ✅ Done (2026-11-10) | `Money`/`Rate` value objects, fee strategies, `computeCost`, rounding, golden + property tests | 2 real calculator results reproduced to the cent ✅ (third skipped by the owner) |
 | 3 | v0.1 end-to-end | ✅ Done (2026-11-12): 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ✅ (3e-1 images · 3e-2 CI · 3e-3 first deploy · 3e-4 backups) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
 | 4 | Mid-market + pipeline | ✅ Done (2026-11-13): 4a database ✅ · 4b collector ✅ · 4c hourly `collect` service ✅ · 4e old-rate warning ✅ · 4d one week ⏳ (verify 20 Nov) | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored (8 working days 3–12 Nov stored; 16–20 Nov to be collected live) |
-| 5 | Provider data | 🟡 **In progress**: 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider ✅ · 5c EUR→CHF data ✅ · 5e corridor choice | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
+| 5 | Provider data | 🟡 **In progress**: 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider ✅ · 5c EUR→CHF data ✅ · 5d manual rates at today's reference rate · 5e corridor choice | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ⬜ Not started | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
 | 7 | Polish | ⬜ Not started | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes |
 | 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts | — |
@@ -270,6 +270,14 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   available for this amount" → "Not in this comparison" in four languages; runbook: how to take a
   provider off the site. 253 tests. For the owner: "arrives" of a manual rate isn't comparable
   with the others (PostFinance shows more EUR than Wise but ranks last), and six smaller points.
+- **2026-11-13:** Owner's answers to the review. **Supply-chain gate on:** `minimumReleaseAge:
+  10080` (7 days) in `pnpm-workspace.yaml`; set explicitly it is also strict (pnpm's built-in
+  default is 1 day and falls back to too-new versions). Checked with pnpm 12.16.1: a 2-day-old
+  `vite@8.3.8` is refused, and so is the current lockfile until its newest entry (knip 6.44.2,
+  7 Nov 09:28 UTC) is 7 days old, so CI is red until 14 Nov ~10:30 Zurich. **Server address**
+  replaced by a placeholder in `docs/deploy.md` (older commits keep it). **20 merged branches
+  deleted** on GitHub and locally. Decided: a manual rate's "arrives" will use today's reference
+  rate minus its measured markup, labelled as an estimate (5d, after 5c).
 - **2026-11-13:** **5c: the EUR→CHF direction and Western Union**, from the owner's screenshots
   (times read from the Windows clock, Zurich time). Corridor `EUR-CHF` (the collector fetched 7 new
   EUR→CHF days on its first local run); the EUR→CHF reference rate of 5 Nov (0.918) read from

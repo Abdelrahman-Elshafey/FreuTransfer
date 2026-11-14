@@ -21,7 +21,8 @@ Source of truth for scope and roadmap: `Project Plan.md`. Market and data-source
   Commits are authored as A.Elshafey only, with no AI attribution lines.
 - Before adding or upgrading any dependency, check the **latest stable** version in the npm
   registry (`npm view <pkg> dist-tags`). Skip RC/alpha releases, and check engines and peer dependencies.
-  pnpm's `minimumReleaseAge` supply-chain gate refuses very fresh releases. **Don't add
+  pnpm's `minimumReleaseAge` supply-chain gate (7 days, strict, in `pnpm-workspace.yaml`) refuses
+  any version younger than that, also in the lockfile, so CI fails too. **Don't add
   `minimumReleaseAgeExclude` entries**; pick the newest version old enough to pass the gate.
 - Record significant decisions as ADRs in `docs/adr/` (`NNNN-short-title.md`).
 

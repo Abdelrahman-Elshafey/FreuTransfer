@@ -94,7 +94,7 @@ packages as private even for a public repository; public ones need no password o
 
 ### 3. Claude (with the owner's OK): the repository on the server
 ```sh
-ssh ubuntu@15.235.241.21
+ssh ubuntu@<server-ip>    # the VPS address: OVH control panel, or the owner's password manager
 git clone https://github.com/Abdelrahman-Elshafey/FreuTransfer.git ~/apps/freutransfer
 ```
 
@@ -137,7 +137,7 @@ Then check the page in all four languages, and that UrConnections is still healt
 4. **Settings → Secrets and variables → Actions → Variables** (repository variables):
    - `DEPLOY_KNOWN_HOSTS`: the server's host key line, which Claude reads from the server and
      checks against its fingerprint;
-   - `DEPLOY_HOST`: `15.235.241.21`. Add this one **last**: the deploy job is skipped until it
+   - `DEPLOY_HOST`: the server's IP address (not written in this public repository). Add this one **last**: the deploy job is skipped until it
      exists, so nothing tries to deploy before the server is ready.
 
 ## Update, roll back, look around
