@@ -8,21 +8,29 @@ export type CompareError =
   | { readonly kind: "invalidQuery" }
   | { readonly kind: "corridorNotAvailable" };
 
+/** The directions the page offers: the v1 corridors (ADR 0008). The first is the default. */
+export const DIRECTIONS = [
+  { from: "CHF", to: "EUR" },
+  { from: "EUR", to: "CHF" },
+] as const;
+export type Direction = (typeof DIRECTIONS)[number];
+
 export type CompareOutcome =
   | { readonly ok: true; readonly data: ComparisonDto }
   | { readonly ok: false; readonly error: CompareError };
 
 /**
- * Calls `GET /v1/compare`. Network and server failures become a `CompareError`; only unexpected
+ * Calls `GET /v1/compare` for "I pay `amount` in `direction.from`, the recipient gets `direction.to`". Network and server failures become a `CompareError`; only unexpected
  * errors (bugs) are thrown. `amount` is already in the API's form ("1000.50", see parseAmount).
  * /v1/* goes to the API: through Vite's proxy in development (vite.config.ts), through nginx
  * in production (apps/web/nginx.conf, docs/adr/0004).
  */
 export async function fetchComparison(
+  direction: Direction,
   amount: string,
   fetchFn: typeof fetch = fetch,
 ): Promise<CompareOutcome> {
-  const query = new URLSearchParams({ from: "CHF", to: "EUR", amount });
+  const query = new URLSearchParams({ from: direction.from, to: direction.to, amount });
   let res: Response;
   try {
     res = await fetchFn(`/v1/compare?${query}`);

@@ -5,8 +5,9 @@ export const de: Messages = {
   title: "FreuTransfer — Kostenvergleich",
   language: "Sprache",
   intro:
-    "Sie senden Franken. Finden Sie heraus, was wirklich ankommt und wie viel im Wechselkurs versteckt ist.",
+    "Sie senden Geld zwischen der Schweiz und dem Euroraum? Finden Sie heraus, was wirklich ankommt und wie viel im Wechselkurs versteckt ist.",
   form: {
+    direction: "Richtung",
     iPay: "Ich zahle",
     amountLabel: (currency) => `Betrag in ${currency}`,
     compare: "Vergleichen",

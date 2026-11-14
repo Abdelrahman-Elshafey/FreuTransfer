@@ -4,8 +4,10 @@ import type { Messages } from "./en.ts";
 export const it: Messages = {
   title: "FreuTransfer — Confronto dei costi",
   language: "Lingua",
-  intro: "Invia franchi? Scopra quanto arriva davvero e quanto è nascosto nel tasso di cambio.",
+  intro:
+    "Invia denaro tra la Svizzera e l’area dell’euro? Scopra quanto arriva davvero e quanto è nascosto nel tasso di cambio.",
   form: {
+    direction: "Direzione",
     iPay: "Pago",
     amountLabel: (currency) => `Importo in ${currency}`,
     compare: "Confronta",
