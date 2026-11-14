@@ -76,6 +76,16 @@ export type ResultRowDto = {
    */
   readonly measuredAgainst: MidRateDto | null;
   readonly caveats: readonly CaveatDto[];
+  /**
+   * Ranked rows only (null in `stale`): the difference from the cheapest ranked row, from the
+   * rounded amounts shown, zero for the cheapest. `extraCostPerYear` = 12 × `extraCost`, for
+   * sending this amount every month.
+   */
+  readonly vsCheapest: {
+    readonly extraCost: MoneyDto;
+    readonly lessReceived: MoneyDto;
+    readonly extraCostPerYear: MoneyDto;
+  } | null;
   /** ISO 8601, UTC. */
   readonly checkedAt: string;
   readonly sourceUrl: string;

@@ -134,6 +134,14 @@ function toDto(row: ComparisonRow): ResultRowDto {
     rateCapturedAt: pricing.kind === "rate" ? pricing.capturedAt.toISOString() : null,
     measuredAgainst: row.measuredAgainst === null ? null : toMidDto(row.measuredAgainst),
     caveats: row.caveats.map(toCaveatDto),
+    vsCheapest:
+      row.vsCheapest === null
+        ? null
+        : {
+            extraCost: row.vsCheapest.extraCost.toJSON(),
+            lessReceived: row.vsCheapest.lessReceived.toJSON(),
+            extraCostPerYear: row.vsCheapest.extraCostPerYear.toJSON(),
+          },
     checkedAt: offer.checkedAt.toISOString(),
     sourceUrl: offer.sourceUrl,
   };

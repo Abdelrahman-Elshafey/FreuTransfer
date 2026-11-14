@@ -41,7 +41,37 @@ export type ComparisonRow = {
   readonly approximate: boolean;
   /** What the reader should know that the numbers can't show (caveatsFor). */
   readonly caveats: readonly Caveat[];
+  /** Ranked rows only: what this provider costs more than the cheapest one; null for stale rows. */
+  readonly vsCheapest: VsCheapest | null;
 };
+
+/**
+ * "My bank vs best" (Project Plan §1): the difference from the cheapest ranked row, from the
+ * rounded amounts the reader sees, so the numbers on the page add up. Zero for the cheapest row
+ * and for rows tied with it.
+ */
+type VsCheapest = {
+  /** Total cost minus the cheapest's, in the sender's currency. */
+  readonly extraCost: Money;
+  /** How much less arrives than with the cheapest, in the recipient's currency. */
+  readonly lessReceived: Money;
+  /**
+   * `extraCost` × 12: sending this amount every month for a year (the commuter's view). Holds for
+   * a monthly allowance too, which starts again every month.
+   */
+  readonly extraCostPerYear: Money;
+};
+
+const MONTHS_PER_YEAR = "12";
+
+function vsCheapest(row: ComparisonRow, cheapest: ComparisonRow): VsCheapest {
+  const extraCost = row.cost.totalCost.minus(cheapest.cost.totalCost);
+  return {
+    extraCost,
+    lessReceived: cheapest.quote.received.minus(row.quote.received),
+    extraCostPerYear: extraCost.times(MONTHS_PER_YEAR),
+  };
+}
 
 /**
  * Something about a row that its numbers can't show (Project Plan §4). A code with its values, not
@@ -210,6 +240,7 @@ export function rankOffers(
       measuredAgainst,
       approximate: pricing.kind === "rate",
       caveats: caveatsFor(offer),
+      vsCheapest: null,
     };
     const ageDays = (now.getTime() - offer.checkedAt.getTime()) / DAY_MS;
     (ageDays > RECHECK_DAYS ? stale : fresh).push(row);
@@ -220,13 +251,19 @@ export function rankOffers(
     a.cost.totalCost.compareTo(b.cost.totalCost) ||
     (a.offer.providerId < b.offer.providerId ? -1 : 1);
 
+  fresh.sort(byCost);
+  const [cheapest] = fresh;
+  const ranked = cheapest
+    ? fresh.map((row) => ({ ...row, vsCheapest: vsCheapest(row, cheapest) }))
+    : [];
+
   // Calendar days from the publication day to today, both in Zurich (the rate's own time zone).
   const midAgeDays = (Date.parse(zurichDay(now)) - Date.parse(mid.asOf)) / DAY_MS;
   return {
     amount,
     mid,
     midTooOld: midAgeDays > MID_RATE_MAX_AGE_DAYS,
-    ranked: fresh.sort(byCost),
+    ranked,
     stale: stale.sort(byCost),
     unavailable,
   };

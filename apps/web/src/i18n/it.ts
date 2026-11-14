@@ -51,6 +51,13 @@ export const it: Messages = {
       "le commissioni superano questo importo, oppure è fuori dai limiti del fornitore",
     implausible_cost: "i suoi dati di prezzo sembrano errati e sono in verifica",
   },
+  myProvider: {
+    label: "Il mio fornitore",
+    choose: "Scegliere…",
+    cheapest: (mine) => `${mine} è il più conveniente per questo importo.`,
+    difference: (p) =>
+      `Con ${p.mine} paga ${p.extraCost} in più che con ${p.best} (arrivano ${p.lessReceived} in meno): ${p.perYear} all’anno se invia questo importo ogni mese.`,
+  },
   caveats: {
     monthly_allowance: (amount) =>
       `Nessuna maggiorazione sui primi ${amount} cambiati ogni mese; i cambi effettuati prima nel mese ne vengono detratti.`,

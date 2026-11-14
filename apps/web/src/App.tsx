@@ -6,6 +6,7 @@ import type { Messages } from "./i18n/en.ts";
 import { type Formatter, parseAmount } from "./i18n/format.ts";
 import { LOCALE_CODES, type Locale, localeInfo } from "./i18n/locales.ts";
 import { cheapestIds } from "./results.ts";
+import { readSaved, save } from "./storage.ts";
 
 // Design: docs/adr/0011 and docs/design-inspiration.md §7 (tokens in styles.css).
 // Every visible word comes from the catalogs in ./i18n (docs/adr/0005).
@@ -217,6 +218,59 @@ function ResultList(props: ListProps) {
   );
 }
 
+const MY_PROVIDER_KEY = "freu-transfer.my-provider";
+
+/**
+ * "Am I overpaying with my bank?" (Project Plan §1): the reader picks their provider and sees what
+ * it costs more than the cheapest. The API computes the amounts (`vsCheapest`); the choice is
+ * remembered in the browser for the next visit.
+ */
+function MyProvider({ ranked }: { ranked: ComparisonDto["results"] }) {
+  const { t, f } = useI18n();
+  const [mine, setMine] = useState(() => readSaved(MY_PROVIDER_KEY) ?? "");
+  const row = ranked.find((r) => r.providerId === mine);
+  const best = ranked[0];
+  let sentence: string | null = null;
+  if (row?.vsCheapest && best) {
+    sentence = cheapestIds(ranked).has(row.providerId)
+      ? t.myProvider.cheapest(row.providerName)
+      : t.myProvider.difference({
+          mine: row.providerName,
+          best: best.providerName,
+          extraCost: f.money(row.vsCheapest.extraCost),
+          lessReceived: f.money(row.vsCheapest.lessReceived),
+          perYear: f.money(row.vsCheapest.extraCostPerYear),
+        });
+  }
+  return (
+    <div className={`${card} mb-4 flex flex-col gap-3 sm:flex-row sm:items-center`}>
+      <label className="flex shrink-0 flex-col gap-1.5 text-sm text-muted">
+        {t.myProvider.label}
+        <select
+          value={row ? mine : ""}
+          onChange={(e) => {
+            setMine(e.target.value);
+            save(MY_PROVIDER_KEY, e.target.value);
+          }}
+          className={`${field} text-ink`}
+        >
+          <option value="">{t.myProvider.choose}</option>
+          {ranked.map((r) => (
+            <option key={r.providerId} value={r.providerId}>
+              {r.providerName}
+            </option>
+          ))}
+        </select>
+      </label>
+      {sentence && (
+        <p className="text-lg" aria-live="polite">
+          {sentence}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function Results({ data }: { data: ComparisonDto }) {
   const { t, f } = useI18n();
   const heading = "mt-10 mb-3 text-xl font-medium tracking-tight";
@@ -239,6 +293,7 @@ function Results({ data }: { data: ComparisonDto }) {
           day: f.day(data.midRate.asOf),
         })}
       </p>
+      {data.results.length > 1 && <MyProvider ranked={data.results} />}
       {data.results.length > 0 ? (
         <ResultList rows={data.results} ranked cheapest={cheapestIds(data.results)} />
       ) : (
