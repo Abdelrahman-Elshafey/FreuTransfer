@@ -211,7 +211,7 @@ No error found in the money calculations.
 3. **Fee tiers by amount** (`kind: "tiered"` in `packages/core/src/fees.ts`) can't be stored in the
    database yet, so only tests reach them. The plan (§6) names them; keep for stage 5, or remove
    until a provider needs them.
-4. **No security headers and no request limit** on the public site (Cloudflare gives basic
+4. *(Resolved 2026-11-18: nginx security headers and a per-visitor limit, 7a.)* **No security headers and no request limit** on the public site (Cloudflare gives basic
    protection). Suggested for stage 7.
 5. `pnpm audit`: 2 moderate findings in `glob`/`minimatch`, reached only through Testcontainers
    (tests). No fixed Testcontainers release exists yet. They are also inside the `migrate` image but
