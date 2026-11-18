@@ -36,6 +36,7 @@ const yuh: ProviderOffer = {
 const deps = (overrides: Partial<AppDeps> = {}): AppDeps => ({
   offers: { latestOffers: async (s, t) => (s === "CHF" && t === "EUR" ? [yuh] : []) },
   midRates: { latest: async (b, q) => (b === "CHF" && q === "EUR" ? mid : null) },
+  history: { between: async () => [] },
   now: () => now,
   ...overrides,
 });
@@ -327,5 +328,79 @@ describe("GET /v1/compare", () => {
     expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
     // "about:blank" means "just the HTTP status", so the title is the status phrase (RFC 9457 §4.2.1).
     expect(res.body).toMatchObject({ type: "about:blank", title: "Not Found" });
+  });
+});
+
+describe("GET /v1/history", () => {
+  // now = 2026-11-05T18:00:00Z (19:00 in Zurich): today is 5 Nov.
+  const nov4: MidRateObservation = {
+    ...mid,
+    rate: Rate.of("CHF", "EUR", "1.0712"),
+    asOf: "2026-11-04",
+  };
+
+  it("returns the last 90 Zurich days by default, rates as exact strings, oldest first", async () => {
+    const asked: unknown[] = [];
+    const app = createApp(
+      deps({
+        history: {
+          between: async (...args) => {
+            asked.push(args);
+            return [nov4, mid];
+          },
+        },
+      }),
+    );
+    const res = await request(app).get("/v1/history?from=chf&to=eur");
+    expect(res.status).toBe(200);
+    // 90 days, today included: 5 Nov − 89 days = 8 Aug (Nov 5 → Oct 6 is 30, → Sep 6 is 60,
+    // → Aug 7 would be 90, so 89 days back is Aug 8).
+    expect(asked).toEqual([["CHF", "EUR", "2026-08-08", "2026-11-05"]]);
+    expect(res.body).toEqual({
+      from: "CHF",
+      to: "EUR",
+      days: 90,
+      fromDay: "2026-08-08",
+      toDay: "2026-11-05",
+      rates: [
+        { rate: "1.0712", source: "ecb", asOf: "2026-11-04" },
+        { rate: "1.0893", source: "ecb", asOf: "2026-11-05" },
+      ],
+    });
+  });
+
+  it("takes days from 1 to 366", async () => {
+    const app = createApp(deps());
+    const one = await request(app).get("/v1/history?from=EUR&to=CHF&days=1");
+    expect([one.status, one.body.fromDay, one.body.toDay]).toEqual([
+      200,
+      "2026-11-05",
+      "2026-11-05",
+    ]);
+    expect((await request(app).get("/v1/history?from=EUR&to=CHF&days=366")).status).toBe(200);
+  });
+
+  it.each([
+    ["days=0", "below 1"],
+    ["days=367", "above a year"],
+    ["days=1.5", "not whole"],
+    ["days=-3", "negative"],
+    ["days=abc", "not a number"],
+  ])("refuses %s (%s) as an invalid query", async (days) => {
+    const res = await request(createApp(deps())).get(`/v1/history?from=CHF&to=EUR&${days}`);
+    expect(res.status).toBe(400);
+    expect(res.body.type).toBe(PROBLEM_TYPES.invalidQuery);
+    expect(res.body.errors[0].field).toBe("days");
+  });
+
+  it("refuses the same currency twice and an unsupported one", async () => {
+    const app = createApp(deps());
+    expect((await request(app).get("/v1/history?from=CHF&to=CHF")).status).toBe(400);
+    expect((await request(app).get("/v1/history?from=CHF&to=USD")).status).toBe(400);
+  });
+
+  it("answers an empty list, not an error, when no rate is stored in the range", async () => {
+    const res = await request(createApp(deps())).get("/v1/history?from=EUR&to=CHF");
+    expect([res.status, res.body.rates]).toEqual([200, []]);
   });
 });

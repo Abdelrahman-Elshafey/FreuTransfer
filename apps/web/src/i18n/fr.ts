@@ -67,6 +67,16 @@ export const fr: Messages = {
     showTable: "Afficher sous forme de tableau",
     unavailable: "Le graphique « Coût selon le montant » ne peut pas être affiché pour le moment.",
   },
+  rateChart: {
+    title: (from, to) => `Taux de référence : 1 ${from} en ${to}`,
+    subtitle: (bank, first, last) =>
+      `Taux moyen publié par la ${bank} les jours ouvrables, du ${first} au ${last}.`,
+    none: "Aucun taux de référence n’est encore enregistré pour cette période.",
+    day: "Jour",
+    rate: "Taux",
+    keyboard: "Taux de référence par jour : flèches gauche et droite",
+    unavailable: "Le graphique du taux de référence ne peut pas être affiché pour le moment.",
+  },
   caveats: {
     monthly_allowance: (amount) =>
       `Aucune majoration sur les premiers ${amount} changés par mois ; les changes effectués plus tôt dans le mois en sont déduits.`,

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import type { ComparisonDto, ResultRowDto } from "@freu-transfer/api/contract";
 import { describe, expect, it } from "vitest";
-import { CHART_AMOUNTS, costSeries, percentTicks, seriesSlot } from "./chart-data.ts";
+import { CHART_AMOUNTS, costSeries, percentTicks, rateTicks, seriesSlot } from "./chart-data.ts";
 
 const row = (providerId: string, percent: string) =>
   ({
@@ -74,5 +74,21 @@ describe("percentTicks", () => {
 
   it("covers the five sample amounts of Project Plan §4", () => {
     expect(CHART_AMOUNTS).toEqual(["100", "500", "1000", "2500", "5000"]);
+  });
+});
+
+describe("rateTicks", () => {
+  it.each([
+    // CHF→EUR, 1.0712 … 1.0893 (range 0.0181): 0.0025 would need 428 … 436 = 8 steps;
+    // 0.005 needs floor(214.24) = 214 … ceil(217.86) = 218 = 4 steps.
+    [1.0712, 1.0893, ["1.070", "1.075", "1.080", "1.085", "1.090"]],
+    // EUR→CHF, 0.918 … 0.9266: 0.001 needs 918 … 927 = 9 steps; 0.002 needs 459 … 464 = 5.
+    [0.918, 0.9266, ["0.918", "0.920", "0.922", "0.924", "0.926", "0.928"]],
+    // One rate, between two steps: 1.0792 / 0.0005 = 2158.4 → 2158 … 2159.
+    [1.0792, 1.0792, ["1.0790", "1.0795"]],
+    // One rate exactly on a step (1.08 / 0.0005 = 2160): a step on each side, never a flat axis.
+    [1.08, 1.08, ["1.0795", "1.0800", "1.0805"]],
+  ])("%s … %s → %j", (min, max, ticks) => {
+    expect(rateTicks(min, max)).toEqual(ticks);
   });
 });

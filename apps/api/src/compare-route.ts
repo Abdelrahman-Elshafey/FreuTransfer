@@ -1,11 +1,8 @@
 import {
   type Caveat,
   type ComparisonRow,
-  type CurrencyCode,
   compareProviders,
-  isCurrencyCode,
   MID_RATE_MAX_AGE_DAYS,
-  type MidRateObservation,
   type MidRateRepository,
   Money,
   NoMidRateError,
@@ -22,26 +19,20 @@ import {
   PROBLEM_TYPES,
   type ResultRowDto,
 } from "./contract.ts";
+import { toMidDto } from "./mid-dto.ts";
 import { sendProblem } from "./problem.ts";
-
-const currency = z.string().transform((s, ctx): CurrencyCode => {
-  const code = s.toUpperCase();
-  if (isCurrencyCode(code)) return code;
-  ctx.addIssue({ code: "custom", message: "unsupported currency" });
-  return z.NEVER;
-});
+import { differentCurrencies, pair, parseQuery } from "./query.ts";
 
 /** `GET /v1/compare?from=CHF&to=EUR&amount=1000`. The amount stays a string (never a float). */
 const querySchema = z
   .object({
-    from: currency,
-    to: currency,
+    ...pair,
     // Checked on the digits, not with parseFloat: money never becomes a JS number.
     amount: z
       .string()
       .refine(isAmount, "a positive amount with at most 2 decimals, e.g. 1000 or 1000.50"),
   })
-  .refine((q) => q.from !== q.to, { message: "from and to must differ", path: ["to"] });
+  .refine(...differentCurrencies);
 
 export type CompareDeps = {
   readonly offers: OfferRepository;
@@ -53,17 +44,9 @@ export type CompareDeps = {
 export function compareRouter(deps: CompareDeps): Router {
   const router = Router();
   const handler: RequestHandler = async (req, res) => {
-    const parsed = querySchema.safeParse(req.query);
-    if (!parsed.success) {
-      sendProblem(res, {
-        type: PROBLEM_TYPES.invalidQuery,
-        title: "Invalid query",
-        status: 400,
-        errors: parsed.error.issues.map((i) => ({ field: i.path.join("."), message: i.message })),
-      });
-      return;
-    }
-    const { from, to, amount } = parsed.data;
+    const query = parseQuery(querySchema, req, res);
+    if (!query) return;
+    const { from, to, amount } = query;
     try {
       const result = await compareProviders(deps, {
         amount: Money.of(amount, from),
@@ -99,10 +82,6 @@ export function compareRouter(deps: CompareDeps): Router {
   };
   router.get("/v1/compare", handler);
   return router;
-}
-
-function toMidDto(mid: MidRateObservation): ResultRowDto["midRate"] {
-  return { rate: mid.rate.value.toString(), source: mid.source, asOf: mid.asOf };
 }
 
 function toCaveatDto(caveat: Caveat): CaveatDto {

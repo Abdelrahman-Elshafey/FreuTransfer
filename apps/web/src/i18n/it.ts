@@ -67,6 +67,16 @@ export const it: Messages = {
     showTable: "Mostra come tabella",
     unavailable: "Il grafico «Costo secondo l’importo» non può essere mostrato al momento.",
   },
+  rateChart: {
+    title: (from, to) => `Tasso di riferimento: 1 ${from} in ${to}`,
+    subtitle: (bank, first, last) =>
+      `Tasso medio pubblicato dalla ${bank} nei giorni lavorativi, dal ${first} al ${last}.`,
+    none: "Per questo periodo non sono ancora salvati tassi di riferimento.",
+    day: "Giorno",
+    rate: "Tasso",
+    keyboard: "Tasso di riferimento per giorno: frecce sinistra e destra",
+    unavailable: "Il grafico del tasso di riferimento non può essere mostrato al momento.",
+  },
   caveats: {
     monthly_allowance: (amount) =>
       `Nessuna maggiorazione sui primi ${amount} cambiati ogni mese; i cambi effettuati prima nel mese ne vengono detratti.`,

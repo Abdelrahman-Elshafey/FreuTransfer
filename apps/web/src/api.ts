@@ -1,7 +1,12 @@
-import { type ComparisonDto, PROBLEM_TYPES, type ProblemDto } from "@freu-transfer/api/contract";
+import {
+  type ComparisonDto,
+  type HistoryDto,
+  PROBLEM_TYPES,
+  type ProblemDto,
+} from "@freu-transfer/api/contract";
 
 /** What went wrong, as a code: the page turns it into a sentence in the reader's language. */
-export type CompareError =
+export type ApiError =
   | { readonly kind: "unreachable" }
   | { readonly kind: "notJson"; readonly status: number }
   | { readonly kind: "http"; readonly status: number }
@@ -15,25 +20,20 @@ export const DIRECTIONS = [
 ] as const;
 export type Direction = (typeof DIRECTIONS)[number];
 
-export type CompareOutcome =
-  | { readonly ok: true; readonly data: ComparisonDto }
-  | { readonly ok: false; readonly error: CompareError };
+/** An API answer: the data, or what went wrong as a code. */
+export type Outcome<T> =
+  | { readonly ok: true; readonly data: T }
+  | { readonly ok: false; readonly error: ApiError };
 
 /**
- * Calls `GET /v1/compare` for "I pay `amount` in `direction.from`, the recipient gets `direction.to`". Network and server failures become a `CompareError`; only unexpected
- * errors (bugs) are thrown. `amount` is already in the API's form ("1000.50", see parseAmount).
- * /v1/* goes to the API: through Vite's proxy in development (vite.config.ts), through nginx
- * in production (apps/web/nginx.conf, docs/adr/0004).
+ * GET from our API. Network and server failures become an `ApiError`; only unexpected errors
+ * (bugs) are thrown. /v1/* goes to the API: through Vite's proxy in development
+ * (vite.config.ts), through nginx in production (apps/web/nginx.conf, docs/adr/0004).
  */
-export async function fetchComparison(
-  direction: Direction,
-  amount: string,
-  fetchFn: typeof fetch = fetch,
-): Promise<CompareOutcome> {
-  const query = new URLSearchParams({ from: direction.from, to: direction.to, amount });
+async function getJson<T>(path: string, fetchFn: typeof fetch): Promise<Outcome<T>> {
   let res: Response;
   try {
-    res = await fetchFn(`/v1/compare?${query}`);
+    res = await fetchFn(path);
   } catch (error) {
     // fetch rejects with a TypeError when the network or the server can't be reached.
     if (!(error instanceof TypeError)) throw error;
@@ -45,12 +45,34 @@ export async function fetchComparison(
       res.ok ? { kind: "notJson", status: res.status } : { kind: "http", status: res.status },
     );
   }
-  if (res.ok) return { ok: true, data: body as ComparisonDto };
+  if (res.ok) return { ok: true, data: body as T };
 
   const type = (body as Partial<ProblemDto> | null)?.type;
   if (type === PROBLEM_TYPES.invalidQuery) return failed({ kind: "invalidQuery" });
   if (type === PROBLEM_TYPES.corridorNotAvailable) return failed({ kind: "corridorNotAvailable" });
   return failed({ kind: "http", status: res.status });
+}
+
+/**
+ * `GET /v1/compare` for "I pay `amount` in `direction.from`, the recipient gets `direction.to`".
+ * `amount` is already in the API's form ("1000.50", see parseAmount).
+ */
+export function fetchComparison(
+  direction: Direction,
+  amount: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<Outcome<ComparisonDto>> {
+  const query = new URLSearchParams({ from: direction.from, to: direction.to, amount });
+  return getJson(`/v1/compare?${query}`, fetchFn);
+}
+
+/** `GET /v1/history`: the reference rates of the API's default period (HistoryDto.days). */
+export function fetchHistory(
+  direction: Direction,
+  fetchFn: typeof fetch = fetch,
+): Promise<Outcome<HistoryDto>> {
+  const query = new URLSearchParams({ from: direction.from, to: direction.to });
+  return getJson(`/v1/history?${query}`, fetchFn);
 }
 
 /**
@@ -61,10 +83,7 @@ export async function fetchComparisons(
   direction: Direction,
   amounts: readonly string[],
   fetchFn: typeof fetch = fetch,
-): Promise<
-  | { readonly ok: true; readonly data: readonly ComparisonDto[] }
-  | { readonly ok: false; readonly error: CompareError }
-> {
+): Promise<Outcome<readonly ComparisonDto[]>> {
   const outcomes = await Promise.all(amounts.map((a) => fetchComparison(direction, a, fetchFn)));
   const data: ComparisonDto[] = [];
   for (const outcome of outcomes) {
@@ -74,7 +93,7 @@ export async function fetchComparisons(
   return { ok: true, data };
 }
 
-const failed = (error: CompareError): CompareOutcome => ({ ok: false, error });
+const failed = (error: ApiError) => ({ ok: false, error }) as const;
 
 const NOT_JSON = Symbol("not JSON");
 

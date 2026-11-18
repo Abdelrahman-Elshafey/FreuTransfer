@@ -1,12 +1,25 @@
-import type { CaveatDto, ComparisonDto, ResultRowDto } from "@freu-transfer/api/contract";
+import type {
+  CaveatDto,
+  ComparisonDto,
+  HistoryDto,
+  ResultRowDto,
+} from "@freu-transfer/api/contract";
 import { type FormEvent, useState } from "react";
-import { type CompareError, DIRECTIONS, fetchComparison, fetchComparisons } from "./api.ts";
+import {
+  type ApiError,
+  DIRECTIONS,
+  fetchComparison,
+  fetchComparisons,
+  fetchHistory,
+} from "./api.ts";
 import { CostChart } from "./CostChart.tsx";
 import { CHART_AMOUNTS } from "./chart-data.ts";
+import { bankName } from "./i18n/bank.ts";
 import { useI18n } from "./i18n/context.tsx";
 import type { Messages } from "./i18n/en.ts";
 import { type Formatter, parseAmount } from "./i18n/format.ts";
 import { LOCALE_CODES, type Locale, localeInfo } from "./i18n/locales.ts";
+import { RateChart } from "./RateChart.tsx";
 import { cheapestIds } from "./results.ts";
 import { readSaved, save } from "./storage.ts";
 
@@ -14,7 +27,7 @@ import { readSaved, save } from "./storage.ts";
 // Every visible word comes from the catalogs in ./i18n (docs/adr/0005).
 
 /** Errors are kept as codes, so switching the language also translates a message already shown. */
-type PageError = CompareError | { readonly kind: "invalidAmount" };
+type PageError = ApiError | { readonly kind: "invalidAmount" };
 
 type Row = ResultRowDto & { readonly rank?: number };
 
@@ -33,13 +46,6 @@ function errorText(t: Messages, error: PageError, example: string): string {
     case "corridorNotAvailable":
       return t.errors.corridorNotAvailable;
   }
-}
-
-/** The publisher's name in the reader's language; an unknown source shows as its code. */
-function bankName(t: Messages, source: string): string {
-  return Object.hasOwn(t.rateSources, source)
-    ? t.rateSources[source as keyof Messages["rateSources"]]
-    : source.toUpperCase();
 }
 
 function caveatText(t: Messages, f: Formatter, caveat: CaveatDto): string {
@@ -358,6 +364,8 @@ export function App() {
   const [loading, setLoading] = useState(false);
   /** The "cost by amount" chart: comparisons at CHART_AMOUNTS, or "failed" (shown as a note). */
   const [chart, setChart] = useState<readonly ComparisonDto[] | "failed" | null>(null);
+  /** The reference rate over time, or "failed" (shown as a note). */
+  const [history, setHistory] = useState<HistoryDto | "failed" | null>(null);
 
   async function compare(event: FormEvent) {
     event.preventDefault();
@@ -365,18 +373,21 @@ export function App() {
     if (parsed === null) {
       setData(null);
       setChart(null);
+      setHistory(null);
       setError({ kind: "invalidAmount" });
       return;
     }
     setLoading(true);
     try {
-      const [outcome, byAmount] = await Promise.all([
+      const [outcome, byAmount, rates] = await Promise.all([
         fetchComparison(direction, parsed),
         fetchComparisons(direction, CHART_AMOUNTS),
+        fetchHistory(direction),
       ]);
       setData(outcome.ok ? outcome.data : null);
       setError(outcome.ok ? null : outcome.error);
       setChart(byAmount.ok ? byAmount.data : "failed");
+      setHistory(rates.ok ? rates.data : "failed");
     } finally {
       setLoading(false); // also after an unexpected error, so the button never stays disabled
     }
@@ -410,6 +421,7 @@ export function App() {
                 // results of the other direction must not stay under the new choice
                 setData(null);
                 setChart(null);
+                setHistory(null);
               }}
               className={`${field} text-ink`}
             >
@@ -455,6 +467,12 @@ export function App() {
             <p className={`${note} mt-10`}>{t.chart.unavailable}</p>
           ) : (
             chart && <CostChart comparisons={chart} currency={direction.from} />
+          ))}
+        {data &&
+          (history === "failed" ? (
+            <p className={`${note} mt-10`}>{t.rateChart.unavailable}</p>
+          ) : (
+            history && <RateChart history={history} />
           ))}
       </main>
 

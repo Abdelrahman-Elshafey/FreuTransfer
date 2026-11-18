@@ -1,6 +1,6 @@
 import { PROBLEM_TYPES } from "@freu-transfer/api/contract";
 import { describe, expect, it } from "vitest";
-import { DIRECTIONS, fetchComparison, fetchComparisons } from "./api.ts";
+import { DIRECTIONS, fetchComparison, fetchComparisons, fetchHistory } from "./api.ts";
 
 const respond = (status: number, body: unknown): typeof fetch =>
   (async () => new Response(JSON.stringify(body), { status })) as typeof fetch;
@@ -119,6 +119,29 @@ describe("fetchComparisons", () => {
     expect(await fetchComparisons(CHF_EUR, ["100", "500", "1000"], second)).toEqual({
       ok: false,
       error: { kind: "http", status: 502 },
+    });
+  });
+});
+
+describe("fetchHistory", () => {
+  it("asks for the chosen direction's history over the API's default period", async () => {
+    let url = "";
+    const spy = (async (input: RequestInfo | URL) => {
+      url = String(input);
+      return new Response(JSON.stringify({ days: 90, rates: [] }));
+    }) as typeof fetch;
+    const outcome = await fetchHistory(EUR_CHF, spy);
+    expect(url).toBe("/v1/history?from=EUR&to=CHF");
+    expect(outcome.ok && outcome.data.days).toBe(90);
+  });
+
+  it("reports failures like a comparison does", async () => {
+    const down = (async () => {
+      throw new TypeError("fetch failed");
+    }) as typeof fetch;
+    expect(await fetchHistory(CHF_EUR, down)).toEqual({
+      ok: false,
+      error: { kind: "unreachable" },
     });
   });
 });

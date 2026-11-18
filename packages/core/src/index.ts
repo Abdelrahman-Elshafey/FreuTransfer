@@ -18,6 +18,7 @@ export {
 export { assertCurrencyCode, type CurrencyCode, isCurrencyCode } from "./currency.ts";
 export { Decimal, toFixedString } from "./decimal.ts";
 export { type FeeModel, feeRule } from "./fees.ts";
+export { HISTORY_MAX_DAYS, rateHistory } from "./history.ts";
 export { Money } from "./money.ts";
 export type {
   MidRateObservation,
@@ -32,6 +33,7 @@ export type {
   CorridorPair,
   CorridorRepository,
   MidRateConflict,
+  MidRateHistory,
   MidRateRepository,
   OfferRepository,
   RawObservationId,

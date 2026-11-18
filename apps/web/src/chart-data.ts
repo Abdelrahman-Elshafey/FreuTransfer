@@ -60,3 +60,36 @@ export function percentTicks(max: number): string[] {
   const decimals = step < 1 ? (step === 0.25 ? 2 : 1) : 0;
   return Array.from({ length: count + 1 }, (_, i) => (i * step).toFixed(decimals));
 }
+
+/**
+ * Y-axis ticks for rates between `min` and `max` (a rate chart doesn't start at 0: it shows how a
+ * rate moves). The smallest clean step that covers the range in at most 5 steps, from the step at
+ * or below `min` to the one at or above `max`; one step on each side when every rate is equal.
+ * Numbers only place the axis; each label is its own fixed-decimal string.
+ */
+export function rateTicks(min: number, max: number): string[] {
+  // [step, decimals its labels need]
+  const steps = [
+    [0.0005, 4],
+    [0.001, 3],
+    [0.002, 3],
+    [0.0025, 4],
+    [0.005, 3],
+    [0.01, 2],
+    [0.02, 2],
+    [0.025, 3],
+    [0.05, 2],
+    [0.1, 1],
+  ] as const;
+  // The small epsilon keeps a value sitting exactly on a step (1.08 / 0.005) from floating past it.
+  const lowOf = (step: number) => Math.floor(min / step + 1e-9);
+  const highOf = (step: number) => Math.ceil(max / step - 1e-9);
+  const [step, decimals] = steps.find(([s]) => highOf(s) - lowOf(s) <= 5) ?? [0.1, 1];
+  let low = lowOf(step);
+  let high = highOf(step);
+  if (low === high) {
+    low -= 1;
+    high += 1;
+  }
+  return Array.from({ length: high - low + 1 }, (_, i) => ((low + i) * step).toFixed(decimals));
+}

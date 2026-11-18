@@ -81,6 +81,16 @@ export const en = {
     showTable: "Show as table",
     unavailable: "The cost-by-amount chart can't be shown right now.",
   },
+  rateChart: {
+    title: (from: string, to: string) => `Reference rate: 1 ${from} in ${to}`,
+    subtitle: (bank: string, first: string, last: string) =>
+      `Mid-market rate published by the ${bank} on working days, from ${first} to ${last}.`,
+    none: "No reference rates are stored for this period yet.",
+    day: "Day",
+    rate: "Rate",
+    keyboard: "Reference rate by day: use the left and right arrow keys",
+    unavailable: "The reference-rate chart can't be shown right now.",
+  },
   caveats: {
     monthly_allowance: (amount: string) =>
       `No markup on the first ${amount} you exchange each month; exchanges earlier this month use it up.`,
