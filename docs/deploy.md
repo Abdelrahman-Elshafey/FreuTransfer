@@ -167,7 +167,10 @@ Then check the page in all four languages, and that UrConnections is still healt
 `collect` runs `packages/collectors/src/collect-cli.ts` at start and then every hour (ADR 0007).
 Each run asks Frankfurter for the last 10 days of every corridor's reference rate (source pinned:
 ECB for EUR), stores the response as received, then the new days. A missed hour, or a server
-outage of up to 10 days, repairs itself on the next run.
+outage of up to 10 days, repairs itself on the next run. The first day of an answer can be up to 5
+days before the window: Frankfurter starts at the last publication on or before it (a window
+starting on a Sunday begins with Friday's rate). Until 2026-11-18 the collector refused such an
+answer, so the runs of 17 and 18 Nov 2026 show `failed` in `collector_runs`.
 
 ```sh
 dc logs --since 24h collect     # collect: CHF→EUR (ecb): 1 new, 7 already stored · run 42 succeeded

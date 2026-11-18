@@ -2,7 +2,7 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0–6 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 done (2026-11-18):** design foundation (ADR 0011), breakdown, caveats, my bank vs best, and two plain-SVG charts (ADR 0012): cost by amount and the reference rate over time (`/v1/history`). **Next: stage 7**, polish. **Bug found (2026-11-18), fix proposed:** the collector rejects Frankfurter's answer when its window starts on a weekend (2 days a week). Open for the owner: Revolut's weekend markup.
+**Now:** stages 0–6 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 done (2026-11-18):** design foundation (ADR 0011), breakdown, caveats, my bank vs best, and two plain-SVG charts (ADR 0012): cost by amount and the reference rate over time (`/v1/history`). **Next: stage 7**, polish. **Collector fix (2026-11-18)** for windows starting on a weekend built. Open for the owner: Revolut's weekend markup.
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
@@ -365,3 +365,10 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   or Sunday gets the Friday's rate first, and the collector's date check rejects the whole answer.
   Every run fails on the 2 days a week whose window starts on a weekend (17 and 18 Nov); the
   10-day window refetches the days later, so nothing is lost, but the newest rate lags up to 2 days.
+- **2026-11-18:** **Collector fix: windows starting on a weekend** (stage 4 bug, found while running
+  6e-2). The first rate of an answer may now be up to 5 days before the window
+  (`MID_RATE_MAX_AGE_DAYS`, the longest normal ECB gap); any other date outside it is still
+  refused. Tests: Frankfurter's real answer of today (from Sunday 8 Nov, starting Friday 6 Nov),
+  the 5-day boundary, a second early rate refused; with the old rule they fail. `pnpm collect`,
+  which failed this morning: succeeded, 2 new days per direction (16 and 17 Nov), 6 already
+  stored. `docs/deploy.md` explains the failed runs of 17 and 18 Nov for the 4d check.
