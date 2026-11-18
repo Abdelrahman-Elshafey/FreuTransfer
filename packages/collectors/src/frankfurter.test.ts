@@ -113,7 +113,20 @@ describe("parseRates: reading Frankfurter's answer", () => {
       rawBody([["2026-11-13", "1.08"]]),
       /outside the requested 2026-11-02..2026-11-12/,
     ],
-    ["a date before the window", rawBody([["2026-11-01", "1.08"]]), /outside the requested/],
+    // The window starts 2026-11-02; the first rate may start 5 days earlier (27 Oct is 6 days).
+    [
+      "a first rate more than 5 days before the window",
+      rawBody([["2026-10-27", "1.08"]]),
+      /outside the requested .*first rate may start 5 days earlier/,
+    ],
+    [
+      "a rate before the window that isn't the first",
+      rawBody([
+        ["2026-10-30", "1.08"],
+        ["2026-11-01", "1.08"],
+      ]),
+      /date 2026-11-01 outside the requested 2026-11-02..2026-11-12$/,
+    ],
     ["an impossible date", rawBody([["2026-02-30", "1.08"]]), /not a real date: 2026-02-30/],
     [
       "the same date twice",
@@ -140,6 +153,34 @@ describe("parseRates: reading Frankfurter's answer", () => {
   ])("refuses %s", (_name, text, message) => {
     expect(() => parseRates(text, expected())).toThrow(FrankfurterError);
     expect(() => parseRates(text, expected())).toThrow(message);
+  });
+
+  it("accepts a window that starts on a weekend: Frankfurter's real answer of 2026-11-18", () => {
+    // GET /v2/rates?base=CHF&quotes=EUR&providers=ECB&from=2026-11-08&to=2026-11-18 (8 Nov is a
+    // Sunday): the series starts with Friday 6 Nov, the last publication on or before the 8th.
+    const real =
+      '[{"date":"2026-11-06","base":"CHF","quote":"EUR","rate":1.0937},{"date":"2026-11-09","base":"CHF","quote":"EUR","rate":1.0912},{"date":"2026-11-10","base":"CHF","quote":"EUR","rate":1.0866},{"date":"2026-11-11","base":"CHF","quote":"EUR","rate":1.083},{"date":"2026-11-12","base":"CHF","quote":"EUR","rate":1.0832},{"date":"2026-11-13","base":"CHF","quote":"EUR","rate":1.0792},{"date":"2026-11-16","base":"CHF","quote":"EUR","rate":1.0818},{"date":"2026-11-17","base":"CHF","quote":"EUR","rate":1.0831}]';
+    const rates = parseRates(real, {
+      ...expected(),
+      window: { from: "2026-11-08", to: "2026-11-18" },
+    });
+    expect(rates.map((r) => [r.asOf, r.rate.value.toString()])).toEqual([
+      ["2026-11-06", "1.0937"],
+      ["2026-11-09", "1.0912"],
+      ["2026-11-10", "1.0866"],
+      ["2026-11-11", "1.083"],
+      ["2026-11-12", "1.0832"],
+      ["2026-11-13", "1.0792"],
+      ["2026-11-16", "1.0818"],
+      ["2026-11-17", "1.0831"],
+    ]);
+  });
+
+  it("accepts a first rate exactly 5 days early (Easter: Thursday's rate for a Tuesday start)", () => {
+    // Window from 2026-11-02; 5 days earlier is 2026-10-28.
+    expect(parseRates(rawBody([["2026-10-28", "1.08"]]), expected()).map((r) => r.asOf)).toEqual([
+      "2026-10-28",
+    ]);
   });
 
   it("accepts an empty answer (no publication in the window)", () => {

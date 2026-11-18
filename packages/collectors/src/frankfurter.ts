@@ -14,6 +14,7 @@ import {
   type CorridorPair,
   type CorridorRepository,
   type CurrencyCode,
+  MID_RATE_MAX_AGE_DAYS,
   type MidRateObservation,
   Rate,
 } from "@freu-transfer/core";
@@ -179,8 +180,13 @@ export function parseRates(
   }
 
   const { pair, window } = expected;
+  // Frankfurter starts a series at the last publication ON OR BEFORE `from` (checked 2026-11-18,
+  // v1 and v2: from=2026-11-08, a Sunday, starts with Friday 2026-11-06). So the first rate may
+  // be a few days early: at most the longest normal gap between ECB publications (Easter,
+  // MID_RATE_MAX_AGE_DAYS). Any other date outside the window means a wrong answer.
+  const earliestStart = addDays(window.from, -MID_RATE_MAX_AGE_DAYS);
   const seen = new Set<string>();
-  return parsed.data.map((item) => {
+  return parsed.data.map((item, index) => {
     if (item.base !== pair.source || item.quote !== pair.target) {
       throw new FrankfurterError(
         `asked for ${pair.source}→${pair.target}, got ${item.base}→${item.quote}`,
@@ -190,9 +196,11 @@ export function parseRates(
     if (utcDay(new Date(`${item.date}T00:00:00Z`)) !== item.date) {
       throw new FrankfurterError(`not a real date: ${item.date}`);
     }
-    if (item.date < window.from || item.date > window.to) {
+    const earliest = index === 0 ? earliestStart : window.from;
+    if (item.date < earliest || item.date > window.to) {
       throw new FrankfurterError(
-        `date ${item.date} outside the requested ${window.from}..${window.to}`,
+        `date ${item.date} outside the requested ${window.from}..${window.to}` +
+          (index === 0 ? ` (the first rate may start ${MID_RATE_MAX_AGE_DAYS} days earlier)` : ""),
       );
     }
     if (seen.has(item.date)) throw new FrankfurterError(`date ${item.date} appears twice`);
