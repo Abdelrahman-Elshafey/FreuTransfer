@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import {
   GenericContainer,
   Network,
@@ -43,11 +44,11 @@ beforeAll(async () => {
     .withNetwork(network)
     .withCopyFilesToContainer([
       {
-        source: new URL("nginx.conf", web).pathname.slice(1),
+        source: fileURLToPath(new URL("nginx.conf", web)),
         target: "/etc/nginx/conf.d/default.conf",
       },
       {
-        source: new URL("security-headers.conf", web).pathname.slice(1),
+        source: fileURLToPath(new URL("security-headers.conf", web)),
         target: "/etc/nginx/security-headers.conf",
       },
     ])
