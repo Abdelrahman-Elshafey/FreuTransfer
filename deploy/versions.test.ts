@@ -2,6 +2,7 @@
 // from another file), so these tests keep the copies equal (CLAUDE.md rule 5).
 import { readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { LOCALE_CODES } from "../apps/web/src/i18n/locales.ts";
 import { composeImages, readRepoFile } from "./repo-file.ts";
 
 /** Every `FROM node:<version>-...` in a Dockerfile. */
@@ -38,6 +39,19 @@ describe("deploy versions", () => {
       /const USER_AGENT = "[^"]*\(\+([^)]+)\)"/,
     )?.[1];
     expect(agent).toBe(site);
+  });
+
+  it("the page lists every language at the same public address for search engines (hreflang)", () => {
+    const site = readRepoFile(".github/workflows/ci.yml").match(/^ {2}SITE_URL: (\S+)$/m)?.[1];
+    const links = [
+      ...readRepoFile("apps/web/index.html").matchAll(
+        /<link rel="alternate" hreflang="([^"]+)" href="([^"]+)" \/>/g,
+      ),
+    ].map((m) => [m[1], m[2]]);
+    expect(links).toEqual([
+      ...LOCALE_CODES.map((code) => [code, `${site}/${code}/`]),
+      ["x-default", `${site}/`],
+    ]);
   });
 
   it.each(["apps/api/Dockerfile", "apps/web/Dockerfile"])(

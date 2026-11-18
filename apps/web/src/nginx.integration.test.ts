@@ -8,6 +8,7 @@ import {
   Wait,
 } from "testcontainers";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { LOCALE_CODES } from "./i18n/locales.ts";
 
 // The production nginx config (apps/web/nginx.conf + security-headers.conf) in the production
 // nginx image, started in Docker: the headers and the request limit are checked on real
@@ -89,6 +90,25 @@ describe("nginx (apps/web/nginx.conf)", () => {
       expect(res.status).toBe(status);
       for (const header of SECURITY_HEADERS) expect(res.headers.get(header), header).not.toBeNull();
       expect(res.headers.get("cache-control")).toBe(cache);
+    },
+  );
+
+  // Language paths (docs/adr/0005): every code the page knows is served the page; others are not.
+  it.each(LOCALE_CODES.flatMap((code) => [`/${code}/`, `/${code}`, `/${code}/methodology`]))(
+    "serves the page on %s, with the security headers and no-cache",
+    async (path) => {
+      const res = await fetch(`${base}${path}`);
+      expect(res.status).toBe(200);
+      expect(await res.text()).toContain("<!doctype html>");
+      expect(res.headers.get("cache-control")).toBe("no-cache");
+      for (const header of SECURITY_HEADERS) expect(res.headers.get(header), header).not.toBeNull();
+    },
+  );
+
+  it.each(["/es/", "/DE/", "/dex/"])(
+    "answers 404 for %s (not one of our languages)",
+    async (path) => {
+      expect((await fetch(`${base}${path}`)).status).toBe(404);
     },
   );
 
