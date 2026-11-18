@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Messages } from "./en.ts";
-import { LOCALE_CODES, localeInfo, pickLocale } from "./locales.ts";
+import { LOCALE_CODES, localeFromPath, localeInfo, pathIn, pickLocale } from "./locales.ts";
 
 describe("pickLocale", () => {
   it("keeps the reader's earlier choice", () => {
@@ -19,6 +19,34 @@ describe("pickLocale", () => {
   it("falls back to English", () => {
     expect(pickLocale(null, ["es-ES"])).toBe("en");
     expect(pickLocale(null, [])).toBe("en");
+  });
+});
+
+describe("localeFromPath", () => {
+  it.each([
+    ["/de/", "de"],
+    ["/fr/methodology", "fr"],
+    ["/it", "it"],
+    ["/", null],
+    ["", null],
+    ["/es/", null], // a language we don't have
+    ["/DE/", null], // our addresses are lower case
+    ["/dex/", null], // starts with "de", but isn't it
+  ])("%j is in %j", (path, locale) => {
+    expect(localeFromPath(path)).toBe(locale);
+  });
+});
+
+describe("pathIn", () => {
+  it.each([
+    ["fr", "/de/", "/fr/"],
+    ["fr", "/de/methodik", "/fr/methodik"],
+    ["en", "/it", "/en/"],
+    ["de", "/", "/de/"],
+    ["de", "", "/de/"],
+    ["it", "/es/x", "/it/es/x"], // no language of ours: one is put in front
+  ])("%s for %j is %j", (locale, path, expected) => {
+    expect(pathIn(locale as "de", path)).toBe(expected);
   });
 });
 

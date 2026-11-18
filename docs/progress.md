@@ -2,7 +2,7 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0–6 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 done (2026-11-18):** design foundation (ADR 0011), breakdown, caveats, my bank vs best, and two plain-SVG charts (ADR 0012): cost by amount and the reference rate over time (`/v1/history`). **Stage 7 in progress:** 7a security headers and request limit built. **Next: 7b**, language URLs. Collector fix for windows starting on a weekend merged. Open for the owner: Revolut's weekend markup.
+**Now:** stages 0–6 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 done (2026-11-18):** design foundation (ADR 0011), breakdown, caveats, my bank vs best, and two plain-SVG charts (ADR 0012): cost by amount and the reference rate over time (`/v1/history`). **Stage 7 in progress:** 7a security headers and request limit, 7b language URLs built. **Next: 7c**, methodology and legal texts. Collector fix for windows starting on a weekend merged. Open for the owner: Revolut's weekend markup.
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
@@ -13,7 +13,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 4 | Mid-market + pipeline | ✅ Done (2026-11-13): 4a database ✅ · 4b collector ✅ · 4c hourly `collect` service ✅ · 4e old-rate warning ✅ · 4d one week ⏳ (verify 20 Nov) | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored (8 working days 3–12 Nov stored; 16–20 Nov to be collected live) |
 | 5 | Provider data | ✅ Done (2026-11-14): 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider ✅ · 5c EUR→CHF data ✅ · 5d manual rates at today's reference rate ✅ · 5e corridor choice ✅ | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ✅ Done (2026-11-18): 6a design foundation ✅ · 6b breakdown ✅ · 6c caveat codes ✅ · 6d my bank vs best ✅ · 6e charts ✅ (6e-1 cost by amount · 6e-2 rate history) | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
-| 7 | Polish | 🟡 **In progress**: 7a security headers + request limit ✅ · 7b language URLs · 7c methodology + legal texts · 7d OpenAPI + `/docs` · 7e README | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes |
+| 7 | Polish | 🟡 **In progress**: 7a security headers + request limit ✅ · 7b language URLs ✅ · 7c methodology + legal texts · 7d OpenAPI + `/docs` · 7e README | README, methodology and legal texts in four languages, OpenAPI, ADRs, language URLs (World Bank comparison dropped: no CH⇄euro corridor) | A reviewer understands the project in 5 minutes |
 | 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts | — |
 
 Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
@@ -388,3 +388,13 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   one violation: Vite inlines font files under 4 kB as `data:` URIs (now allowed for fonts). Local
   production stack: results, both charts and both fonts with no CSP violation. Noticed: no
   favicon (404), for 7e.
+- **2026-11-18:** **7b: language URLs** (owner's choice, ADR 0005 amended). Pages live at `/en/
+  /de/ /fr/ /it/`; the address decides the language (a shared link keeps its language); `/` gets
+  the saved choice, else the browser's language, else English, replacing the address; the switcher
+  pushes the same page in the other language; back and forward follow. `index.html` has hreflang
+  links for the four plus `x-default`, kept on CI's `SITE_URL` and on `LOCALE_CODES` by
+  `deploy/versions.test.ts`; a canonical link per language. nginx serves the page for each language
+  path, 404 for others (tested per code, with the headers). Tests: `localeFromPath`, `pathIn`
+  (a fix while reviewing: it cut the old prefix with the new code's length). Headless Chrome with a
+  French browser: / → /fr/?x=1 (query kept, no extra history entry), switch → /de/, back → /fr/,
+  forward → /de/, / again → saved /de/, a shared /it/ → Italian.

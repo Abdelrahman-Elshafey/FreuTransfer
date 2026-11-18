@@ -62,7 +62,7 @@ rates stored as `NUMERIC(20,10)`; timestamps in UTC.
 - **Costs we can't measure** (SWIFT intermediary fees, weekend markups): disclose them in the UI.
 - **Freshness:** every number shows its source and date; stale data is listed separately, not ranked.
 - **Validation:** 2 real calculator results reproduced to the cent (a third was skipped by the owner,
-  2026-11-10); compare with World Bank data.
+  2026-11-10); World Bank data has no CH⇄euro corridor (owner, 2026-11-18: comparison dropped).
 
 ## 5. Architecture (ADR 0001, hosting ADRs 0002 and 0004)
 Modular monolith with ports & adapters:
@@ -137,7 +137,9 @@ Decided by the owner (2026-11-06):
 - Sanity guard (stage 5): a total cost **above 10%** or **below 0%** is treated as a data error: the
   offer isn't ranked but listed for checking (built in 5a: `MAX_PLAUSIBLE_COST` in core; exactly 10%
   and exactly 0% still rank).
+- (2026-11-18) Languages at `/en/ /de/ /fr/ /it/` with hreflang (ADR 0005, stage 7b). The World Bank
+  comparison is dropped: Remittance Prices Worldwide has no corridor between Switzerland and the euro
+  area (7c explains it in the methodology).
 
 Still open:
 - Whether to automate any bank rate page later.
-- Language-specific URLs (`/de/…`) for search engines, or one URL with a switcher (stage 7).

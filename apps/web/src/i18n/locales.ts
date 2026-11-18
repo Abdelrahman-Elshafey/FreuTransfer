@@ -41,3 +41,22 @@ export function pickLocale(saved: string | null, browser: readonly string[]): Lo
   }
   return "en";
 }
+
+/**
+ * The language a path is in (docs/adr/0005): "/de/" or "/de/x" → "de"; null when the path doesn't
+ * start with one of our language codes ("/", "/es/", "/DE/").
+ */
+export function localeFromPath(path: string): Locale | null {
+  const first = path.split("/")[1] ?? "";
+  return isLocale(first) ? first : null;
+}
+
+/**
+ * The same page in `locale`: "/de/x" → "/fr/x". A path without a language gets one in front:
+ * "/" → "/fr/". Only the path: the caller keeps the query and the hash.
+ */
+export function pathIn(locale: Locale, path: string): string {
+  const current = localeFromPath(path);
+  const rest = current === null ? path : path.slice(1 + current.length);
+  return `/${locale}${rest.startsWith("/") ? rest : `/${rest}`}`;
+}

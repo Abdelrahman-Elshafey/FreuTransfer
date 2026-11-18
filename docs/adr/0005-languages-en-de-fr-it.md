@@ -1,6 +1,6 @@
 # ADR 0005: Four languages (English, German, French, Italian)
 
-- **Status:** accepted
+- **Status:** accepted; language URLs added 2026-11-18 (owner, stage 7b)
 - **Date:** 2026-11-09
 
 ## Context
@@ -43,14 +43,30 @@ dependency, no build plugin and no runtime cost:
 - The language is the reader's earlier choice (localStorage, if allowed), else the first matching
   browser language, else English. `<html lang>` and the page title follow it.
 
+## Language URLs (owner, 2026-11-18, stage 7b)
+- Every page lives under its language: **`/en/`, `/de/`, `/fr/`, `/it/`** (`localeFromPath` and
+  `pathIn` in `apps/web/src/i18n/locales.ts`). The address decides the language, so a shared
+  `/de/` link opens in German whatever the reader saved.
+- `/` (or an address without one of our languages) gets the saved choice, else the browser's
+  language, else English, and the address is replaced (not pushed), so "back" doesn't loop. The
+  switcher moves to the same page in the other language with a history entry and saves the choice;
+  back and forward follow the address.
+- `index.html` lists the four addresses as `hreflang` links (absolute, the public site's address,
+  kept equal to CI's `SITE_URL` by `deploy/versions.test.ts`) plus `x-default` = `/`; the page sets
+  its own `canonical` link.
+- nginx serves the page for `/en|de|fr|it/…` and answers 404 for any other first segment
+  (`apps/web/nginx.conf`; `nginx.integration.test.ts` checks each `LOCALE_CODES` entry).
+- The page is still rendered in the browser: search engines that run JavaScript see each language;
+  pre-rendering is not needed for v1.
+
 ## Alternatives considered
 - **react-i18next / FormatJS (react-intl):** mature, but a runtime dependency for features we don't
   need yet (ICU message syntax, lazy namespaces, plural engines), and string keys
   (`t("table.fee")`) that TypeScript checks less directly than property access (`t.table.fee`).
 - **Paraglide / Lingui:** compile-time and type-safe, but add a code generator or Babel/SWC macro
   to the build. Worth it with many pages or translators using a translation platform; not now.
-- **Language-specific URLs (`/de/…`):** better for search engines, but need server routing and
-  hreflang tags. Decided at stage 7 together with SEO; the catalogs don't change either way.
+- **One URL with a switcher (until stage 7b):** no routing, but search engines see one language
+  and a link can't name one. Replaced by language URLs (section above).
 
 ## Consequences
 - Every visible word in `apps/web` comes from a catalog, in all four languages, in the same change
