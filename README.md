@@ -4,10 +4,10 @@ What **actually arrives** when you send money between **Switzerland and the euro
 and EUR → CHF), and how much of the cost is hidden in the exchange rate. In English,
 German, French and Italian.
 
-> 🚧 In development, live at https://freutransfer.aelshafey.com: stages 0–5 done (comparison in four
-> languages and both directions, reference rate collected every hour, backups); stage 6, the
-> frontend, next. The
-> full README (diagrams, maths, decisions, screenshots) comes in stage 7.
+> 🚧 In development, live at https://freutransfer.aelshafey.com: stages 0–6 done (comparison in four
+> languages and both directions, breakdown, caveats, charts, reference rate collected every hour,
+> backups); stage 7, polish, in progress. The full README (diagrams, maths, decisions, screenshots)
+> comes at the end of stage 7.
 > Plan: [`Project Plan.md`](Project%20Plan.md).
 
 ## Quick start

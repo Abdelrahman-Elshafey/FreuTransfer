@@ -25,7 +25,7 @@ export function localeInfo(locale: Locale): (typeof LOCALES)[Locale] {
   return LOCALES[locale];
 }
 
-function isLocale(value: string): value is Locale {
+export function isLocale(value: string): value is Locale {
   return Object.hasOwn(LOCALES, value);
 }
 

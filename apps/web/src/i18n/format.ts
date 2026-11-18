@@ -46,6 +46,8 @@ export function formatterFor(locale: string) {
       new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(
         new Date(`${day}T00:00:00Z`),
       ),
+    /** A country's name from its ISO 3166 code ("SG" → "Singapur" in German). */
+    region: (code: string) => new Intl.DisplayNames(locale, { type: "region" }).of(code) ?? code,
   };
 }
 

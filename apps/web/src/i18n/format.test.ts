@@ -14,6 +14,12 @@ describe("formatterFor", () => {
     expect(fr.money({ amount: "1044.75", currency: "EUR" })).toBe(`1'044.75${NBSP}€`);
   });
 
+  it("names a country in the reader's language", () => {
+    // Printed from Node 26.13's ICU: Singapur (de-CH), Singapour (fr-CH)
+    expect(de.region("SG")).toBe("Singapur");
+    expect(fr.region("SG")).toBe("Singapour");
+  });
+
   it("never goes through a float: 17 significant digits survive", () => {
     // As a JS number, 12345678901234567.89 would print as 12345678901234568.
     expect(de.money({ amount: "12345678901234567.89", currency: "CHF" })).toBe(

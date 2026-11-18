@@ -77,6 +77,12 @@ export const fr: Messages = {
     keyboard: "Taux de référence par jour : flèches gauche et droite",
     unavailable: "Le graphique du taux de référence ne peut pas être affiché pour le moment.",
   },
+  nav: { methodology: "Méthodologie", privacy: "Confidentialité" },
+  notFound: {
+    title: "Page introuvable",
+    text: "Cette adresse n’existe pas (ou plus).",
+    home: "Vers la comparaison",
+  },
   caveats: {
     monthly_allowance: (amount) =>
       `Aucune majoration sur les premiers ${amount} changés par mois ; les changes effectués plus tôt dans le mois en sont déduits.`,

@@ -77,6 +77,12 @@ export const de: Messages = {
     keyboard: "Referenzkurs nach Tag: mit den Pfeiltasten links und rechts",
     unavailable: "Die Grafik zum Referenzkurs kann gerade nicht angezeigt werden.",
   },
+  nav: { methodology: "Methodik", privacy: "Datenschutz" },
+  notFound: {
+    title: "Seite nicht gefunden",
+    text: "Diese Adresse gibt es nicht (mehr).",
+    home: "Zum Vergleich",
+  },
   caveats: {
     monthly_allowance: (amount) =>
       `Kein Aufschlag auf die ersten ${amount}, die Sie pro Monat wechseln; frühere Wechsel in diesem Monat zählen mit.`,

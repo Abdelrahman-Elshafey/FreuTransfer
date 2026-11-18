@@ -4,7 +4,7 @@ import type {
   HistoryDto,
   ResultRowDto,
 } from "@freu-transfer/api/contract";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import {
   type ApiError,
   DIRECTIONS,
@@ -19,9 +19,16 @@ import { useI18n } from "./i18n/context.tsx";
 import type { Messages } from "./i18n/en.ts";
 import { type Formatter, parseAmount } from "./i18n/format.ts";
 import { LOCALE_CODES, type Locale, localeInfo } from "./i18n/locales.ts";
+import { PAGES } from "./i18n/pages/index.ts";
+import type { LegalValues, MethodologyValues } from "./i18n/pages/types.ts";
+import { METHODOLOGY } from "./methodology-values.ts";
+import { pageFromPath, pagePath } from "./pages.ts";
 import { RateChart } from "./RateChart.tsx";
 import { cheapestIds } from "./results.ts";
+import { Link, usePathname } from "./router.tsx";
+import { HOSTING_REGION, OPERATOR, SOURCE_URL } from "./site.ts";
 import { readSaved, save } from "./storage.ts";
+import { TextPage } from "./TextPage.tsx";
 
 // Design: docs/adr/0011 and docs/design-inspiration.md §7 (tokens in styles.css).
 // Every visible word comes from the catalogs in ./i18n (docs/adr/0005).
@@ -354,7 +361,8 @@ function LanguageSwitcher() {
   );
 }
 
-export function App() {
+/** The comparison: the form, the results and the charts (the home page). */
+function ComparePage() {
   const { t, f } = useI18n();
   const [directionIndex, setDirectionIndex] = useState(0);
   const direction = DIRECTIONS[directionIndex] ?? DIRECTIONS[0];
@@ -395,88 +403,178 @@ export function App() {
 
   const label = "flex flex-col gap-1.5 text-sm text-muted";
   return (
+    <>
+      <h1 className="mt-6 max-w-3xl text-4xl leading-tight font-normal tracking-tight sm:mt-12 sm:text-6xl">
+        {t.headline}
+      </h1>
+      <p className="mt-4 max-w-xl text-lg text-muted">{t.intro}</p>
+
+      <form
+        onSubmit={compare}
+        className={`${card} mt-8 flex flex-col gap-4 sm:flex-row sm:items-end`}
+      >
+        <label className={label}>
+          {t.form.direction}
+          <select
+            value={directionIndex}
+            disabled={loading} // an answer still on its way is for the direction it asked
+            onChange={(e) => {
+              setDirectionIndex(Number(e.target.value));
+              // results of the other direction must not stay under the new choice
+              setData(null);
+              setChart(null);
+              setHistory(null);
+            }}
+            className={`${field} text-ink`}
+          >
+            {DIRECTIONS.map((d, i) => (
+              <option key={`${d.from}-${d.to}`} value={i}>
+                {d.from} → {d.to}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className={`${label} sm:flex-1`}>
+          {t.form.iPay}
+          <span
+            className={`${field} flex items-center gap-2 text-ink focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ink`}
+          >
+            <input
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              inputMode="decimal"
+              aria-label={t.form.amountLabel(direction.from)}
+              className="w-full min-w-0 bg-transparent text-lg tabular-nums outline-none"
+            />
+            <span className="text-muted">{direction.from}</span>
+          </span>
+        </label>
+        <button
+          type="submit"
+          disabled={loading}
+          className="h-12 rounded-full bg-ink px-8 font-medium text-page transition active:scale-[0.98] disabled:opacity-60"
+        >
+          {loading ? t.form.comparing : t.form.compare}
+        </button>
+      </form>
+
+      {error && (
+        <p className="mt-4 text-danger" role="alert">
+          {errorText(t, error, f.decimal("1000.50"))}
+        </p>
+      )}
+      {data && <Results data={data} />}
+      {data &&
+        (chart === "failed" ? (
+          <p className={`${note} mt-10`}>{t.chart.unavailable}</p>
+        ) : (
+          chart && <CostChart comparisons={chart} currency={direction.from} />
+        ))}
+      {data &&
+        (history === "failed" ? (
+          <p className={`${note} mt-10`}>{t.rateChart.unavailable}</p>
+        ) : (
+          history && <RateChart history={history} />
+        ))}
+    </>
+  );
+}
+
+/** The values the methodology quotes, formatted for the reader's locale. */
+function methodologyValues(f: Formatter): MethodologyValues {
+  const { example: e } = METHODOLOGY;
+  const from = (amount: string) => f.money({ amount, currency: e.from });
+  return {
+    recheckDays: METHODOLOGY.recheckDays,
+    maxAgeDays: METHODOLOGY.maxAgeDays,
+    maxCost: f.percent(METHODOLOGY.maxCostPercent),
+    sourceUrl: SOURCE_URL,
+    example: {
+      paid: from(e.paid),
+      fee: from(e.fee),
+      converted: from(e.converted),
+      rate: f.decimal(e.rate),
+      mid: f.decimal(e.mid),
+      received: f.money({ amount: e.received, currency: e.to }),
+      worth: from(e.worth),
+      totalCost: from(e.totalCost),
+      hidden: from(e.hidden),
+      percent: f.percent(e.percent),
+    },
+  };
+}
+
+const legalValues = (f: Formatter): LegalValues => ({
+  name: OPERATOR.name,
+  email: OPERATOR.email,
+  hostingCountry: f.region(HOSTING_REGION),
+});
+
+function NotFound() {
+  const { t, locale } = useI18n();
+  return (
+    <article>
+      <h1 className="mt-6 text-4xl leading-tight font-normal tracking-tight sm:mt-12 sm:text-5xl">
+        {t.notFound.title}
+      </h1>
+      <p className="mt-4 text-lg text-muted">{t.notFound.text}</p>
+      <p className="mt-6">
+        <Link to={pagePath(locale, "home")}>{t.notFound.home}</Link>
+      </p>
+    </article>
+  );
+}
+
+/**
+ * The site: header, the page the address names (docs/adr/0005), footer. The comparison stays
+ * mounted while another page shows, so its results are still there on the way back.
+ */
+export function App() {
+  const { t, f, locale } = useI18n();
+  const page = pageFromPath(usePathname());
+  const pages = PAGES[locale];
+  const text =
+    page === "methodology"
+      ? pages.methodology(methodologyValues(f))
+      : page === "privacy"
+        ? pages.privacy(legalValues(f))
+        : null;
+  const title = page === null ? t.notFound.title : text?.title;
+
+  useEffect(() => {
+    document.title = title ? `${title} — FreuTransfer` : t.title;
+  }, [title, t.title]);
+
+  return (
     <div className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
       <header className="flex items-center justify-between gap-4 py-5">
-        <span className="text-lg font-semibold tracking-tight">FreuTransfer</span>
+        <Link
+          to={pagePath(locale, "home")}
+          className="text-lg font-semibold tracking-tight text-ink no-underline"
+        >
+          FreuTransfer
+        </Link>
         <LanguageSwitcher />
       </header>
 
       <main>
-        <h1 className="mt-6 max-w-3xl text-4xl leading-tight font-normal tracking-tight sm:mt-12 sm:text-6xl">
-          {t.headline}
-        </h1>
-        <p className="mt-4 max-w-xl text-lg text-muted">{t.intro}</p>
-
-        <form
-          onSubmit={compare}
-          className={`${card} mt-8 flex flex-col gap-4 sm:flex-row sm:items-end`}
-        >
-          <label className={label}>
-            {t.form.direction}
-            <select
-              value={directionIndex}
-              disabled={loading} // an answer still on its way is for the direction it asked
-              onChange={(e) => {
-                setDirectionIndex(Number(e.target.value));
-                // results of the other direction must not stay under the new choice
-                setData(null);
-                setChart(null);
-                setHistory(null);
-              }}
-              className={`${field} text-ink`}
-            >
-              {DIRECTIONS.map((d, i) => (
-                <option key={`${d.from}-${d.to}`} value={i}>
-                  {d.from} → {d.to}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={`${label} sm:flex-1`}>
-            {t.form.iPay}
-            <span
-              className={`${field} flex items-center gap-2 text-ink focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ink`}
-            >
-              <input
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                inputMode="decimal"
-                aria-label={t.form.amountLabel(direction.from)}
-                className="w-full min-w-0 bg-transparent text-lg tabular-nums outline-none"
-              />
-              <span className="text-muted">{direction.from}</span>
-            </span>
-          </label>
-          <button
-            type="submit"
-            disabled={loading}
-            className="h-12 rounded-full bg-ink px-8 font-medium text-page transition active:scale-[0.98] disabled:opacity-60"
-          >
-            {loading ? t.form.comparing : t.form.compare}
-          </button>
-        </form>
-
-        {error && (
-          <p className="mt-4 text-danger" role="alert">
-            {errorText(t, error, f.decimal("1000.50"))}
-          </p>
-        )}
-        {data && <Results data={data} />}
-        {data &&
-          (chart === "failed" ? (
-            <p className={`${note} mt-10`}>{t.chart.unavailable}</p>
-          ) : (
-            chart && <CostChart comparisons={chart} currency={direction.from} />
-          ))}
-        {data &&
-          (history === "failed" ? (
-            <p className={`${note} mt-10`}>{t.rateChart.unavailable}</p>
-          ) : (
-            history && <RateChart history={history} />
-          ))}
+        <div hidden={page !== "home"}>
+          <ComparePage />
+        </div>
+        {text && <TextPage text={text} />}
+        {page === null && <NotFound />}
       </main>
 
-      <footer className={`${note} mt-16`}>{t.disclaimer}</footer>
+      <footer className={`${note} mt-16 space-y-2`}>
+        <nav className="flex flex-wrap gap-x-4 gap-y-1">
+          {(["methodology", "privacy"] as const).map((p) => (
+            <Link key={p} to={pagePath(locale, p)} className="text-muted">
+              {t.nav[p]}
+            </Link>
+          ))}
+        </nav>
+        <p>{t.disclaimer}</p>
+      </footer>
     </div>
   );
 }

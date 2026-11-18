@@ -2,7 +2,7 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0–6 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 done (2026-11-18):** design foundation (ADR 0011), breakdown, caveats, my bank vs best, and two plain-SVG charts (ADR 0012): cost by amount and the reference rate over time (`/v1/history`). **Stage 7 in progress:** 7a security headers and request limit, 7b language URLs built. **Next: 7c**, methodology and legal texts. Collector fix for windows starting on a weekend merged. Open for the owner: Revolut's weekend markup.
+**Now:** stages 0–6 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 done (2026-11-18):** design foundation (ADR 0011), breakdown, caveats, my bank vs best, and two plain-SVG charts (ADR 0012): cost by amount and the reference rate over time (`/v1/history`). **Stage 7 in progress:** 7a security headers and request limit, 7b language URLs, 7c methodology and privacy pages (no imprint, owner's choice) built. **Next: 7d**, OpenAPI and `/docs`. Collector fix for windows starting on a weekend merged. Open for the owner: Revolut's weekend markup.
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
@@ -13,7 +13,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 4 | Mid-market + pipeline | ✅ Done (2026-11-13): 4a database ✅ · 4b collector ✅ · 4c hourly `collect` service ✅ · 4e old-rate warning ✅ · 4d one week ⏳ (verify 20 Nov) | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored (8 working days 3–12 Nov stored; 16–20 Nov to be collected live) |
 | 5 | Provider data | ✅ Done (2026-11-14): 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider ✅ · 5c EUR→CHF data ✅ · 5d manual rates at today's reference rate ✅ · 5e corridor choice ✅ | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ✅ Done (2026-11-18): 6a design foundation ✅ · 6b breakdown ✅ · 6c caveat codes ✅ · 6d my bank vs best ✅ · 6e charts ✅ (6e-1 cost by amount · 6e-2 rate history) | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
-| 7 | Polish | 🟡 **In progress**: 7a security headers + request limit ✅ · 7b language URLs ✅ · 7c methodology + legal texts · 7d OpenAPI + `/docs` · 7e README | README, methodology and legal texts in four languages, OpenAPI, ADRs, language URLs (World Bank comparison dropped: no CH⇄euro corridor) | A reviewer understands the project in 5 minutes |
+| 7 | Polish | 🟡 **In progress**: 7a security headers + request limit ✅ · 7b language URLs ✅ · 7c methodology + privacy ✅ · 7d OpenAPI + `/docs` · 7e README | README, methodology and legal texts in four languages, OpenAPI, ADRs, language URLs (World Bank comparison dropped: no CH⇄euro corridor) | A reviewer understands the project in 5 minutes |
 | 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts | — |
 
 Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
@@ -398,3 +398,27 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   (a fix while reviewing: it cut the old prefix with the new code's length). Headless Chrome with a
   French browser: / → /fr/?x=1 (query kept, no extra history entry), switch → /de/, back → /fr/,
   forward → /de/, / again → saved /de/, a shared /it/ → Italian.
+- **2026-11-18:** **Review of the unfinished 7c** (owner's request; `review.md` log). `pnpm check`
+  was red (knip: 3 unused exports, fixed); two tests the code promised were missing
+  (`methodology-values.test.ts`, `site.test.ts`, written, each shown to fail); two wrong facts in
+  the English draft (30 → more than 30 days; logs also keep the referrer); README and ADR 0005
+  updated. Owner: **no imprint page** (option 1): the privacy page names the operator with a
+  name and a contact e-mail only, no postal address; the independence statement moved to the
+  methodology. Waiting for the owner: name, contact e-mail and the OVH data centre country
+  (`site.ts`), approval of the English texts (then de/fr/it), and the other privacy points.
+- **2026-11-18:** **7c: methodology and privacy pages, in four languages.** Pages at their own
+  address per language (`/de/methodik`, `/fr/confidentialite`, ADR 0005), linked from the footer;
+  an unknown address under a language shows "page not found". Methodology: what is compared, the
+  ECB reference rate, the cost formula with the Plan §3 example, where prices come from, what is
+  not included, why there is no World Bank comparison, the open method and independence. Privacy:
+  who is responsible (owner's name and e-mail; no imprint and no postal address, owner's choice),
+  browser storage, server logs, the data centre (Singapore, named by `Intl` in each language),
+  Cloudflare, rights under the FADP. Tests: the page's numbers equal core's, every language has the
+  English pages' blocks and uses every value, no `ß` (each shown to fail once). Headless Chrome:
+  all pages in four languages, hreflang per page, `/de/impressum` → not found; at 390 px no page is
+  wider than the screen (the formula box scrolls). Still open for the owner: the Cloudflare and
+  log-retention points in `review.md`.
+  Same day: the privacy page says Cloudflare processes IP addresses also in the US, as a company
+  certified under the Swiss-US Data Privacy Framework (Annex 1 of the Data Protection Ordinance,
+  status 1 Dec 2025; Cloudflare's privacy policy, 4 Nov 2025). Singapore is not on Annex 1: the
+  safeguard for the server's logs (OVHcloud's contract clauses) is for the owner to confirm.
