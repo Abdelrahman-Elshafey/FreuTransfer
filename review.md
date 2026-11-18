@@ -78,6 +78,60 @@ Add an entry to the log below and to `docs/progress.md`.
 
 ## Review log
 
+### 2026-11-18, full review (branch `step-7/methodology-legal`, after 7a–7c)
+Asked by the owner: the whole codebase, for bugs, unneeded code and security problems. All code
+read in dependency order (core → db → collectors → api → web → Docker, Compose, CI, scripts); the
+tests read where a doubt needed them. Machines: `pnpm check` green (453 tests after the fixes);
+`pnpm audit` 2 moderate (Testcontainers' glob/minimatch, tests only; the `picomatch` high of the
+last review is no longer reported); outdated: Vite 8.3.8, plugin-react 6.3.0, knip 6.45.1 (Prisma 8
+is an RC, skipped); no leftovers. Real thing: the web image built and run (page words 200,
+`/de/xyz` 404 with the page, `/es/` plain 404); the live API probed with repeated, bracketed,
+exponent, `__proto__`, too-long and wrong-method queries: 400/404 problems, never a 500.
+
+**Fixed**
+1. **`/de/xyz` answered 200** (item 5 of the 7c review below): nginx now knows each page's word per language and
+   answers 404 with the page as the body; the nginx test builds every address from `pages.ts`.
+2. **Two entries with the same provider, corridor and check time passed the loader.** The seed then
+   skipped the second silently (same values) or stopped saying a stored row was edited (other
+   values, or the same time written as `.000Z`). The loader now refuses the duplicate (3 tests,
+   failed first).
+3. **Unneeded code** (rule 9): `CostBreakdown.idealReceived` and `receivedValueAtMid` were computed
+   on every row and read only by one test; removed.
+4. **Second copy** (rule 11): the collector's own `addDays` repeated core's `daysBefore`; it uses
+   core's now.
+5. Docs: Project Plan §9 lacked the 18 Nov decisions (no imprint, 404 for unknown pages); a comment
+   in `i18n/en.ts` described `caveats` but sat above `myProvider`.
+
+**For the owner (not changed)**
+1. **A manual rate's age is measured from `checkedAt`, not from when the rate was read.** The loader
+   accepts a `rateCapturedAt` long before `checkedAt` (or after it), and such a row stays ranked: an
+   old rate's gap, applied to today's reference rate, with a fresh "checked" date. ADR 0010 counts
+   on re-reading within 30 days to catch a bank that changed its margin. Today every manual entry
+   has both times equal, so nothing is wrong on the site. Proposal: the loader requires
+   `rateCapturedAt` ≤ `checkedAt`, and core counts a manual row's age from the older of the two.
+2. **Data that goes stale soon** (30 days after `checkedAt`): PostFinance on 5–6 Dec, Yuh on 6 Dec,
+   Revolut on 10 Dec, Wise and Western Union on 13 Dec. After that they leave the ranking.
+3. **CI supply chain:** the third-party actions (`docker/*`, `pnpm/action-setup`) are pinned by
+   tag, not by commit. The `images` job may write to GHCR, and what it pushes is deployed after
+   the owner's approval: pin those actions to commit SHAs.
+4. Small hardening, optional: the deploy lock lives in `/tmp` (Ubuntu's protected symlinks cover
+   it; a folder of the app would be cleaner); the Compose services run without
+   `no-new-privileges`/`cap_drop`; `/health` has no request limit (it reaches the API, not the
+   database).
+5. Simplification candidate: the `tiered` fee model handles any number of tiers and an open last
+   tier, but the database only ever builds one tier from `max_amount`. A `maxAmount` on the fee
+   model would replace it (a core design change, so not done here).
+
+**Checked and fine:** money stays Decimal from file to screen; every SQL is tagged `$queryRaw` or
+Prisma; links from data are https only and rendered by React (escaped); the API never answers 500
+to a bad query; CSP, HSTS and the request limit on the live site; no published ports, non-root
+containers, Postgres private; `deploy.sh` accepts only a 40-character hex commit on `dev`; append-only
+triggers, the seed's single transaction, raw responses stored before parsing.
+
+**Not done:** the half-way deploy and rollback drill (step 13) was not repeated, since deploy.sh and
+Compose are unchanged since it last ran; the full production stack was not started locally (only
+the web image).
+
 ### 2026-11-18, review of the unfinished 7c (branch `step-7/methodology-legal`, uncommitted)
 Asked by the owner: check the code where the last session stopped (mid-7c), against every rule,
 and the docs. Machines: `pnpm check` was **red** (knip: 3 unused exports); after the fixes only the
@@ -121,12 +175,18 @@ older than the 7-day gate. No leftovers beyond the draft markers below.
 4. 7d's plan (an OpenAPI viewer from a pinned CDN) contradicts the privacy text ("the page loads
    nothing from other sites") and the CSP (`'self'` only). Serve the viewer from our own files, or
    reword both for `/docs`.
-5. `/de/xyz` shows "not found" but nginx answers 200, and its canonical/hreflang links name
+5. *(Resolved 2026-11-18: nginx answers 404 with the page as its body; the page list is checked against `pages.ts`.)* `/de/xyz` shows "not found" but nginx answers 200, and its canonical/hreflang links name
    `/xx/xyz`: add `noindex` there, or let nginx know the page list.
 6. Bundle size: with the long texts in four languages the catalogs will pass ADR 0005's ~20 KB
    mark (about 60 KB raw). Load `pages/<lang>.ts` per language, or raise the mark.
 7. `picomatch` (high, build-time only, no fix yet) and the three updates now past the gate: a small
    upgrade branch after 7c.
+8. Found 2026-11-18 while checking 7a live: Cloudflare adds Network Error Logging headers
+   (`Nel`, `Report-To`), so Chrome-based browsers may send reports of failed connections (address,
+   referrer, server IP) to `a.nel.cloudflare.com`. The privacy page says nothing about it and the
+   nginx test can't see it (no Cloudflare there). Fix: turn NEL off for the zone in Cloudflare
+   (a dashboard toggle or `PATCH /zones/{zone_id}/settings/nel`, Cloudflare docs, page modified
+   2026-05-07); otherwise name it in the privacy page's Cloudflare paragraph.
 
 ### 2026-11-13, second review (branch `step-5/review`, after 5a and 5b)
 Asked by the owner: a full review of the code, the docs and everything related. Machines:

@@ -17,6 +17,7 @@ export {
   type UnavailableReason,
 } from "./compare.ts";
 export { assertCurrencyCode, type CurrencyCode, isCurrencyCode } from "./currency.ts";
+export { daysBefore } from "./day.ts";
 export { Decimal, toFixedString } from "./decimal.ts";
 export { type FeeModel, feeRule } from "./fees.ts";
 export { HISTORY_MAX_DAYS, rateHistory } from "./history.ts";

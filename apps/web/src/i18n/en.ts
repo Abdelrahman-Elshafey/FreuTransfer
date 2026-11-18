@@ -58,7 +58,6 @@ export const en = {
       "the fees are higher than this amount, or it is outside the provider's limits",
     implausible_cost: "its price data looks wrong and is being checked",
   } satisfies Record<UnavailableReason, string>,
-  /** The API's caveat codes (`CaveatDto`); `amount` arrives formatted, e.g. "CHF 1'250.00". */
   myProvider: {
     label: "My provider",
     choose: "Choose…",
@@ -97,6 +96,7 @@ export const en = {
     text: "This address doesn't exist (any more).",
     home: "To the comparison",
   },
+  /** The API's caveat codes (`CaveatDto`); `amount` arrives formatted, e.g. "CHF 1'250.00". */
   caveats: {
     monthly_allowance: (amount: string) =>
       `No markup on the first ${amount} you exchange each month; exchanges earlier this month use it up.`,

@@ -53,6 +53,24 @@ describe("manual data files", () => {
     expect(() => parseManualData(data)).toThrow(/Unknown provider/);
   });
 
+  // The database keeps one row per corridor × provider × check time: a second entry with the same
+  // key would be skipped by the seed (same values) or reported as an edit of a stored row.
+  it.each([
+    ["the same values", {}],
+    ["another markup", { fxMarkup: "0.01" }],
+    ["the same time written differently", { checkedAt: "2026-11-05T17:30:00.000Z" }],
+  ])("rejects two entries for one provider, corridor and check time (%s)", (_name, change) => {
+    const data = valid();
+    data.feeSchedules.push({ ...data.feeSchedules[0], ...change });
+    expect(() => parseManualData(data)).toThrow(/checked at .* appears twice/);
+  });
+
+  it("accepts a second check of the same provider at another time", () => {
+    const data = valid();
+    data.feeSchedules.push({ ...data.feeSchedules[0], checkedAt: "2026-11-06T17:30:00Z" });
+    expect(() => parseManualData(data)).not.toThrow();
+  });
+
   it("requires needs_input for a manual entry without a rate", () => {
     const data = valid();
     data.feeSchedules[0] = {

@@ -140,6 +140,8 @@ Decided by the owner (2026-11-06):
 - (2026-11-18) Languages at `/en/ /de/ /fr/ /it/` with hreflang (ADR 0005, stage 7b). The World Bank
   comparison is dropped: Remittance Prices Worldwide has no corridor between Switzerland and the euro
   area (7c explains it in the methodology).
+- (2026-11-18) No imprint page: the privacy page names the operator with name and e-mail only, no
+  postal address (ADR 0005, stage 7c). An address under a language that names no page answers 404.
 
 Still open:
 - Whether to automate any bank rate page later.
