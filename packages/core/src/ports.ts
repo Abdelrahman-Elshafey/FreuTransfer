@@ -23,6 +23,20 @@ export interface MidRateRepository {
   ): Promise<MidRateObservation | null>;
 }
 
+/** The reference rates over time (the rate-history chart), apart from what a comparison needs. */
+export interface MidRateHistory {
+  /**
+   * The reference rates for base → quote published from `fromDay` to `toDay` ("YYYY-MM-DD", both
+   * included), oldest first, one per day: the newest fetch, as `MidRateRepository.latest`.
+   */
+  between(
+    base: CurrencyCode,
+    quote: CurrencyCode,
+    fromDay: string,
+    toDay: string,
+  ): Promise<MidRateObservation[]>;
+}
+
 /** A currency pair the site compares: what the sender pays in, what the recipient gets. */
 export type CorridorPair = { readonly source: CurrencyCode; readonly target: CurrencyCode };
 

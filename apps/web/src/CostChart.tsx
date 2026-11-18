@@ -1,6 +1,7 @@
 import type { ComparisonDto } from "@freu-transfer/api/contract";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { CHART_AMOUNTS, costSeries, percentTicks, type Series, seriesSlot } from "./chart-data.ts";
+import { linePath, useWidth } from "./chart-svg.ts";
 import { useI18n } from "./i18n/context.tsx";
 
 // "Cost by amount" (Project Plan §1, "cheapest provider by amount"): plain SVG (docs/adr/0012),
@@ -18,37 +19,6 @@ const color = (providerId: string) => {
   const slot = seriesSlot(providerId);
   return slot === null ? "var(--muted)" : `var(--series-${slot})`;
 };
-
-/** The reader's width in pixels, so text stays 12px on a phone instead of being scaled down. */
-function useWidth() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(640);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new ResizeObserver(([entry]) => {
-      if (entry) setWidth(entry.contentRect.width);
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-  return [ref, width] as const;
-}
-
-/** "M x y L x y …" with a new segment after every gap, so a missing point is never bridged. */
-function linePath(points: readonly (readonly [number, number] | null)[]): string {
-  let path = "";
-  let drawing = false;
-  for (const p of points) {
-    if (p === null) {
-      drawing = false;
-      continue;
-    }
-    path += `${drawing ? "L" : "M"}${p[0].toFixed(1)} ${p[1].toFixed(1)} `;
-    drawing = true;
-  }
-  return path.trim();
-}
 
 export function CostChart({
   comparisons,

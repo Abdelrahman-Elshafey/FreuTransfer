@@ -158,6 +158,49 @@ describe("PrismaMidRateRepository", () => {
     // Only CHF→EUR rates are stored; the other direction has none.
     expect(await new PrismaMidRateRepository(db).latest("EUR", "CHF")).toBeNull();
   });
+
+  it("returns the rates of a day range, both ends included, oldest first", async () => {
+    // Stored for CHF→EUR: 3 Nov 1.0700, 4 Nov 1.0712.
+    const repo = new PrismaMidRateRepository(db);
+    const days = (rates: { asOf: string; rate: { value: { toString(): string } } }[]) =>
+      rates.map((r) => [r.asOf, r.rate.value.toString()]);
+    expect(days(await repo.between("CHF", "EUR", "2026-11-03", "2026-11-04"))).toEqual([
+      ["2026-11-03", "1.07"],
+      ["2026-11-04", "1.0712"],
+    ]);
+    expect(days(await repo.between("CHF", "EUR", "2026-11-04", "2026-11-30"))).toEqual([
+      ["2026-11-04", "1.0712"],
+    ]);
+    expect(await repo.between("CHF", "EUR", "2026-10-01", "2026-11-02")).toEqual([]);
+  });
+
+  // Runs last in this block: it stores EUR→CHF rates, which the test above expects to be empty.
+  it("keeps one rate per day, the newest fetch (as latest does), when two sources have one", async () => {
+    await db.midMarketRate.createMany({
+      data: [
+        {
+          base: "EUR",
+          quote: "CHF",
+          rate: "0.9300",
+          source: "ecb",
+          asOf: new Date("2026-11-05"),
+          fetchedAt: new Date("2026-11-05T15:00:00Z"),
+        },
+        {
+          base: "EUR",
+          quote: "CHF",
+          rate: "0.9310",
+          source: "other",
+          asOf: new Date("2026-11-05"),
+          fetchedAt: new Date("2026-11-05T16:00:00Z"),
+        },
+      ],
+    });
+    const repo = new PrismaMidRateRepository(db);
+    const range = await repo.between("EUR", "CHF", "2026-11-05", "2026-11-05");
+    expect(range.map((r) => [r.source, r.rate.value.toString()])).toEqual([["other", "0.931"]]);
+    expect((await repo.latest("EUR", "CHF"))?.source).toBe("other");
+  });
 });
 
 describe("database rules", () => {

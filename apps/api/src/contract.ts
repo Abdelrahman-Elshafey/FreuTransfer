@@ -33,7 +33,7 @@ export type ProblemDto = {
 /** Amounts are strings, already rounded to the currency's minor unit ("1044.75"). */
 export type MoneyDto = { readonly amount: string; readonly currency: string };
 
-type MidRateDto = {
+export type MidRateDto = {
   /** 1 source currency = `rate` target currency, exact ("1.0893"). */
   readonly rate: string;
   /** "ecb" (the only reference rate source in v1, ADR 0008) */
@@ -112,4 +112,18 @@ export type ComparisonDto = {
     readonly providerName: string;
     readonly reason: UnavailableReason;
   }[];
+};
+
+/**
+ * `GET /v1/history?from=CHF&to=EUR&days=90`: the reference rates of the last `days` calendar days
+ * in Zurich (`fromDay` to `toDay`, today included), oldest first, one per publication day.
+ * `days` is 1 to 366, 90 when not given. Days without a publication (weekends) have no entry.
+ */
+export type HistoryDto = {
+  readonly from: string;
+  readonly to: string;
+  readonly days: number;
+  readonly fromDay: string;
+  readonly toDay: string;
+  readonly rates: readonly MidRateDto[];
 };

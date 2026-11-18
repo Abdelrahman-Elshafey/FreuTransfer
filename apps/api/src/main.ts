@@ -16,9 +16,11 @@ if (!databaseUrl) {
 }
 
 const db = createPrismaClient(databaseUrl);
+const midRates = new PrismaMidRateRepository(db);
 const app = createApp({
   offers: new PrismaOfferRepository(db),
-  midRates: new PrismaMidRateRepository(db),
+  midRates,
+  history: midRates,
   now: () => new Date(),
 });
 

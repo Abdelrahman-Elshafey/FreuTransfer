@@ -4,6 +4,7 @@ import {
   Decimal,
   type FeeModel,
   feeRule,
+  type MidRateHistory,
   type MidRateObservation,
   type MidRateRepository,
   Money,
@@ -76,7 +77,7 @@ export class PrismaOfferRepository implements OfferRepository {
   }
 }
 
-export class PrismaMidRateRepository implements MidRateRepository {
+export class PrismaMidRateRepository implements MidRateRepository, MidRateHistory {
   readonly #db: PrismaClient;
 
   constructor(db: PrismaClient) {
@@ -96,14 +97,44 @@ export class PrismaMidRateRepository implements MidRateRepository {
       },
       orderBy: [{ asOf: "desc" }, { fetchedAt: "desc" }],
     });
-    if (!row) return null;
-    return {
-      rate: Rate.of(base, quote, dec(row.rate)),
-      source: row.source,
-      asOf: row.asOf.toISOString().slice(0, 10),
-      fetchedAt: row.fetchedAt,
-    };
+    return row ? toObservation(row, base, quote) : null;
   }
+
+  async between(
+    base: CurrencyCode,
+    quote: CurrencyCode,
+    fromDay: string,
+    toDay: string,
+  ): Promise<MidRateObservation[]> {
+    const rows = await this.#db.midMarketRate.findMany({
+      where: {
+        base,
+        quote,
+        asOf: { gte: new Date(`${fromDay}T00:00:00Z`), lte: new Date(`${toDay}T00:00:00Z`) },
+      },
+      // Per day the newest fetch first, as in `latest`; only the first row of each day is kept.
+      orderBy: [{ asOf: "asc" }, { fetchedAt: "desc" }],
+    });
+    const byDay = new Map<string, MidRateObservation>();
+    for (const row of rows) {
+      const observation = toObservation(row, base, quote);
+      if (!byDay.has(observation.asOf)) byDay.set(observation.asOf, observation);
+    }
+    return [...byDay.values()];
+  }
+}
+
+function toObservation(
+  row: { rate: DbDecimal; source: string; asOf: Date; fetchedAt: Date },
+  base: CurrencyCode,
+  quote: CurrencyCode,
+): MidRateObservation {
+  return {
+    rate: Rate.of(base, quote, dec(row.rate)),
+    source: row.source,
+    asOf: row.asOf.toISOString().slice(0, 10),
+    fetchedAt: row.fetchedAt,
+  };
 }
 
 function toOffer(row: OfferRow): ProviderOffer {

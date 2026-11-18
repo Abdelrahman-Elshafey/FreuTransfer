@@ -1,8 +1,9 @@
 import express, { type Express } from "express";
 import { type CompareDeps, compareRouter } from "./compare-route.ts";
+import { type HistoryDeps, historyRouter } from "./history-route.ts";
 import { problemHandler, sendProblem } from "./problem.ts";
 
-export type AppDeps = CompareDeps;
+export type AppDeps = CompareDeps & HistoryDeps;
 
 /**
  * Builds the Express app without starting a server, so tests can call it directly
@@ -18,6 +19,7 @@ export function createApp(deps: AppDeps): Express {
   });
 
   app.use(compareRouter(deps));
+  app.use(historyRouter(deps));
 
   app.use((_req, res) => {
     sendProblem(res, { type: "about:blank", title: "Not Found", status: 404 });

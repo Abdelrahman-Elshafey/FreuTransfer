@@ -2,7 +2,7 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0–5 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 in progress:** 6a design foundation (ADR 0011), 6b breakdown, 6c caveats, 6d my bank vs best and 6e-1 the cost-by-amount chart (ADR 0012) built. **Next: 6e-2**, the reference rate over time (`/v1/history`). Open for the owner: Revolut's weekend markup (confirm in its Swiss fee document).
+**Now:** stages 0–6 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 done (2026-11-18):** design foundation (ADR 0011), breakdown, caveats, my bank vs best, and two plain-SVG charts (ADR 0012): cost by amount and the reference rate over time (`/v1/history`). **Next: stage 7**, polish. **Bug found (2026-11-18), fix proposed:** the collector rejects Frankfurter's answer when its window starts on a weekend (2 days a week). Open for the owner: Revolut's weekend markup.
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
@@ -12,8 +12,8 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 3 | v0.1 end-to-end | ✅ Done (2026-11-12): 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ✅ (3e-1 images · 3e-2 CI · 3e-3 first deploy · 3e-4 backups) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
 | 4 | Mid-market + pipeline | ✅ Done (2026-11-13): 4a database ✅ · 4b collector ✅ · 4c hourly `collect` service ✅ · 4e old-rate warning ✅ · 4d one week ⏳ (verify 20 Nov) | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored (8 working days 3–12 Nov stored; 16–20 Nov to be collected live) |
 | 5 | Provider data | ✅ Done (2026-11-14): 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider ✅ · 5c EUR→CHF data ✅ · 5d manual rates at today's reference rate ✅ · 5e corridor choice ✅ | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
-| 6 | Frontend | 🟡 **In progress**: 6a design foundation ✅ · 6b breakdown ✅ · 6c caveat codes ✅ · 6d my bank vs best ✅ · 6e charts (6e-1 cost by amount ✅ · 6e-2 rate history) | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
-| 7 | Polish | ⬜ Not started | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes |
+| 6 | Frontend | ✅ Done (2026-11-18): 6a design foundation ✅ · 6b breakdown ✅ · 6c caveat codes ✅ · 6d my bank vs best ✅ · 6e charts ✅ (6e-1 cost by amount · 6e-2 rate history) | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
+| 7 | Polish | ⏭️ Next | README, `methodology.md` and legal texts in four languages, World Bank comparison, OpenAPI, ADRs, language URLs decision | A reviewer understands the project in 5 minutes |
 | 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts | — |
 
 Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
@@ -351,3 +351,17 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   card: the legend and table are the relief (tested). Headless Chrome: phone x-axis labels
   collided (now plain amounts, the currency in the subtitle) and the readout cut names (widened);
   readout at 2,500 CHF and the German EUR→CHF table match the API.
+- **2026-11-18:** **6e-2: the reference rate over time; stage 6 done.** `GET /v1/history?from&to&days`
+  (1-366, default 90): the core use case `rateHistory` counts Zurich calendar days, today included
+  (`day.ts`, now shared with the comparison); a separate port `MidRateHistory` (the comparison's
+  port and its fakes unchanged), implemented by the Prisma repository: one rate per day, the newest
+  fetch, tested on Postgres. The query checks (`query.ts`), the reference-rate DTO and the page's
+  GET helper became shared code at their second use. The chart: one series (no legend, the title
+  names it), the y-axis fitted to the rates, time on the x-axis, a crosshair readout by pointer and
+  arrow keys, a table view, four languages. Local API: 90 days → 21 Aug … 18 Nov, `days=0` → 400;
+  headless Chrome: readout 5 Nov 1.0893, ← → by day, phone and desktop, light and dark.
+  **Found while running it:** `pnpm collect` failed: Frankfurter (v1 and v2, checked today) starts
+  a series at the last publication on or before the start date, so a window starting on a Saturday
+  or Sunday gets the Friday's rate first, and the collector's date check rejects the whole answer.
+  Every run fails on the 2 days a week whose window starts on a weekend (17 and 18 Nov); the
+  10-day window refetches the days later, so nothing is lost, but the newest rate lags up to 2 days.

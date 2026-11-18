@@ -1,5 +1,6 @@
 import { type CostBreakdown, computeCost } from "./cost.ts";
 import type { CurrencyCode } from "./currency.ts";
+import { zurichDay } from "./day.ts";
 import { Decimal } from "./decimal.ts";
 import { AmountNotSupportedError } from "./errors.ts";
 import { maxAmount } from "./fees.ts";
@@ -121,11 +122,6 @@ export type Comparison = {
 /** No reference rate is stored for the corridor, so no fair comparison is possible. */
 export class NoMidRateError extends Error {
   override name = "NoMidRateError";
-}
-
-/** The calendar day in Zurich ("YYYY-MM-DD"): ECB rates are dated in Central European time. */
-function zurichDay(instant: Date): string {
-  return instant.toLocaleDateString("sv-SE", { timeZone: "Europe/Zurich" });
 }
 
 /**

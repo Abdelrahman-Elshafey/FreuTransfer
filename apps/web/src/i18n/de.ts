@@ -67,6 +67,16 @@ export const de: Messages = {
     showTable: "Als Tabelle anzeigen",
     unavailable: "Die Grafik «Kosten nach Betrag» kann gerade nicht angezeigt werden.",
   },
+  rateChart: {
+    title: (from, to) => `Referenzkurs: 1 ${from} in ${to}`,
+    subtitle: (bank, first, last) =>
+      `Mittelkurs der ${bank} an Arbeitstagen, vom ${first} bis ${last}.`,
+    none: "Für diesen Zeitraum sind noch keine Referenzkurse gespeichert.",
+    day: "Tag",
+    rate: "Kurs",
+    keyboard: "Referenzkurs nach Tag: mit den Pfeiltasten links und rechts",
+    unavailable: "Die Grafik zum Referenzkurs kann gerade nicht angezeigt werden.",
+  },
   caveats: {
     monthly_allowance: (amount) =>
       `Kein Aufschlag auf die ersten ${amount}, die Sie pro Monat wechseln; frühere Wechsel in diesem Monat zählen mit.`,
