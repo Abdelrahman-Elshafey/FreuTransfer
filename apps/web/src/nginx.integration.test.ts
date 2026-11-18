@@ -9,6 +9,13 @@ import {
 } from "testcontainers";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { LOCALE_CODES } from "./i18n/locales.ts";
+import { type PageId, pageFromPath, pagePath } from "./pages.ts";
+
+// Every page; typed against PageId both ways, so adding a page without listing it here fails.
+const PAGE_IDS = ["home", "methodology", "privacy"] as const satisfies readonly PageId[];
+type Unlisted = Exclude<PageId, (typeof PAGE_IDS)[number]>;
+const allListed: [Unlisted] extends [never] ? true : never = true;
+void allListed;
 
 // The production nginx config (apps/web/nginx.conf + security-headers.conf) in the production
 // nginx image, started in Docker: the headers and the request limit are checked on real
@@ -93,14 +100,31 @@ describe("nginx (apps/web/nginx.conf)", () => {
     },
   );
 
-  // Language paths (docs/adr/0005): every code the page knows is served the page; others are not.
-  it.each(LOCALE_CODES.flatMap((code) => [`/${code}/`, `/${code}`, `/${code}/methodology`]))(
-    "serves the page on %s, with the security headers and no-cache",
+  // Language paths (docs/adr/0005): every page in every language the page knows is served the
+  // page (pages.ts makes the paths, so a new page or slug fails here until nginx.conf has it).
+  const pagePaths = LOCALE_CODES.flatMap((code) => PAGE_IDS.map((page) => pagePath(code, page)));
+  it.each([
+    ...pagePaths,
+    ...pagePaths.map((path) => (path.endsWith("/") ? path.slice(0, -1) : `${path}/`)),
+  ])("serves the page on %s, with the security headers and no-cache", async (path) => {
+    expect(pageFromPath(path), "a path the page itself knows").not.toBeNull();
+    const res = await fetch(`${base}${path}`);
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain("<!doctype html>");
+    expect(res.headers.get("cache-control")).toBe("no-cache");
+    for (const header of SECURITY_HEADERS) expect(res.headers.get(header), header).not.toBeNull();
+  });
+
+  // Addresses under our languages that name no page: the page (it shows "not found" in that
+  // language) with a real 404, so search engines don't index them. Includes another language's
+  // word for a page (/en/methodik), which the page doesn't know either.
+  it.each(["/de/xyz", "/en/methodik", "/fr/privacy", "/it/metodologia/x", "/en/assets/x.js"])(
+    "answers 404 with the page for %s, with the security headers",
     async (path) => {
+      expect(pageFromPath(path), "a path the page itself doesn't know").toBeNull();
       const res = await fetch(`${base}${path}`);
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(404);
       expect(await res.text()).toContain("<!doctype html>");
-      expect(res.headers.get("cache-control")).toBe("no-cache");
       for (const header of SECURITY_HEADERS) expect(res.headers.get(header), header).not.toBeNull();
     },
   );

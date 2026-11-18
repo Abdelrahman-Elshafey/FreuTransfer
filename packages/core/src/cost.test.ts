@@ -19,8 +19,7 @@ describe("computeCost", () => {
     expect(quote.received.toString()).toBe("1044.75 EUR");
 
     const cost = computeCost(quote, mid);
-    expect(cost.idealReceived.toString()).toBe("1070.00 EUR");
-    expect(cost.receivedValueAtMid.toString()).toBe("976.40 CHF");
+    // 1044.75 EUR ÷ 1.07 = 976.4018691… CHF at mid; 1000 − 976.4018691… = 23.5981308… → 23.60
     expect(cost.totalCost.toString()).toBe("23.60 CHF");
     expect(cost.visibleFee.toString()).toBe("5.00 CHF");
     expect(cost.fxMarkup.toString()).toBe("18.60 CHF");

@@ -65,8 +65,9 @@ dependency, no build plugin and no runtime cost:
   and shared). The switcher keeps the page: `/de/methodik` → `/fr/methodologie`. The `hreflang`
   links follow the page shown.
 - An address under one of our languages that names no page (`/de/xyz`) shows "page not found" in
-  that language, with a link to the comparison. nginx still answers 200 for it (it serves the page
-  for every `/xx/…` path).
+  that language, with a link to the comparison. nginx answers it with status 404 and the page as
+  the body (so search engines don't index it): `nginx.conf` lists each page's word per language,
+  and `nginx.integration.test.ts` checks it against `pages.ts` (2026-11-18, review item).
 - The long texts (methodology, privacy) are structured data per language in
   `apps/web/src/i18n/pages/`; the numbers they quote come from `apps/web/src/methodology-values.ts`,
   kept equal to core by its test.

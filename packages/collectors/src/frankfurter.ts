@@ -14,6 +14,7 @@ import {
   type CorridorPair,
   type CorridorRepository,
   type CurrencyCode,
+  daysBefore,
   MID_RATE_MAX_AGE_DAYS,
   type MidRateObservation,
   Rate,
@@ -98,7 +99,7 @@ async function collectPair(
 ): Promise<CorridorOutcome> {
   const source = SOURCE_FOR_QUOTE[pair.target];
   const today = utcDay(deps.now());
-  const window = { from: addDays(today, -WINDOW_DAYS), to: today };
+  const window = { from: daysBefore(today, WINDOW_DAYS), to: today };
   const url = `${API}?base=${pair.source}&quotes=${pair.target}&providers=${source}&from=${window.from}&to=${window.to}`;
 
   let response: Response;
@@ -184,7 +185,7 @@ export function parseRates(
   // v1 and v2: from=2026-11-08, a Sunday, starts with Friday 2026-11-06). So the first rate may
   // be a few days early: at most the longest normal gap between ECB publications (Easter,
   // MID_RATE_MAX_AGE_DAYS). Any other date outside the window means a wrong answer.
-  const earliestStart = addDays(window.from, -MID_RATE_MAX_AGE_DAYS);
+  const earliestStart = daysBefore(window.from, MID_RATE_MAX_AGE_DAYS);
   const seen = new Set<string>();
   return parsed.data.map((item, index) => {
     if (item.base !== pair.source || item.quote !== pair.target) {
@@ -218,10 +219,4 @@ export function parseRates(
 /** "YYYY-MM-DD" of a moment, in UTC (Frankfurter's dates are publication days). */
 function utcDay(moment: Date): string {
   return moment.toISOString().slice(0, 10);
-}
-
-function addDays(day: string, days: number): string {
-  const date = new Date(`${day}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return utcDay(date);
 }

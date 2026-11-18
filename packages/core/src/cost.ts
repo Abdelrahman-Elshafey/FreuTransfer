@@ -4,14 +4,10 @@ import type { Money } from "./money.ts";
 import type { QuoteAmounts } from "./quote.ts";
 import type { Rate } from "./rate.ts";
 
-/** The result shown to users. All money is in the sender's currency except `received`/`idealReceived`. */
+/** The result shown to users. All money is in the sender's currency except `received`. */
 export type CostBreakdown = {
   readonly totalPaid: Money;
   readonly received: Money;
-  /** What would arrive at the mid-market rate with no fee at all. */
-  readonly idealReceived: Money;
-  /** What arrived, valued back in the sender's currency at mid-market. */
-  readonly receivedValueAtMid: Money;
   /** Everything you lost compared with the fair rate: fee + hidden markup. */
   readonly totalCost: Money;
   readonly visibleFee: Money;
@@ -57,8 +53,6 @@ export function computeCost(quote: QuoteAmounts, mid: Rate): CostBreakdown {
   return {
     totalPaid,
     received,
-    idealReceived: mid.convert(totalPaid).round(),
-    receivedValueAtMid: receivedValueAtMid.round(),
     totalCost,
     visibleFee: roundedFee,
     fxMarkup: totalCost.minus(roundedFee),
