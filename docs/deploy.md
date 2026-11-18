@@ -189,6 +189,20 @@ dc exec collect node packages/collectors/src/collect-cli.ts      # one run now
 - `collect` has no health check: the image's check asks the API on port 3000, which doesn't run
   there, and an unhealthy container would make every deploy fail (`up --wait`).
 
+## Security headers and the request limit (stage 7a)
+
+`web` (nginx) adds the security headers to every response (`apps/web/security-headers.conf`,
+included in each `location` of `apps/web/nginx.conf`) and limits each visitor to 10 API requests a
+second, bursts of 20 (a comparison sends 7 at once). The visitor is the address Cloudflare sends in
+`CF-Connecting-IP`; without the tunnel (locally) it's the Docker gateway. Over the limit, nginx
+answers `429` as a problem (`application/problem+json`) itself, without asking the API.
+`apps/web/src/nginx.integration.test.ts` checks both on the real image (Docker must run).
+
+```sh
+curl -sI https://freutransfer.aelshafey.com/ | grep -i -E "content-security|strict-transport"
+dc logs --since 1h web | grep '" 429 '    # visitors who hit the limit
+```
+
 ## Backups (stage 3e-4)
 
 Two copies, because a dump on the server dies with the server (OVH's Strasbourg data center burned
