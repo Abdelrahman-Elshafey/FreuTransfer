@@ -59,6 +59,21 @@ dependency, no build plugin and no runtime cost:
 - The page is still rendered in the browser: search engines that run JavaScript see each language;
   pre-rendering is not needed for v1.
 
+## Page addresses (stage 7c)
+- The other pages have a word in their own language after the code: `/de/methodik`,
+  `/fr/confidentialite` (`apps/web/src/pages.ts`; lower-case ASCII, no accents, as they are typed
+  and shared). The switcher keeps the page: `/de/methodik` → `/fr/methodologie`. The `hreflang`
+  links follow the page shown.
+- An address under one of our languages that names no page (`/de/xyz`) shows "page not found" in
+  that language, with a link to the comparison. nginx still answers 200 for it (it serves the page
+  for every `/xx/…` path).
+- The long texts (methodology, privacy) are structured data per language in
+  `apps/web/src/i18n/pages/`; the numbers they quote come from `apps/web/src/methodology-values.ts`,
+  kept equal to core by its test.
+- No imprint page (owner, 2026-11-18): a private, non-commercial site in Switzerland needs none.
+  The privacy page names who is responsible, with a name and a contact e-mail only (Swiss FADP,
+  Art. 19); no postal address is published.
+
 ## Alternatives considered
 - **react-i18next / FormatJS (react-intl):** mature, but a runtime dependency for features we don't
   need yet (ICU message syntax, lazy namespaces, plural engines), and string keys

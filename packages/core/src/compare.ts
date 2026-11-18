@@ -25,7 +25,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * almost certainly a data error (a mistyped rate or fee), not a real price. Such an offer is never
  * ranked; it is listed as "being checked", so a typo can't top the ranking.
  */
-const MAX_PLAUSIBLE_COST = new Decimal("0.10");
+export const MAX_PLAUSIBLE_COST = new Decimal("0.10");
 
 export type ComparisonRow = {
   readonly offer: ProviderOffer;

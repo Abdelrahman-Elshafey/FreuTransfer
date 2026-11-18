@@ -91,6 +91,12 @@ export const en = {
     keyboard: "Reference rate by day: use the left and right arrow keys",
     unavailable: "The reference-rate chart can't be shown right now.",
   },
+  nav: { methodology: "Methodology", privacy: "Privacy" },
+  notFound: {
+    title: "Page not found",
+    text: "This address doesn't exist (any more).",
+    home: "To the comparison",
+  },
   caveats: {
     monthly_allowance: (amount: string) =>
       `No markup on the first ${amount} you exchange each month; exchanges earlier this month use it up.`,

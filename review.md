@@ -78,6 +78,56 @@ Add an entry to the log below and to `docs/progress.md`.
 
 ## Review log
 
+### 2026-11-18, review of the unfinished 7c (branch `step-7/methodology-legal`, uncommitted)
+Asked by the owner: check the code where the last session stopped (mid-7c), against every rule,
+and the docs. Machines: `pnpm check` was **red** (knip: 3 unused exports); after the fixes only the
+placeholder test fails, on purpose (417 tests, 416 pass). `pnpm audit`: 3 findings, one new and
+**high** (`picomatch` ReDoS, reached only through Vite at build time, no fixed release); the 2
+moderate ones as before (Testcontainers). Vite 8.3.8, plugin-react 6.3.0 and knip 6.45.1 are now
+older than the 7-day gate. No leftovers beyond the draft markers below.
+
+**Fixed**
+1. **`pnpm check` red:** `navigate`, `Section` and `LegalValues` exported without a reader outside
+   their file. `navigate` and `Section` are now private; `LegalValues` now types the page's values.
+2. **Two tests the comments promised didn't exist** (rules 1 and 5): `methodology-values.test.ts`
+   (the page's copies of core's limits and of the §3 example, worked out with core's `Money` and
+   `Rate`; each value changed once, each change fails) and `site.test.ts` (fails while a
+   `[placeholder]` is left in the operator's details). A third comment named a
+   `pages-text.test.ts`; corrected. Core now exports `MAX_PLAUSIBLE_COST` for the first test.
+3. **Two wrong facts in the English draft:** "not re-checked for 30 days" (core: *more than* 30, a
+   price at exactly 30 days is still ranked); the server logs also record the page a visitor came
+   from (`$http_referer`, read from the real nginx image).
+4. Docs: README still said "stage 6 next"; ADR 0005 didn't record the page addresses
+   (`/de/methodik`) or the not-found page.
+
+**For the owner (not changed)**
+1. *(Resolved 2026-11-18: details given, English approved, translated.)* 7c can't be committed yet: the operator's name, a contact e-mail and the OVH data
+   centre's country (`apps/web/src/site.ts`), and approval of the English texts before
+   `pages/de|fr|it.ts` (still English re-exports marked "not to be committed") are translated.
+2. Privacy page (legal content, not checked by a lawyer): the Swiss FADP (Art. 19) asks a privacy
+   notice to name who is responsible and the countries data goes to. *(Responsible: resolved
+   2026-11-18, owner chose no imprint page; the privacy page names the operator with name and
+   e-mail, no postal address. US: resolved 2026-11-18, the page says Cloudflare processes IP
+   addresses also in the US and is certified under the Swiss-US Data Privacy Framework, which
+   Annex 1 of the Data Protection Ordinance (status 1 Dec 2025) recognises.)* **Still open:**
+   Singapore is not on Annex 1, so the page should also name the safeguard for the logs stored
+   there (FADP Art. 19 para. 4), normally the standard contractual clauses in OVHcloud's data
+   processing agreement. Whether the owner's OVH contract includes them is not confirmed (its
+   public DPA names clauses for transfers from the EEA and Switzerland); the owner checks the
+   contract in the OVH control panel, or moves the server to an EU data centre.
+3. The 30 MB log limit the privacy page states lives only in the server's `/etc/docker/daemon.json`
+   (UrConnections' runbook), not in this repo: write it in `docs/deploy.md` or set it per service
+   in `compose.prod.yml`. On a quiet site 30 MB is many months of IP addresses: a time limit?
+4. 7d's plan (an OpenAPI viewer from a pinned CDN) contradicts the privacy text ("the page loads
+   nothing from other sites") and the CSP (`'self'` only). Serve the viewer from our own files, or
+   reword both for `/docs`.
+5. `/de/xyz` shows "not found" but nginx answers 200, and its canonical/hreflang links name
+   `/xx/xyz`: add `noindex` there, or let nginx know the page list.
+6. Bundle size: with the long texts in four languages the catalogs will pass ADR 0005's ~20 KB
+   mark (about 60 KB raw). Load `pages/<lang>.ts` per language, or raise the mark.
+7. `picomatch` (high, build-time only, no fix yet) and the three updates now past the gate: a small
+   upgrade branch after 7c.
+
 ### 2026-11-13, second review (branch `step-5/review`, after 5a and 5b)
 Asked by the owner: a full review of the code, the docs and everything related. Machines:
 `pnpm check` green (253 tests); `pnpm audit` the same 2 moderate findings (Testcontainers, tests

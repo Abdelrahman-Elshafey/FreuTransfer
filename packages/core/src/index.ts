@@ -10,6 +10,7 @@ export {
   type Caveat,
   type ComparisonRow,
   compareProviders,
+  MAX_PLAUSIBLE_COST,
   MID_RATE_MAX_AGE_DAYS,
   NoMidRateError,
   RECHECK_DAYS,

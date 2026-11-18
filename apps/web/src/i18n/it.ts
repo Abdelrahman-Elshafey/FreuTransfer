@@ -77,6 +77,12 @@ export const it: Messages = {
     keyboard: "Tasso di riferimento per giorno: frecce sinistra e destra",
     unavailable: "Il grafico del tasso di riferimento non può essere mostrato al momento.",
   },
+  nav: { methodology: "Metodologia", privacy: "Privacy" },
+  notFound: {
+    title: "Pagina non trovata",
+    text: "Questo indirizzo non esiste (più).",
+    home: "Al confronto",
+  },
   caveats: {
     monthly_allowance: (amount) =>
       `Nessuna maggiorazione sui primi ${amount} cambiati ogni mese; i cambi effettuati prima nel mese ne vengono detratti.`,

@@ -1,8 +1,17 @@
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
+import { pageFromPath, pagePath } from "../pages.ts";
+import { usePathname } from "../router.tsx";
 import { readSaved, save } from "../storage.ts";
 import type { Messages } from "./en.ts";
 import { type Formatter, formatterFor } from "./format.ts";
-import { type Locale, localeFromPath, localeInfo, pathIn, pickLocale } from "./locales.ts";
+import {
+  isLocale,
+  type Locale,
+  localeFromPath,
+  localeInfo,
+  pathIn,
+  pickLocale,
+} from "./locales.ts";
 
 type I18n = {
   readonly locale: Locale;
@@ -16,9 +25,18 @@ type I18n = {
 const I18nContext = createContext<I18n | null>(null);
 const STORAGE_KEY = "freu-transfer.locale";
 
-/** The current address with its path moved to `locale` (query and hash kept). */
+/**
+ * `path` in `locale`: a page keeps being that page (/de/methodik → /fr/methodologie); an address
+ * that names no page keeps its rest (/de/xyz → /fr/xyz), so it stays "not found".
+ */
+function pathInLocale(locale: Locale, path: string): string {
+  const page = pageFromPath(path);
+  return page === null ? pathIn(locale, path) : pagePath(locale, page);
+}
+
+/** The current address in `locale`, query and hash kept. */
 const addressIn = (locale: Locale) =>
-  pathIn(locale, location.pathname) + location.search + location.hash;
+  pathInLocale(locale, location.pathname) + location.search + location.hash;
 
 /**
  * The language comes from the address (docs/adr/0005): a shared /de/ link opens in German. An
@@ -60,19 +78,27 @@ export function I18nProvider({ children }: { readonly children: ReactNode }) {
     };
   }, [locale]);
 
+  const path = usePathname();
   useEffect(() => {
     // Screen readers, hyphenation and search engines read the page's language from here.
     document.documentElement.lang = localeInfo(locale).format;
-    document.title = value.t.title;
-    // The page's own address in this language (index.html lists all four as hreflang links).
+    // The page's own address in this language.
     let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!canonical) {
       canonical = document.createElement("link");
       canonical.rel = "canonical";
       document.head.append(canonical);
     }
-    canonical.href = new URL(pathIn(locale, location.pathname), location.origin).href;
-  }, [locale, value.t]);
+    canonical.href = new URL(pathInLocale(locale, path), location.origin).href;
+    // index.html names each language's home page (for crawlers that don't run JavaScript); on
+    // another page they name that page in each language, at the site address written there.
+    for (const link of document.querySelectorAll<HTMLLinkElement>(
+      "link[rel=alternate][hreflang]",
+    )) {
+      const code = link.hreflang;
+      if (isLocale(code)) link.href = new URL(pathInLocale(code, path), link.href).href;
+    }
+  }, [locale, path]);
 
   return <I18nContext value={value}>{children}</I18nContext>;
 }
