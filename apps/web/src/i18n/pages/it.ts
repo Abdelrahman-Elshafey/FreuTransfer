@@ -183,7 +183,7 @@ export const it: PagesText = {
         blocks: [
           {
             p: [
-              "Come ogni server web, il nostro scrive una riga di registro per ogni richiesta: il Suo indirizzo IP, l’ora, l’indirizzo richiesto, la pagina da cui proviene e il nome del Suo browser. I registri servono a far funzionare il sito e a proteggerlo dagli abusi (ogni visitatore può fare solo un numero limitato di richieste al secondo). Sono conservati finché non vengono sovrascritti: ogni parte del sito tiene al massimo 30 MB di registri. Nulla di essi viene combinato con altri dati o trasmesso.",
+              "Come ogni server web, il nostro scrive una riga di registro per ogni richiesta: il Suo indirizzo IP abbreviato (senza la sua ultima parte, così che non indichi più una connessione), l’ora, l’indirizzo richiesto, la pagina da cui proviene e il nome del Suo browser. I registri servono a far funzionare il sito e a proteggerlo dagli abusi (ogni visitatore può fare solo un numero limitato di richieste al secondo; per questo l’indirizzo completo è tenuto solo in memoria, mai scritto). Sono conservati finché non vengono sovrascritti: ogni parte del sito tiene al massimo 30 MB di registri. Nulla di essi viene combinato con altri dati o trasmesso.",
             ],
           },
           {

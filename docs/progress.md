@@ -2,7 +2,7 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0–6 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 done (2026-11-18):** design foundation (ADR 0011), breakdown, caveats, my bank vs best, and two plain-SVG charts (ADR 0012): cost by amount and the reference rate over time (`/v1/history`). **Stage 7 in progress:** 7a security headers and request limit, 7b language URLs, 7c methodology and privacy pages (no imprint, owner's choice) built. **Next: 7d**, OpenAPI and `/docs`. Collector fix for windows starting on a weekend merged. Open for the owner: Revolut's weekend markup.
+**Now:** stages 0–6 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 done (2026-11-18):** design foundation (ADR 0011), breakdown, caveats, my bank vs best, and two plain-SVG charts (ADR 0012): cost by amount and the reference rate over time (`/v1/history`). **Stage 7 in progress:** 7a security headers and request limit, 7b language URLs, 7c methodology and privacy pages (no imprint, owner's choice), logs without full IP addresses (ADR 0013), 7d the OpenAPI description and the API page (ADR 0014) built. **Next: 7e**, README and favicon. Collector fix for windows starting on a weekend merged. Open for the owner: Revolut's weekend markup.
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
@@ -440,6 +440,14 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   (ADR 0010; tests at exactly 30 days and 30 days + 1 minute). Every GitHub Action in CI is pinned
   to a commit (releases at least 7 days old, SHAs read with `git ls-remote`), checked by
   `deploy/versions.test.ts`. `pnpm check` green (458 tests).
+- **2026-11-19:** PR #32 was merged at the 7c commit; the full-review commits reached `dev`
+  with PR #33 (from `step-7/methodology-legal`). Cloudflare's Network Error Logging is off
+  (owner; checked live: no `Nel` header). **Logs keep no full IP address** (ADR 0013, owner's
+  choice): OVH Singapore's terms have no contract clauses to name, so nginx logs the address
+  shortened (IPv4 without its last part, IPv6 to two groups), drops `X-Forwarded-For`, and keeps
+  only critical error lines (the others name the client). The privacy page says so in four
+  languages. The nginx test reads the real container's log (fails on the old config and without
+  the error-log level).
 - **2026-11-19:** **7d-1: the OpenAPI description** (ADR 0014). The response shapes are Zod schemas
   (`apps/api/src/schemas.ts`); `contract.ts` derives the page's types with type-only imports (no
   Zod in the page's bundle, size unchanged). `GET /v1/openapi.json` serves OpenAPI 3.1 built with
@@ -460,3 +468,5 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   nothing wider than the screen once the field tables stack on phones; a type link jumps to its
   type. Fixed on the way (7d-1): the named schemas carried `$schema` and a fragment-only `$id`,
   which JSON Schema 2020-12 doesn't allow (test failed first). `pnpm check` green (489 tests).
+  The IP-log change (`step-7/ip-logs`) and 7d-1 travel in this branch (`step-7/docs-page`), so one
+  pull request brings all three to `dev`.
