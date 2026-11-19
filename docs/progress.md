@@ -2,7 +2,7 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0–6 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 done (2026-11-18):** design foundation (ADR 0011), breakdown, caveats, my bank vs best, and two plain-SVG charts (ADR 0012): cost by amount and the reference rate over time (`/v1/history`). **Stage 7 in progress:** 7a security headers and request limit, 7b language URLs, 7c methodology and privacy pages (no imprint, owner's choice) built. **Next: 7d**, OpenAPI and `/docs`. Collector fix for windows starting on a weekend merged. Open for the owner: Revolut's weekend markup.
+**Now:** stages 0–6 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 done (2026-11-18):** design foundation (ADR 0011), breakdown, caveats, my bank vs best, and two plain-SVG charts (ADR 0012): cost by amount and the reference rate over time (`/v1/history`). **Stage 7 in progress:** 7a security headers and request limit, 7b language URLs, 7c methodology and privacy pages (no imprint, owner's choice), logs without full IP addresses (ADR 0013), 7d the OpenAPI description and the API page (ADR 0014) built. **Next: 7e**, README and favicon. Collector fix for windows starting on a weekend merged. Open for the owner: Revolut's weekend markup.
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
@@ -13,7 +13,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 4 | Mid-market + pipeline | ✅ Done (2026-11-13): 4a database ✅ · 4b collector ✅ · 4c hourly `collect` service ✅ · 4e old-rate warning ✅ · 4d one week ⏳ (verify 20 Nov) | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored (8 working days 3–12 Nov stored; 16–20 Nov to be collected live) |
 | 5 | Provider data | ✅ Done (2026-11-14): 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider ✅ · 5c EUR→CHF data ✅ · 5d manual rates at today's reference rate ✅ · 5e corridor choice ✅ | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ✅ Done (2026-11-18): 6a design foundation ✅ · 6b breakdown ✅ · 6c caveat codes ✅ · 6d my bank vs best ✅ · 6e charts ✅ (6e-1 cost by amount · 6e-2 rate history) | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
-| 7 | Polish | 🟡 **In progress**: 7a security headers + request limit ✅ · 7b language URLs ✅ · 7c methodology + privacy ✅ · 7d OpenAPI + `/docs` · 7e README | README, methodology and legal texts in four languages, OpenAPI, ADRs, language URLs (World Bank comparison dropped: no CH⇄euro corridor) | A reviewer understands the project in 5 minutes |
+| 7 | Polish | 🟡 **In progress**: 7a security headers + request limit ✅ · 7b language URLs ✅ · 7c methodology + privacy ✅ · 7d OpenAPI + API page (7d-1 description ✅ · 7d-2 API page ✅) · 7e README | README, methodology and legal texts in four languages, OpenAPI, ADRs, language URLs (World Bank comparison dropped: no CH⇄euro corridor) | A reviewer understands the project in 5 minutes |
 | 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts | — |
 
 Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
@@ -440,3 +440,33 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   (ADR 0010; tests at exactly 30 days and 30 days + 1 minute). Every GitHub Action in CI is pinned
   to a commit (releases at least 7 days old, SHAs read with `git ls-remote`), checked by
   `deploy/versions.test.ts`. `pnpm check` green (458 tests).
+- **2026-11-19:** PR #32 was merged at the 7c commit; the full-review commits reached `dev`
+  with PR #33 (from `step-7/methodology-legal`). Cloudflare's Network Error Logging is off
+  (owner; checked live: no `Nel` header). **Logs keep no full IP address** (ADR 0013, owner's
+  choice): OVH Singapore's terms have no contract clauses to name, so nginx logs the address
+  shortened (IPv4 without its last part, IPv6 to two groups), drops `X-Forwarded-For`, and keeps
+  only critical error lines (the others name the client). The privacy page says so in four
+  languages. The nginx test reads the real container's log (fails on the old config and without
+  the error-log level).
+- **2026-11-19:** **7d-1: the OpenAPI description** (ADR 0014). The response shapes are Zod schemas
+  (`apps/api/src/schemas.ts`); `contract.ts` derives the page's types with type-only imports (no
+  Zod in the page's bundle, size unchanged). `GET /v1/openapi.json` serves OpenAPI 3.1 built with
+  Zod's own `z.toJSONSchema`: 8 named schemas, the query parameters from the handlers' schemas,
+  every error. Tests: each kind of real answer parses to exactly itself (a dropped field fails, shown
+  once); routes, errors and references of the document; `contract.ts` stays free of runtime
+  imports. Run for real: the local API with the seeded database answers the document, and its real
+  comparisons (incl. an unavailable provider) match the schemas; both images build. Core exports
+  `CURRENCY_CODES`. An external validator (Redocly CLI) could not be run here (blocked as a
+  download); the owner can run `npx @redocly/cli@2.76.0 lint` on the served file.
+- **2026-11-19:** **7d-2: the API page** (owner: option A, our own page; ADR 0014). `/<code>/api` in
+  every language, linked from the footer, made from `/v1/openapi.json`: endpoints with parameters
+  and answers, data types with their fields (unions per alternative, objects in place as `a.b`).
+  The frame in four languages, the description's English marked `lang="en"`; no dependency,
+  nothing from other sites. One page list (`PAGE_IDS` in `pages.ts`) for the footer and both page
+  tests; nginx serves `/xx/api`. Tests: the page's reading of the real description
+  (`api-docs.test.ts`). Headless Chrome (local API + page): German at 1280 px, English at 390 px;
+  nothing wider than the screen once the field tables stack on phones; a type link jumps to its
+  type. Fixed on the way (7d-1): the named schemas carried `$schema` and a fragment-only `$id`,
+  which JSON Schema 2020-12 doesn't allow (test failed first). `pnpm check` green (489 tests).
+  The IP-log change (`step-7/ip-logs`) and 7d-1 travel in this branch (`step-7/docs-page`), so one
+  pull request brings all three to `dev`.

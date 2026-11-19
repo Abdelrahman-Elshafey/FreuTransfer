@@ -17,8 +17,9 @@ to be found and redone. The page is still small (stage 3), so the rules are chea
   codes (`amount_not_supported`, `no_reference_rate`), errors are RFC 9457 problem **types**. Its
   English `title`/`errors[].message` are for developers only. No `?lang=` parameter, no
   `Accept-Language` handling on the server.
-- The response shape lives in one file, `apps/api/src/contract.ts`, typed on the server and imported
-  by the page (`@freu-transfer/api/contract`), so a new code can't reach the page untranslated: the
+- The response types live in one file, `apps/api/src/contract.ts` (derived from the Zod schemas in
+  `schemas.ts` since ADR 0014), typed on the server and imported by the page
+  (`@freu-transfer/api/contract`), so a new code can't reach the page untranslated: the
   catalogs use `satisfies Record<UnavailableReason, string>`.
 - The data files' research `note` is English evidence for the owner and reviewers; it stays in
   `data/manual` and the database but is no longer sent to the page. Caveats the reader should see
@@ -62,7 +63,8 @@ dependency, no build plugin and no runtime cost:
 ## Page addresses (stage 7c)
 - The other pages have a word in their own language after the code: `/de/methodik`,
   `/fr/confidentialite` (`apps/web/src/pages.ts`; lower-case ASCII, no accents, as they are typed
-  and shared). The switcher keeps the page: `/de/methodik` → `/fr/methodologie`. The `hreflang`
+  and shared). The API page is `/<code>/api` in every language (ADR 0014). The switcher keeps the
+  page: `/de/methodik` → `/fr/methodologie`. The `hreflang`
   links follow the page shown.
 - An address under one of our languages that names no page (`/de/xyz`) shows "page not found" in
   that language, with a link to the comparison. nginx answers it with status 404 and the page as

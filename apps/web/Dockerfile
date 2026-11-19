@@ -16,8 +16,9 @@ COPY apps/web/package.json apps/web/
 COPY packages/core/package.json packages/core/
 COPY packages/db/package.json packages/db/
 COPY packages/collectors/package.json packages/collectors/
-# Only the page's own dependencies: from the API it imports just src/contract.ts, whose one import
-# from core is a type (erased by the build), so the API's server libraries are not installed.
+# Only the page's own dependencies: from the API it imports just src/contract.ts, whose imports are
+# all types (erased by the build; apps/api/src/openapi.test.ts checks it), so the API's server
+# libraries and the schemas behind those types are neither installed nor copied.
 RUN --mount=type=cache,id=pnpm,target=/root/.cache/pnpm \
   pnpm install --frozen-lockfile --filter @freu-transfer/web --store-dir /root/.cache/pnpm/store
 COPY tsconfig.base.json ./

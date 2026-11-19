@@ -1,4 +1,4 @@
-import type { ComparisonDto } from "@freu-transfer/api/contract";
+import type { ComparisonDto, MoneyDto } from "@freu-transfer/api/contract";
 import { useState } from "react";
 import { CHART_AMOUNTS, costSeries, percentTicks, type Series, seriesSlot } from "./chart-data.ts";
 import { linePath, useWidth } from "./chart-svg.ts";
@@ -25,7 +25,7 @@ export function CostChart({
   currency,
 }: {
   comparisons: readonly ComparisonDto[];
-  currency: string;
+  currency: MoneyDto["currency"];
 }) {
   const { t, f } = useI18n();
   const [box, width] = useWidth();

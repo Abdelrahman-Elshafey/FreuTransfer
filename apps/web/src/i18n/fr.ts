@@ -77,11 +77,31 @@ export const fr: Messages = {
     keyboard: "Taux de référence par jour : flèches gauche et droite",
     unavailable: "Le graphique du taux de référence ne peut pas être affiché pour le moment.",
   },
-  nav: { methodology: "Méthodologie", privacy: "Confidentialité" },
+  nav: { methodology: "Méthodologie", privacy: "Confidentialité", api: "API" },
   notFound: {
     title: "Page introuvable",
     text: "Cette adresse n’existe pas (ou plus).",
     home: "Vers la comparaison",
+  },
+  apiPage: {
+    title: "API",
+    intro:
+      "Le comparateur repose sur une API HTTP. Cette page est construite à partir de sa description OpenAPI :",
+    english: "Les descriptions propres à l’API sont en anglais.",
+    endpoints: "Points d’accès",
+    parameters: "Paramètres",
+    answers: "Réponses",
+    dataTypes: "Types de données",
+    field: "Champ",
+    type: "Type",
+    required: "obligatoire",
+    optional: "facultatif",
+    description: "Description",
+    status: "Statut",
+    oneOf: "L’une de ces formes :",
+    loading: "Chargement de la description de l’API…",
+    unavailable:
+      "La description de l’API ne peut pas être chargée pour le moment. Veuillez réessayer plus tard.",
   },
   caveats: {
     monthly_allowance: (amount) =>

@@ -5,6 +5,7 @@ import type {
   ResultRowDto,
 } from "@freu-transfer/api/contract";
 import { type FormEvent, useEffect, useState } from "react";
+import { ApiPage } from "./ApiPage.tsx";
 import {
   type ApiError,
   DIRECTIONS,
@@ -22,7 +23,7 @@ import { LOCALE_CODES, type Locale, localeInfo } from "./i18n/locales.ts";
 import { PAGES } from "./i18n/pages/index.ts";
 import type { LegalValues, MethodologyValues } from "./i18n/pages/types.ts";
 import { METHODOLOGY } from "./methodology-values.ts";
-import { pageFromPath, pagePath } from "./pages.ts";
+import { PAGE_IDS, pageFromPath, pagePath } from "./pages.ts";
 import { RateChart } from "./RateChart.tsx";
 import { cheapestIds } from "./results.ts";
 import { Link, usePathname } from "./router.tsx";
@@ -539,7 +540,7 @@ export function App() {
       : page === "privacy"
         ? pages.privacy(legalValues(f))
         : null;
-  const title = page === null ? t.notFound.title : text?.title;
+  const title = page === null ? t.notFound.title : page === "api" ? t.apiPage.title : text?.title;
 
   useEffect(() => {
     document.title = title ? `${title} — FreuTransfer` : t.title;
@@ -562,12 +563,13 @@ export function App() {
           <ComparePage />
         </div>
         {text && <TextPage text={text} />}
+        {page === "api" && <ApiPage />}
         {page === null && <NotFound />}
       </main>
 
       <footer className={`${note} mt-16 space-y-2`}>
         <nav className="flex flex-wrap gap-x-4 gap-y-1">
-          {(["methodology", "privacy"] as const).map((p) => (
+          {PAGE_IDS.filter((p) => p !== "home").map((p) => (
             <Link key={p} to={pagePath(locale, p)} className="text-muted">
               {t.nav[p]}
             </Link>

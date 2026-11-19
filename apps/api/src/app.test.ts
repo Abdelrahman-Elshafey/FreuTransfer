@@ -8,8 +8,10 @@ import {
 } from "@freu-transfer/core";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
+import type { z } from "zod";
 import { type AppDeps, createApp } from "./app.ts";
-import { PROBLEM_TYPES } from "./contract.ts";
+import { type ComparisonDto, PROBLEM_TYPES } from "./contract.ts";
+import { comparisonSchema, healthSchema, historySchema, problemSchema } from "./schemas.ts";
 
 const now = new Date("2026-11-05T18:00:00Z");
 const mid: MidRateObservation = {
@@ -402,5 +404,104 @@ describe("GET /v1/history", () => {
   it("answers an empty list, not an error, when no rate is stored in the range", async () => {
     const res = await request(createApp(deps())).get("/v1/history?from=EUR&to=CHF");
     expect([res.status, res.body.rates]).toEqual([200, []]);
+  });
+});
+
+// The documented shapes (schemas.ts, which also make /v1/openapi.json) must be exactly what the
+// API sends: each kind of answer, with every optional part present at least once, parses without
+// error AND without losing a key (parse drops unknown keys, so an undocumented field fails toEqual).
+describe("every answer matches its documented schema", () => {
+  const exact = (schema: z.ZodType, body: unknown) => expect(schema.parse(body)).toEqual(body);
+
+  it("a comparison with ranked, manual, stale and unavailable rows and both caveats", async () => {
+    const manual: ProviderOffer = {
+      ...yuh,
+      providerId: "bank",
+      sourceKind: "manual",
+      pricing: { kind: "rate", rate: Rate.of("CHF", "EUR", "1.07"), capturedAt: now },
+    };
+    const allowance: ProviderOffer = {
+      ...yuh,
+      providerId: "allowance",
+      pricing: {
+        kind: "markup",
+        markup: new Decimal("0"),
+        tier: { upTo: Money.of("1250", "CHF"), markupAbove: new Decimal("0.01") },
+      },
+    };
+    const limited: ProviderOffer = {
+      ...yuh,
+      providerId: "limited",
+      fees: {
+        kind: "tiered",
+        tiers: [
+          { upTo: Money.of("4700", "CHF"), model: { kind: "deducted", rule: feeRule("CHF", {}) } },
+        ],
+      },
+    };
+    const stale: ProviderOffer = {
+      ...yuh,
+      providerId: "old",
+      checkedAt: new Date("2026-09-01T00:00:00Z"),
+    };
+    const pricey: ProviderOffer = {
+      ...yuh,
+      providerId: "pricey",
+      fees: { kind: "deducted", rule: feeRule("CHF", { fixed: "2000" }) },
+    };
+    const app = createApp(
+      deps({
+        offers: { latestOffers: async () => [yuh, manual, allowance, limited, stale, pricey] },
+      }),
+    );
+    const res = await request(app).get("/v1/compare?from=CHF&to=EUR&amount=1000");
+
+    expect(res.status).toBe(200);
+    const body = res.body as ComparisonDto;
+    // The data really reaches every optional part.
+    expect(body.results.some((r) => r.measuredAgainst !== null && r.rateCapturedAt !== null)).toBe(
+      true,
+    );
+    expect(new Set(body.results.flatMap((r) => r.caveats.map((c) => c.code)))).toEqual(
+      new Set(["monthly_allowance", "amount_limit"]),
+    );
+    expect(body.stale.map((r) => [r.providerId, r.vsCheapest])).toEqual([["old", null]]);
+    expect(body.unavailable.map((u) => u.reason)).toEqual(["amount_not_supported"]);
+    exact(comparisonSchema, body);
+  });
+
+  it("a history", async () => {
+    const app = createApp(deps({ history: { between: async () => [mid] } }));
+    const res = await request(app).get("/v1/history?from=CHF&to=EUR");
+    expect(res.body.rates).toHaveLength(1);
+    exact(historySchema, res.body);
+  });
+
+  it.each([
+    ["/v1/compare?from=CHF&to=CHF&amount=x", 400, "an invalid query"],
+    ["/v1/compare?from=EUR&to=CHF&amount=1", 404, "a direction without a reference rate"],
+    ["/v1/nothing", 404, "an unknown route"],
+  ])("a problem: %s (%i, %s)", async (path, status) => {
+    const res = await request(createApp(deps())).get(path);
+    expect(res.status).toBe(status);
+    expect(res.headers["content-type"]).toMatch(/^application\/problem\+json/);
+    exact(problemSchema, res.body);
+  });
+
+  it("a 500 problem", async () => {
+    const failing = deps({
+      offers: {
+        latestOffers: async () => {
+          throw new Error("database is down");
+        },
+      },
+    });
+    const res = await request(createApp(failing)).get("/v1/compare?from=CHF&to=EUR&amount=1");
+    expect(res.status).toBe(500);
+    exact(problemSchema, res.body);
+  });
+
+  it("the health check", async () => {
+    exact(healthSchema, (await request(createApp(deps())).get("/health")).body);
   });
 });

@@ -12,6 +12,9 @@ const MINOR_UNITS = {
 
 export type CurrencyCode = keyof typeof MINOR_UNITS;
 
+/** Every supported currency, for lists of allowed values (the API description). */
+export const CURRENCY_CODES = Object.keys(MINOR_UNITS) as CurrencyCode[];
+
 export function isCurrencyCode(value: string): value is CurrencyCode {
   return Object.hasOwn(MINOR_UNITS, value);
 }

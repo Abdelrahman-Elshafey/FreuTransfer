@@ -181,7 +181,7 @@ export const fr: PagesText = {
         blocks: [
           {
             p: [
-              "Comme tout serveur web, le nôtre écrit une ligne de journal pour chaque requête : votre adresse IP, l’heure, l’adresse demandée, la page d’où vous venez et le nom de votre navigateur. Les journaux servent à faire fonctionner le site et à le protéger contre les abus (chaque visiteur ne peut faire qu’un nombre limité de requêtes par seconde). Ils sont conservés jusqu’à ce qu’ils soient écrasés : chaque partie du site garde au plus 30 Mo de journaux. Rien n’y est combiné avec d’autres données ni transmis.",
+              "Comme tout serveur web, le nôtre écrit une ligne de journal pour chaque requête : votre adresse IP raccourcie (sans sa dernière partie, de sorte qu’elle ne désigne plus une connexion), l’heure, l’adresse demandée, la page d’où vous venez et le nom de votre navigateur. Les journaux servent à faire fonctionner le site et à le protéger contre les abus (chaque visiteur ne peut faire qu’un nombre limité de requêtes par seconde ; pour cela, l’adresse complète n’est gardée qu’en mémoire, jamais écrite). Ils sont conservés jusqu’à ce qu’ils soient écrasés : chaque partie du site garde au plus 30 Mo de journaux. Rien n’y est combiné avec d’autres données ni transmis.",
             ],
           },
           {

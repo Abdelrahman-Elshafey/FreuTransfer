@@ -13,6 +13,7 @@ import {
 import { type RequestHandler, Router } from "express";
 import { z } from "zod";
 import {
+  AMOUNT_PATTERN,
   type CaveatDto,
   type ComparisonDto,
   isAmount,
@@ -24,13 +25,18 @@ import { sendProblem } from "./problem.ts";
 import { differentCurrencies, pair, parseQuery } from "./query.ts";
 
 /** `GET /v1/compare?from=CHF&to=EUR&amount=1000`. The amount stays a string (never a float). */
-const querySchema = z
+export const compareQuery = z
   .object({
     ...pair,
     // Checked on the digits, not with parseFloat: money never becomes a JS number.
     amount: z
       .string()
-      .refine(isAmount, "a positive amount with at most 2 decimals, e.g. 1000 or 1000.50"),
+      .refine(isAmount, "a positive amount with at most 2 decimals, e.g. 1000 or 1000.50")
+      .meta({
+        description: "What leaves the sender's account, in `from`: up to 7 digits and 2 decimals.",
+        pattern: AMOUNT_PATTERN.source,
+        examples: ["1000", "1000.50"],
+      }),
   })
   .refine(...differentCurrencies);
 
@@ -44,7 +50,7 @@ export type CompareDeps = {
 export function compareRouter(deps: CompareDeps): Router {
   const router = Router();
   const handler: RequestHandler = async (req, res) => {
-    const query = parseQuery(querySchema, req, res);
+    const query = parseQuery(compareQuery, req, res);
     if (!query) return;
     const { from, to, amount } = query;
     try {

@@ -183,7 +183,7 @@ export const de: PagesText = {
         blocks: [
           {
             p: [
-              "Wie jeder Webserver schreibt unserer für jede Anfrage eine Protokollzeile: Ihre IP-Adresse, die Zeit, die angefragte Adresse, die Seite, von der Sie kamen, und den Namen Ihres Browsers. Die Protokolle dienen dem Betrieb der Website und ihrem Schutz vor Missbrauch (jede Besucherin und jeder Besucher darf nur eine begrenzte Zahl Anfragen pro Sekunde stellen). Sie bleiben gespeichert, bis sie überschrieben werden: Jeder Teil der Website behält höchstens 30 MB Protokolle. Nichts davon wird mit anderen Daten verknüpft oder weitergegeben.",
+              "Wie jeder Webserver schreibt unserer für jede Anfrage eine Protokollzeile: Ihre IP-Adresse gekürzt (ohne ihren letzten Teil, sodass sie nicht mehr auf einen Anschluss zeigt), die Zeit, die angefragte Adresse, die Seite, von der Sie kamen, und den Namen Ihres Browsers. Die Protokolle dienen dem Betrieb der Website und ihrem Schutz vor Missbrauch (jede Besucherin und jeder Besucher darf nur eine begrenzte Zahl Anfragen pro Sekunde stellen; dafür wird die volle Adresse nur im Arbeitsspeicher gehalten, nie aufgeschrieben). Sie bleiben gespeichert, bis sie überschrieben werden: Jeder Teil der Website behält höchstens 30 MB Protokolle. Nichts davon wird mit anderen Daten verknüpft oder weitergegeben.",
             ],
           },
           {

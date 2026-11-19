@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { LOCALE_CODES } from "./i18n/locales.ts";
-import { type PageId, pageFromPath, pagePath } from "./pages.ts";
-
-const PAGES: PageId[] = ["home", "methodology", "privacy"];
+import { PAGE_IDS as PAGES, pageFromPath, pagePath } from "./pages.ts";
 
 describe("pages", () => {
   it.each([
@@ -13,6 +11,8 @@ describe("pages", () => {
     ["/fr/confidentialite", "privacy"],
     ["/de/impressum", null], // no imprint page (owner, 2026-11-18)
     ["/it/privacy", "privacy"],
+    ["/fr/api", "api"],
+    ["/de/api/", "api"],
     ["/de/methodology", null], // the English slug in a German address: not a page
     ["/de/xyz", null],
     ["/", null],

@@ -77,11 +77,30 @@ export const it: Messages = {
     keyboard: "Tasso di riferimento per giorno: frecce sinistra e destra",
     unavailable: "Il grafico del tasso di riferimento non può essere mostrato al momento.",
   },
-  nav: { methodology: "Metodologia", privacy: "Privacy" },
+  nav: { methodology: "Metodologia", privacy: "Privacy", api: "API" },
   notFound: {
     title: "Pagina non trovata",
     text: "Questo indirizzo non esiste (più).",
     home: "Al confronto",
+  },
+  apiPage: {
+    title: "API",
+    intro:
+      "Il confronto si basa su un’API HTTP. Questa pagina è costruita dalla sua descrizione OpenAPI:",
+    english: "Le descrizioni proprie dell’API sono in inglese.",
+    endpoints: "Endpoint",
+    parameters: "Parametri",
+    answers: "Risposte",
+    dataTypes: "Tipi di dati",
+    field: "Campo",
+    type: "Tipo",
+    required: "obbligatorio",
+    optional: "facoltativo",
+    description: "Descrizione",
+    status: "Stato",
+    oneOf: "Una di queste forme:",
+    loading: "Caricamento della descrizione dell’API…",
+    unavailable: "La descrizione dell’API non può essere caricata al momento. Riprovi più tardi.",
   },
   caveats: {
     monthly_allowance: (amount) =>

@@ -42,7 +42,7 @@ Roadmap status, updated after every stage: [`docs/progress.md`](docs/progress.md
 | `packages/core` | Pure domain: money, rates, cost engine, ports (no I/O) |
 | `packages/db` | Prisma schema, migrations, repositories (return core types) |
 | `packages/collectors` | Data collectors: the reference rate from Frankfurter, every hour in production (`pnpm collect`) |
-| `apps/api` | Express 5 HTTP API; `src/contract.ts` is the response shape the page imports |
+| `apps/api` | Express 5 HTTP API; response shapes as Zod schemas (`src/schemas.ts`), the OpenAPI description at `/v1/openapi.json`, the types the page imports in `src/contract.ts` |
 | `apps/web` | React + Vite frontend; `src/i18n` holds the four languages (ADR 0005) |
 | `compose.prod.yml`, `apps/*/Dockerfile` | The production stack; runbook in [`docs/deploy.md`](docs/deploy.md) |
 | `scripts/deploy.sh`, `deploy/backup` | Deploying one commit on the server; database backups and their off-site copies |

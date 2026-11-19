@@ -9,13 +9,7 @@ import {
 } from "testcontainers";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { LOCALE_CODES } from "./i18n/locales.ts";
-import { type PageId, pageFromPath, pagePath } from "./pages.ts";
-
-// Every page; typed against PageId both ways, so adding a page without listing it here fails.
-const PAGE_IDS = ["home", "methodology", "privacy"] as const satisfies readonly PageId[];
-type Unlisted = Exclude<PageId, (typeof PAGE_IDS)[number]>;
-const allListed: [Unlisted] extends [never] ? true : never = true;
-void allListed;
+import { PAGE_IDS, pageFromPath, pagePath } from "./pages.ts";
 
 // The production nginx config (apps/web/nginx.conf + security-headers.conf) in the production
 // nginx image, started in Docker: the headers and the request limit are checked on real
@@ -75,6 +69,28 @@ afterAll(async () => {
   await api?.stop();
   await network?.stop();
 });
+
+/** The container's output (access and error log) until a line containing `marker`. */
+async function logUntil(container: StartedTestContainer, marker: string): Promise<string> {
+  const stream = await container.logs();
+  let text = "";
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(`no log line with ${marker}`)), 10_000);
+      stream.on("data", (chunk: Buffer | string) => {
+        text += chunk.toString();
+        if (text.includes(marker)) {
+          clearTimeout(timer);
+          resolve();
+        }
+      });
+      stream.on("error", reject);
+    });
+  } finally {
+    stream.destroy();
+  }
+  return text;
+}
 
 const SECURITY_HEADERS = [
   "content-security-policy",
@@ -172,5 +188,24 @@ describe("nginx (apps/web/nginx.conf)", () => {
       headers: { "cf-connecting-ip": "203.0.113.8" },
     });
     expect(other.status).toBe(200);
+  });
+
+  // Privacy page: the logs keep no full IP address. Runs after the limit test above, so the log
+  // also holds its refused requests (nginx would name each one's client in an error line).
+  it("logs only shortened addresses: IPv4 without its last part, IPv6 to two groups", async () => {
+    const visit = (ip: string, path = "/") =>
+      fetch(`${base}${path}`, { headers: { "cf-connecting-ip": ip, "x-forwarded-for": ip } });
+    await visit("198.51.100.23");
+    await visit("2001:db8:1:2::5");
+    // The last line written, so the log is known to be complete up to here.
+    await visit("192.0.2.1", "/log-complete");
+
+    const log = await logUntil(nginx, "/log-complete");
+    expect(log).toMatch(/^198\.51\.100\.0 - /m);
+    expect(log).toMatch(/^2001:db8:: - /m);
+    expect(log).toMatch(/^203\.0\.113\.0 - .*" 429 /m);
+    for (const full of ["198.51.100.23", "2001:db8:1:2", "203.0.113.7", "203.0.113.8"]) {
+      expect(log).not.toContain(full);
+    }
   });
 });
