@@ -435,3 +435,8 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   For the owner: a manual rate's age counts from `checkedAt`, not from when it was read; data goes
   stale from 5 Dec; pin CI's third-party actions to commit SHAs; optional hardening; a simpler fee
   model. `pnpm check` green (453 tests).
+- **2026-11-18:** Review items 1 and 3 (owner's OK). A manual row's age now runs from when its
+  rate was read, if older than its check, and the loader refuses a rate read after its check
+  (ADR 0010; tests at exactly 30 days and 30 days + 1 minute). Every GitHub Action in CI is pinned
+  to a commit (releases at least 7 days old, SHAs read with `git ls-remote`), checked by
+  `deploy/versions.test.ts`. `pnpm check` green (458 tests).

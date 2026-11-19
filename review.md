@@ -103,7 +103,7 @@ exponent, `__proto__`, too-long and wrong-method queries: 400/404 problems, neve
    in `i18n/en.ts` described `caveats` but sat above `myProvider`.
 
 **For the owner (not changed)**
-1. **A manual rate's age is measured from `checkedAt`, not from when the rate was read.** The loader
+1. *(Resolved 2026-11-18, owner's OK: core counts a manual row's age from the older of the two times; the loader refuses a rate read after its check; ADR 0010.)* **A manual rate's age is measured from `checkedAt`, not from when the rate was read.** The loader
    accepts a `rateCapturedAt` long before `checkedAt` (or after it), and such a row stays ranked: an
    old rate's gap, applied to today's reference rate, with a fresh "checked" date. ADR 0010 counts
    on re-reading within 30 days to catch a bank that changed its margin. Today every manual entry
@@ -111,7 +111,7 @@ exponent, `__proto__`, too-long and wrong-method queries: 400/404 problems, neve
    `rateCapturedAt` ≤ `checkedAt`, and core counts a manual row's age from the older of the two.
 2. **Data that goes stale soon** (30 days after `checkedAt`): PostFinance on 5–6 Dec, Yuh on 6 Dec,
    Revolut on 10 Dec, Wise and Western Union on 13 Dec. After that they leave the ranking.
-3. **CI supply chain:** the third-party actions (`docker/*`, `pnpm/action-setup`) are pinned by
+3. *(Resolved 2026-11-18: every action pinned to a commit with its version, checked by `deploy/versions.test.ts`.)* **CI supply chain:** the third-party actions (`docker/*`, `pnpm/action-setup`) are pinned by
    tag, not by commit. The `images` job may write to GHCR, and what it pushes is deployed after
    the owner's approval: pin those actions to commit SHAs.
 4. Small hardening, optional: the deploy lock lives in `/tmp` (Ubuntu's protected symlinks cover
