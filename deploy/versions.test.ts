@@ -68,4 +68,21 @@ describe("deploy versions", () => {
       expect(new Set(copied)).toEqual(new Set(workspace));
     },
   );
+
+  // SECURITY: a tag can be moved to other code; a commit can't. The images job may write to GHCR,
+  // and what it pushes is deployed, so every action runs a fixed commit, named with its version.
+  it("CI runs every GitHub Action at a pinned commit, the same commit wherever it is used", () => {
+    const uses = [
+      ...readRepoFile(".github/workflows/ci.yml").matchAll(/^\s*(?:- )?uses: (\S+)(.*)$/gm),
+    ].map((m) => ({ ref: m[1] ?? "", comment: m[2] ?? "" }));
+    expect(uses.length).toBeGreaterThan(0);
+    const commitOf = new Map<string, string>();
+    for (const { ref, comment } of uses) {
+      expect(ref, ref).toMatch(/^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/);
+      expect(comment, `${ref} names its version`).toMatch(/^ # v\d+\.\d+\.\d+/);
+      const [action = "", commit = ""] = ref.split("@");
+      expect(commitOf.get(action) ?? commit, action).toBe(commit);
+      commitOf.set(action, commit);
+    }
+  });
 });

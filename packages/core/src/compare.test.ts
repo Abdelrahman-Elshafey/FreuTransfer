@@ -333,6 +333,24 @@ describe("manual rate at today's reference rate", () => {
     });
     expect(rank([better]).unavailable).toEqual([{ offer: better, reason: "implausible_cost" }]);
   });
+
+  // ADR 0010: the estimate holds only while the bank keeps its margin, which re-reading catches. So
+  // a manual row's age runs from when its rate was read, even if the entry was checked later.
+  it("rule 5: a rate read more than 30 days ago is stale, however recently it was checked", () => {
+    // now = 2026-11-05 18:00 UTC; checkedAt = now.
+    //   read 2026-10-06 18:00 → exactly 30 days → still ranked (only MORE than 30 is stale)
+    //   read 2026-10-06 17:59 → 30 days and 1 minute → stale
+    const readAt = (iso: string, id: string) =>
+      offer(id, { kind: "rate", rate: Rate.of("CHF", "EUR", "1.08"), capturedAt: new Date(iso) });
+    const result = rankOffers(
+      [readAt("2026-10-06T18:00:00Z", "edge"), readAt("2026-10-06T17:59:00Z", "old")],
+      mid,
+      Money.of("1000", "CHF"),
+      now,
+    );
+    expect(result.ranked.map((r) => r.offer.providerId)).toEqual(["edge"]);
+    expect(result.stale.map((r) => r.offer.providerId)).toEqual(["old"]);
+  });
 });
 
 describe("compareProviders", () => {

@@ -165,6 +165,18 @@ const manualDataSchema = (now: Date) =>
         checkedAt: fs.checkedAt,
         rateCapturedAt: "rateCapturedAt" in fs ? fs.rateCapturedAt : null,
       };
+      // A rate is read during the check that records it, or before (core counts a manual row's
+      // age from the reading, ADR 0010).
+      if (
+        times.rateCapturedAt !== null &&
+        Date.parse(times.rateCapturedAt) > Date.parse(fs.checkedAt)
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["feeSchedules", i, "rateCapturedAt"],
+          message: `rateCapturedAt ${times.rateCapturedAt}: the rate can't be read after it was checked (${fs.checkedAt})`,
+        });
+      }
       for (const [field, value] of Object.entries(times)) {
         if (value !== null && new Date(value) > now) {
           ctx.addIssue({

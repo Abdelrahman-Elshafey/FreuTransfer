@@ -238,7 +238,13 @@ export function rankOffers(
       caveats: caveatsFor(offer),
       vsCheapest: null,
     };
-    const ageDays = (now.getTime() - offer.checkedAt.getTime()) / DAY_MS;
+    // A manual row is as old as its rate reading, if that is older than the check (ADR 0010: only
+    // re-reading catches a bank that changed its margin).
+    const since = Math.min(
+      offer.checkedAt.getTime(),
+      pricing.kind === "rate" ? pricing.capturedAt.getTime() : Number.POSITIVE_INFINITY,
+    );
+    const ageDays = (now.getTime() - since) / DAY_MS;
     (ageDays > RECHECK_DAYS ? stale : fresh).push(row);
   }
 

@@ -29,5 +29,7 @@ from today's reference rate. Seen in the review of 2026-11-13: for 2,500 CHF, Po
 ## Consequences
 - What arrives and the ranking always agree; the amount for a manual rate is an estimate, labelled.
 - The estimate assumes the provider moves its rate with the market and keeps its margin. A bank
-  that changes its margin is only caught by re-reading (`RECHECK_DAYS`, 30 days).
+  that changes its margin is only caught by re-reading (`RECHECK_DAYS`, 30 days). So a manual
+  row's age runs from when its rate was read, if that is older than its `checkedAt`, and the loader
+  refuses a rate read after the check that records it (owner, 2026-11-18, full review).
 - The cost % is the same as before up to rounding: the distance is the cost.

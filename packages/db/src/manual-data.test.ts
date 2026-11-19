@@ -85,6 +85,26 @@ describe("manual data files", () => {
     expect(() => parseManualData(data)).not.toThrow();
   });
 
+  // A manual rate is read during the check that records it, or before; core counts the row's age
+  // from the reading (ADR 0010). checkedAt is 2026-11-05T17:30:00Z.
+  it.each([
+    ["at the check time", true, "2026-11-05T17:30:00Z"],
+    ["a day before the check", true, "2026-11-04T17:30:00Z"],
+    ["one second after the check", false, "2026-11-05T17:30:01Z"],
+  ])("a manual rate read %s is accepted: %s", (_name, ok, rateCapturedAt) => {
+    const data = valid();
+    data.feeSchedules[0] = {
+      ...data.feeSchedules[0],
+      sourceKind: "manual",
+      fxMarkup: undefined,
+      providerRate: "1.08",
+      rateCapturedAt,
+    };
+    const parse = () => parseManualData(data);
+    if (ok) expect(parse).not.toThrow();
+    else expect(parse).toThrow(/read after it was checked/);
+  });
+
   // The database stores NUMERIC(20,10). Postgres would silently round an 11th decimal, and the
   // next seed would then report a changed history row (file "…05341" ≠ stored "…0534").
   it("rejects more decimals or digits than the database stores", () => {
