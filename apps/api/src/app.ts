@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import { type CompareDeps, compareRouter } from "./compare-route.ts";
 import { type HistoryDeps, historyRouter } from "./history-route.ts";
+import { openApiDocument } from "./openapi.ts";
 import { problemHandler, sendProblem } from "./problem.ts";
 
 export type AppDeps = CompareDeps & HistoryDeps;
@@ -16,6 +17,12 @@ export function createApp(deps: AppDeps): Express {
 
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
+  });
+
+  // Built once: it only changes with the code.
+  const description = openApiDocument();
+  app.get("/v1/openapi.json", (_req, res) => {
+    res.json(description);
   });
 
   app.use(compareRouter(deps));

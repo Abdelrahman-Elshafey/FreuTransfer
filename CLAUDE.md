@@ -88,7 +88,9 @@ Each rule names the mistake it prevents.
   core, db and API send codes, money and dates, never reader-facing sentences. Every visible text
   comes from `apps/web/src/i18n/` and is added in all four languages in the same change (Swiss
   German: `ss`, never `ß`). Numbers and dates only through the `Intl` formatter, from the API's
-  strings. The API's response shape lives in `apps/api/src/contract.ts`, shared with the page.
+  strings. The API's response shapes are Zod schemas in `apps/api/src/schemas.ts` (also the
+  OpenAPI document, `/v1/openapi.json`); `apps/api/src/contract.ts` derives the types shared with
+  the page, with type-only imports.
 - Production: the owner's OVH VPS + domain, Docker Compose with Postgres not exposed publicly,
   collectors as an hourly Compose service (ADR 0007), public access through a Cloudflare Tunnel with no open
   ports (ADR 0004; UrConnections' Caddy owns 80/443 on that server). No Vercel/Neon.

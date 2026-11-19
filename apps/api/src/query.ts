@@ -1,16 +1,22 @@
-import { type CurrencyCode, isCurrencyCode } from "@freu-transfer/core";
+import { CURRENCY_CODES, type CurrencyCode, isCurrencyCode } from "@freu-transfer/core";
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { PROBLEM_TYPES } from "./contract.ts";
 import { sendProblem } from "./problem.ts";
 
 /** A currency the site supports, case-insensitive in the query ("chf" = "CHF"). */
-const currency = z.string().transform((s, ctx): CurrencyCode => {
-  const code = s.toUpperCase();
-  if (isCurrencyCode(code)) return code;
-  ctx.addIssue({ code: "custom", message: "unsupported currency" });
-  return z.NEVER;
-});
+const currency = z
+  .string()
+  .transform((s, ctx): CurrencyCode => {
+    const code = s.toUpperCase();
+    if (isCurrencyCode(code)) return code;
+    ctx.addIssue({ code: "custom", message: "unsupported currency" });
+    return z.NEVER;
+  })
+  .meta({
+    enum: CURRENCY_CODES,
+    description: "A supported currency (ISO 4217), case-insensitive.",
+  });
 
 /** `from` and `to`: every endpoint asks about one direction of a currency pair. */
 export const pair = { from: currency, to: currency };

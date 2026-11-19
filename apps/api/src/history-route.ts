@@ -9,7 +9,7 @@ import { differentCurrencies, pair, parseQuery } from "./query.ts";
 const DEFAULT_HISTORY_DAYS = 90;
 
 /** `GET /v1/history?from=CHF&to=EUR&days=90`; `days` is optional. */
-const querySchema = z
+export const historyQuery = z
   .object({
     ...pair,
     days: z
@@ -17,7 +17,10 @@ const querySchema = z
       .regex(/^\d{1,3}$/, `whole days, 1 to ${HISTORY_MAX_DAYS}`)
       .transform(Number)
       .refine((d) => d >= 1 && d <= HISTORY_MAX_DAYS, `whole days, 1 to ${HISTORY_MAX_DAYS}`)
-      .optional(),
+      .optional()
+      .meta({
+        description: `Calendar days back from today, 1 to ${HISTORY_MAX_DAYS}; ${DEFAULT_HISTORY_DAYS} when not given.`,
+      }),
   })
   .refine(...differentCurrencies);
 
@@ -30,7 +33,7 @@ export type HistoryDeps = {
 export function historyRouter(deps: HistoryDeps): Router {
   const router = Router();
   const handler: RequestHandler = async (req, res) => {
-    const query = parseQuery(querySchema, req, res);
+    const query = parseQuery(historyQuery, req, res);
     if (!query) return;
     const days = query.days ?? DEFAULT_HISTORY_DAYS;
     const result = await rateHistory(deps, {

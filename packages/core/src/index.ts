@@ -16,7 +16,12 @@ export {
   RECHECK_DAYS,
   type UnavailableReason,
 } from "./compare.ts";
-export { assertCurrencyCode, type CurrencyCode, isCurrencyCode } from "./currency.ts";
+export {
+  assertCurrencyCode,
+  CURRENCY_CODES,
+  type CurrencyCode,
+  isCurrencyCode,
+} from "./currency.ts";
 export { daysBefore } from "./day.ts";
 export { Decimal, toFixedString } from "./decimal.ts";
 export { type FeeModel, feeRule } from "./fees.ts";

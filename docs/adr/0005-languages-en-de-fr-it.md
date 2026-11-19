@@ -17,8 +17,9 @@ to be found and redone. The page is still small (stage 3), so the rules are chea
   codes (`amount_not_supported`, `no_reference_rate`), errors are RFC 9457 problem **types**. Its
   English `title`/`errors[].message` are for developers only. No `?lang=` parameter, no
   `Accept-Language` handling on the server.
-- The response shape lives in one file, `apps/api/src/contract.ts`, typed on the server and imported
-  by the page (`@freu-transfer/api/contract`), so a new code can't reach the page untranslated: the
+- The response types live in one file, `apps/api/src/contract.ts` (derived from the Zod schemas in
+  `schemas.ts` since ADR 0014), typed on the server and imported by the page
+  (`@freu-transfer/api/contract`), so a new code can't reach the page untranslated: the
   catalogs use `satisfies Record<UnavailableReason, string>`.
 - The data files' research `note` is English evidence for the owner and reviewers; it stays in
   `data/manual` and the database but is no longer sent to the page. Caveats the reader should see
