@@ -169,6 +169,9 @@ older than the 7-day gate. No leftovers beyond the draft markers below.
    processing agreement. Whether the owner's OVH contract includes them is not confirmed (its
    public DPA names clauses for transfers from the EEA and Switzerland); the owner checks the
    contract in the OVH control panel, or moves the server to an EU data centre.
+   *(2026-11-19: OVH Singapore's terms (17 Jan 2025) have no such clauses; the owner chose to keep
+   no full IP address in the logs instead, ADR 0013. Reduced, not settled: a shortened address may
+   still be personal data.)*
 3. The 30 MB log limit the privacy page states lives only in the server's `/etc/docker/daemon.json`
    (UrConnections' runbook), not in this repo: write it in `docs/deploy.md` or set it per service
    in `compose.prod.yml`. On a quiet site 30 MB is many months of IP addresses: a time limit?
@@ -181,7 +184,7 @@ older than the 7-day gate. No leftovers beyond the draft markers below.
    mark (about 60 KB raw). Load `pages/<lang>.ts` per language, or raise the mark.
 7. `picomatch` (high, build-time only, no fix yet) and the three updates now past the gate: a small
    upgrade branch after 7c.
-8. Found 2026-11-18 while checking 7a live: Cloudflare adds Network Error Logging headers
+8. *(Resolved 2026-11-19: the owner turned NEL off; the live site sends no `Nel`/`Report-To`.)* Found 2026-11-18 while checking 7a live: Cloudflare adds Network Error Logging headers
    (`Nel`, `Report-To`), so Chrome-based browsers may send reports of failed connections (address,
    referrer, server IP) to `a.nel.cloudflare.com`. The privacy page says nothing about it and the
    nginx test can't see it (no Cloudflare there). Fix: turn NEL off for the zone in Cloudflare
