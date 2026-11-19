@@ -2,15 +2,19 @@ import { type Locale, localeFromPath } from "./i18n/locales.ts";
 
 /**
  * The site's pages and their address in each language (docs/adr/0005): /de/methodik is the
- * methodology in German. The home page is the language's root (/de/).
+ * methodology in German. The home page is the language's root (/de/); the API page is /<code>/api
+ * in every language ("API" is the same word in all four).
  */
-export type PageId = "home" | "methodology" | "privacy";
+
+/** Every page; after the home page, in the footer's order. */
+export const PAGE_IDS = ["home", "methodology", "privacy", "api"] as const;
+export type PageId = (typeof PAGE_IDS)[number];
 
 const SLUGS: Readonly<Record<Locale, Readonly<Record<Exclude<PageId, "home">, string>>>> = {
-  en: { methodology: "methodology", privacy: "privacy" },
-  de: { methodology: "methodik", privacy: "datenschutz" },
-  fr: { methodology: "methodologie", privacy: "confidentialite" },
-  it: { methodology: "metodologia", privacy: "privacy" },
+  en: { methodology: "methodology", privacy: "privacy", api: "api" },
+  de: { methodology: "methodik", privacy: "datenschutz", api: "api" },
+  fr: { methodology: "methodologie", privacy: "confidentialite", api: "api" },
+  it: { methodology: "metodologia", privacy: "privacy", api: "api" },
 };
 
 /** The page an address shows: null for an address of ours that names no page (/de/xyz). */

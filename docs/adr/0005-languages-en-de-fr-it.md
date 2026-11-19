@@ -63,7 +63,8 @@ dependency, no build plugin and no runtime cost:
 ## Page addresses (stage 7c)
 - The other pages have a word in their own language after the code: `/de/methodik`,
   `/fr/confidentialite` (`apps/web/src/pages.ts`; lower-case ASCII, no accents, as they are typed
-  and shared). The switcher keeps the page: `/de/methodik` → `/fr/methodologie`. The `hreflang`
+  and shared). The API page is `/<code>/api` in every language (ADR 0014). The switcher keeps the
+  page: `/de/methodik` → `/fr/methodologie`. The `hreflang`
   links follow the page shown.
 - An address under one of our languages that names no page (`/de/xyz`) shows "page not found" in
   that language, with a link to the comparison. nginx answers it with status 404 and the page as

@@ -9,13 +9,7 @@ import {
 } from "testcontainers";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { LOCALE_CODES } from "./i18n/locales.ts";
-import { type PageId, pageFromPath, pagePath } from "./pages.ts";
-
-// Every page; typed against PageId both ways, so adding a page without listing it here fails.
-const PAGE_IDS = ["home", "methodology", "privacy"] as const satisfies readonly PageId[];
-type Unlisted = Exclude<PageId, (typeof PAGE_IDS)[number]>;
-const allListed: [Unlisted] extends [never] ? true : never = true;
-void allListed;
+import { PAGE_IDS, pageFromPath, pagePath } from "./pages.ts";
 
 // The production nginx config (apps/web/nginx.conf + security-headers.conf) in the production
 // nginx image, started in Docker: the headers and the request limit are checked on real

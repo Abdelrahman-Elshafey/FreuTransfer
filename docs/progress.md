@@ -13,7 +13,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 4 | Mid-market + pipeline | ✅ Done (2026-11-13): 4a database ✅ · 4b collector ✅ · 4c hourly `collect` service ✅ · 4e old-rate warning ✅ · 4d one week ⏳ (verify 20 Nov) | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored (8 working days 3–12 Nov stored; 16–20 Nov to be collected live) |
 | 5 | Provider data | ✅ Done (2026-11-14): 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider ✅ · 5c EUR→CHF data ✅ · 5d manual rates at today's reference rate ✅ · 5e corridor choice ✅ | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ✅ Done (2026-11-18): 6a design foundation ✅ · 6b breakdown ✅ · 6c caveat codes ✅ · 6d my bank vs best ✅ · 6e charts ✅ (6e-1 cost by amount · 6e-2 rate history) | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
-| 7 | Polish | 🟡 **In progress**: 7a security headers + request limit ✅ · 7b language URLs ✅ · 7c methodology + privacy ✅ · 7d OpenAPI + `/docs` (7d-1 description ✅ · 7d-2 viewer) · 7e README | README, methodology and legal texts in four languages, OpenAPI, ADRs, language URLs (World Bank comparison dropped: no CH⇄euro corridor) | A reviewer understands the project in 5 minutes |
+| 7 | Polish | 🟡 **In progress**: 7a security headers + request limit ✅ · 7b language URLs ✅ · 7c methodology + privacy ✅ · 7d OpenAPI + API page (7d-1 description ✅ · 7d-2 API page ✅) · 7e README | README, methodology and legal texts in four languages, OpenAPI, ADRs, language URLs (World Bank comparison dropped: no CH⇄euro corridor) | A reviewer understands the project in 5 minutes |
 | 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts | — |
 
 Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
@@ -450,3 +450,13 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   comparisons (incl. an unavailable provider) match the schemas; both images build. Core exports
   `CURRENCY_CODES`. An external validator (Redocly CLI) could not be run here (blocked as a
   download); the owner can run `npx @redocly/cli@2.76.0 lint` on the served file.
+- **2026-11-19:** **7d-2: the API page** (owner: option A, our own page; ADR 0014). `/<code>/api` in
+  every language, linked from the footer, made from `/v1/openapi.json`: endpoints with parameters
+  and answers, data types with their fields (unions per alternative, objects in place as `a.b`).
+  The frame in four languages, the description's English marked `lang="en"`; no dependency,
+  nothing from other sites. One page list (`PAGE_IDS` in `pages.ts`) for the footer and both page
+  tests; nginx serves `/xx/api`. Tests: the page's reading of the real description
+  (`api-docs.test.ts`). Headless Chrome (local API + page): German at 1280 px, English at 390 px;
+  nothing wider than the screen once the field tables stack on phones; a type link jumps to its
+  type. Fixed on the way (7d-1): the named schemas carried `$schema` and a fragment-only `$id`,
+  which JSON Schema 2020-12 doesn't allow (test failed first). `pnpm check` green (489 tests).

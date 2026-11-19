@@ -32,6 +32,18 @@ function inline(schema: z.ZodType) {
   return rest;
 }
 
+/**
+ * The named schemas for `components.schemas`. Without the `$schema` and `$id` that
+ * z.toJSONSchema gives each: the document already says which JSON Schema it uses, and an `$id`
+ * that is only a fragment ("#/components/schemas/Money") is not allowed in JSON Schema 2020-12.
+ */
+function namedSchemas() {
+  const { schemas } = z.toJSONSchema(components, { uri: (id) => ref(id).$ref });
+  return Object.fromEntries(
+    Object.entries(schemas).map(([id, { $schema: _, $id: __, ...rest }]) => [id, rest]),
+  );
+}
+
 const json = (schema: object) => ({ "application/json": { schema } });
 const problem = (description: string) => ({
   description,
@@ -102,7 +114,7 @@ export function openApiDocument() {
       },
     },
     components: {
-      schemas: z.toJSONSchema(components, { uri: (id) => ref(id).$ref }).schemas,
+      schemas: namedSchemas(),
     },
   };
 }

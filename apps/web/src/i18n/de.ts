@@ -77,11 +77,31 @@ export const de: Messages = {
     keyboard: "Referenzkurs nach Tag: mit den Pfeiltasten links und rechts",
     unavailable: "Die Grafik zum Referenzkurs kann gerade nicht angezeigt werden.",
   },
-  nav: { methodology: "Methodik", privacy: "Datenschutz" },
+  nav: { methodology: "Methodik", privacy: "Datenschutz", api: "API" },
   notFound: {
     title: "Seite nicht gefunden",
     text: "Diese Adresse gibt es nicht (mehr).",
     home: "Zum Vergleich",
+  },
+  apiPage: {
+    title: "API",
+    intro:
+      "Der Vergleich läuft über eine HTTP-API. Diese Seite entsteht aus ihrer OpenAPI-Beschreibung:",
+    english: "Die Beschreibungen der API selbst sind auf Englisch.",
+    endpoints: "Endpunkte",
+    parameters: "Parameter",
+    answers: "Antworten",
+    dataTypes: "Datentypen",
+    field: "Feld",
+    type: "Typ",
+    required: "Pflicht",
+    optional: "optional",
+    description: "Beschreibung",
+    status: "Status",
+    oneOf: "Eine dieser Formen:",
+    loading: "Die API-Beschreibung wird geladen …",
+    unavailable:
+      "Die API-Beschreibung kann gerade nicht geladen werden. Bitte versuchen Sie es später noch einmal.",
   },
   caveats: {
     monthly_allowance: (amount) =>

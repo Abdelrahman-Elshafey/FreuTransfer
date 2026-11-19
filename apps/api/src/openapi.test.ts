@@ -76,6 +76,16 @@ describe("OpenAPI description", () => {
     expect(codes("/v1/history")).toEqual(["200", "400", "429", "500"]);
   });
 
+  // z.toJSONSchema gives each named schema its own `$schema` and an `$id` that is only a fragment
+  // ("#/components/schemas/Money"), which JSON Schema 2020-12 doesn't allow; inside an OpenAPI
+  // document neither is needed.
+  it("names the schemas only by their place in components (no $id, no $schema)", () => {
+    for (const [id, schema] of Object.entries(doc.components.schemas)) {
+      expect(schema, id).not.toHaveProperty("$id");
+      expect(schema, id).not.toHaveProperty("$schema");
+    }
+  });
+
   it("describes money as strings, never numbers", () => {
     const money = doc.components.schemas.Money as unknown as {
       properties: { amount: { type: string } };

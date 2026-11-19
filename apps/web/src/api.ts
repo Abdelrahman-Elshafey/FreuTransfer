@@ -4,6 +4,7 @@ import {
   PROBLEM_TYPES,
   type ProblemDto,
 } from "@freu-transfer/api/contract";
+import type { OpenApiDocument } from "./api-docs.ts";
 
 /** What went wrong, as a code: the page turns it into a sentence in the reader's language. */
 export type ApiError =
@@ -73,6 +74,13 @@ export function fetchHistory(
 ): Promise<Outcome<HistoryDto>> {
   const query = new URLSearchParams({ from: direction.from, to: direction.to });
   return getJson(`/v1/history?${query}`, fetchFn);
+}
+
+/** `GET /v1/openapi.json`: the API's own description, for the API page. */
+export function fetchApiDescription(
+  fetchFn: typeof fetch = fetch,
+): Promise<Outcome<OpenApiDocument>> {
+  return getJson("/v1/openapi.json", fetchFn);
 }
 
 /**
