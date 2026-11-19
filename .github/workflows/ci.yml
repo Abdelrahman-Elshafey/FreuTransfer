@@ -7,6 +7,9 @@
 #             "production"): the server runs scripts/deploy.sh <commit>; then a check from outside.
 # Rollback: Actions tab → an older successful run → "Re-run jobs" (images stay in GHCR;
 # migrations are NOT undone).
+# SECURITY: every action is pinned to a commit (a tag can be moved to other code), with its version
+# in a comment; deploy/versions.test.ts checks it. To update one: pick a release at least 7 days old
+# (as the pnpm gate), then `git ls-remote https://github.com/<owner>/<action> refs/tags/<tag>^{}`.
 name: CI
 
 on:
@@ -27,9 +30,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6 # reads the version from package.json "packageManager"
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1, reads the version from package.json "packageManager"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
           cache: pnpm
@@ -55,17 +58,17 @@ jobs:
       # Push only after a merge into dev; PRs (and main, until v1.0) only build.
       PUSH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/dev' }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Image names must be lowercase; the owner "Abdelrahman-Elshafey" isn't. The same prefix is
       # IMAGE_PREFIX in the server's .env.prod (.env.prod.example).
       - id: owner
         run: echo "name=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
 
-      - uses: docker/setup-buildx-action@v4
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - if: env.PUSH == 'true'
-        uses: docker/login-action@v4
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -73,7 +76,7 @@ jobs:
 
       # The same Dockerfiles as a local `docker compose -f compose.prod.yml build`. The layer cache
       # lives in GitHub Actions, so an unchanged dependency install is reused.
-      - uses: docker/build-push-action@v7
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: ${{ matrix.file }}

@@ -422,3 +422,21 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   certified under the Swiss-US Data Privacy Framework (Annex 1 of the Data Protection Ordinance,
   status 1 Dec 2025; Cloudflare's privacy policy, 4 Nov 2025). Singapore is not on Annex 1: the
   safeguard for the server's logs (OVHcloud's contract clauses) is for the owner to confirm.
+- **2026-11-18:** **Check of 7a on the live site** (owner's question). All six security headers on
+  pages and on a 404; 40 API requests at once: about 25 answered, the rest 429. Fixed: an unknown
+  address under a language (`/de/xyz`) now gets status 404 with the page as its body (it was 200);
+  nginx lists each page's word per language, checked against `pages.ts` by the nginx test (shown
+  to fail with a word removed and with the 404 page removed). Found: Cloudflare adds Network Error
+  Logging headers (`Nel`, `Report-To`), so browsers may report failed connections to Cloudflare;
+  for the owner to turn off in Cloudflare (`review.md`).
+- **2026-11-18:** **Full review** (owner's request; `review.md` log). Fixed: duplicate fee-schedule
+  entries (same provider, corridor and check time) are refused by the loader; two unused cost
+  fields removed; the collector uses core's `daysBefore`; Project Plan §9 and a catalog comment.
+  For the owner: a manual rate's age counts from `checkedAt`, not from when it was read; data goes
+  stale from 5 Dec; pin CI's third-party actions to commit SHAs; optional hardening; a simpler fee
+  model. `pnpm check` green (453 tests).
+- **2026-11-18:** Review items 1 and 3 (owner's OK). A manual row's age now runs from when its
+  rate was read, if older than its check, and the loader refuses a rate read after its check
+  (ADR 0010; tests at exactly 30 days and 30 days + 1 minute). Every GitHub Action in CI is pinned
+  to a commit (releases at least 7 days old, SHAs read with `git ls-remote`), checked by
+  `deploy/versions.test.ts`. `pnpm check` green (458 tests).

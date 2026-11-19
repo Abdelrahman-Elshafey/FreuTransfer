@@ -133,7 +133,18 @@ const manualDataSchema = (now: Date) =>
   filesSchema.superRefine((data, ctx) => {
     const providers = new Set(data.providers.map((p) => p.id));
     const corridors = new Set(data.corridors.map((c) => c.id));
+    // The database's key for a fee schedule (seed.ts looks rows up by it), compared as instants.
+    const keys = new Set<string>();
     data.feeSchedules.forEach((fs, i) => {
+      const key = `${fs.corridorId}|${fs.providerId}|${Date.parse(fs.checkedAt)}`;
+      if (keys.has(key)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["feeSchedules", i, "checkedAt"],
+          message: `${fs.providerId} ${fs.corridorId} checked at ${fs.checkedAt} appears twice`,
+        });
+      }
+      keys.add(key);
       if (!providers.has(fs.providerId)) {
         ctx.addIssue({
           code: "custom",
@@ -154,6 +165,18 @@ const manualDataSchema = (now: Date) =>
         checkedAt: fs.checkedAt,
         rateCapturedAt: "rateCapturedAt" in fs ? fs.rateCapturedAt : null,
       };
+      // A rate is read during the check that records it, or before (core counts a manual row's
+      // age from the reading, ADR 0010).
+      if (
+        times.rateCapturedAt !== null &&
+        Date.parse(times.rateCapturedAt) > Date.parse(fs.checkedAt)
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["feeSchedules", i, "rateCapturedAt"],
+          message: `rateCapturedAt ${times.rateCapturedAt}: the rate can't be read after it was checked (${fs.checkedAt})`,
+        });
+      }
       for (const [field, value] of Object.entries(times)) {
         if (value !== null && new Date(value) > now) {
           ctx.addIssue({

@@ -53,6 +53,24 @@ describe("manual data files", () => {
     expect(() => parseManualData(data)).toThrow(/Unknown provider/);
   });
 
+  // The database keeps one row per corridor × provider × check time: a second entry with the same
+  // key would be skipped by the seed (same values) or reported as an edit of a stored row.
+  it.each([
+    ["the same values", {}],
+    ["another markup", { fxMarkup: "0.01" }],
+    ["the same time written differently", { checkedAt: "2026-11-05T17:30:00.000Z" }],
+  ])("rejects two entries for one provider, corridor and check time (%s)", (_name, change) => {
+    const data = valid();
+    data.feeSchedules.push({ ...data.feeSchedules[0], ...change });
+    expect(() => parseManualData(data)).toThrow(/checked at .* appears twice/);
+  });
+
+  it("accepts a second check of the same provider at another time", () => {
+    const data = valid();
+    data.feeSchedules.push({ ...data.feeSchedules[0], checkedAt: "2026-11-06T17:30:00Z" });
+    expect(() => parseManualData(data)).not.toThrow();
+  });
+
   it("requires needs_input for a manual entry without a rate", () => {
     const data = valid();
     data.feeSchedules[0] = {
@@ -65,6 +83,26 @@ describe("manual data files", () => {
     expect(() => parseManualData(data)).toThrow(/needs_input/);
     (data.feeSchedules[0] as Record<string, unknown>).status = "needs_input";
     expect(() => parseManualData(data)).not.toThrow();
+  });
+
+  // A manual rate is read during the check that records it, or before; core counts the row's age
+  // from the reading (ADR 0010). checkedAt is 2026-11-05T17:30:00Z.
+  it.each([
+    ["at the check time", true, "2026-11-05T17:30:00Z"],
+    ["a day before the check", true, "2026-11-04T17:30:00Z"],
+    ["one second after the check", false, "2026-11-05T17:30:01Z"],
+  ])("a manual rate read %s is accepted: %s", (_name, ok, rateCapturedAt) => {
+    const data = valid();
+    data.feeSchedules[0] = {
+      ...data.feeSchedules[0],
+      sourceKind: "manual",
+      fxMarkup: undefined,
+      providerRate: "1.08",
+      rateCapturedAt,
+    };
+    const parse = () => parseManualData(data);
+    if (ok) expect(parse).not.toThrow();
+    else expect(parse).toThrow(/read after it was checked/);
   });
 
   // The database stores NUMERIC(20,10). Postgres would silently round an 11th decimal, and the
