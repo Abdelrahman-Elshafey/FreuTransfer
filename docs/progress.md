@@ -440,3 +440,11 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   (ADR 0010; tests at exactly 30 days and 30 days + 1 minute). Every GitHub Action in CI is pinned
   to a commit (releases at least 7 days old, SHAs read with `git ls-remote`), checked by
   `deploy/versions.test.ts`. `pnpm check` green (458 tests).
+- **2026-11-19:** PR #32 was merged at the 7c commit; the full-review commits moved to
+  `step-7/review-fixes` (cherry-picked onto `dev`). Cloudflare's Network Error Logging is off
+  (owner; checked live: no `Nel` header). **Logs keep no full IP address** (ADR 0013, owner's
+  choice): OVH Singapore's terms have no contract clauses to name, so nginx logs the address
+  shortened (IPv4 without its last part, IPv6 to two groups), drops `X-Forwarded-For`, and keeps
+  only critical error lines (the others name the client). The privacy page says so in four
+  languages. The nginx test reads the real container's log (fails on the old config and without
+  the error-log level).

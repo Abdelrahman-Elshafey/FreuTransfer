@@ -185,7 +185,7 @@ export const en: PagesText = {
         blocks: [
           {
             p: [
-              "Like any web server, ours writes a log line for each request: your IP address, the time, the address asked for, the page you came from and your browser's name. The logs serve to run the site and to protect it from abuse (each visitor may make a limited number of requests a second). They are kept until they are overwritten: each part of the site keeps at most 30 MB of logs. Nothing in them is combined with other data or passed on.",
+              "Like any web server, ours writes a log line for each request: your IP address shortened (its last part removed, so it no longer points to one connection), the time, the address asked for, the page you came from and your browser's name. The logs serve to run the site and to protect it from abuse (each visitor may make a limited number of requests a second; for this, the full address is kept only in memory, never written down). They are kept until they are overwritten: each part of the site keeps at most 30 MB of logs. Nothing in them is combined with other data or passed on.",
             ],
           },
           {
