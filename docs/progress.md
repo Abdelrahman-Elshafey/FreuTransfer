@@ -2,7 +2,7 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0–6 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 done (2026-11-18):** design foundation (ADR 0011), breakdown, caveats, my bank vs best, and two plain-SVG charts (ADR 0012): cost by amount and the reference rate over time (`/v1/history`). **Stage 7 in progress:** 7a security headers and request limit, 7b language URLs, 7c methodology and privacy pages (no imprint, owner's choice), logs without full IP addresses (ADR 0013), 7d the OpenAPI description and the API page (ADR 0014) built. **Next: 7e**, README and favicon. Collector fix for windows starting on a weekend merged. Open for the owner: Revolut's weekend markup.
+**Now:** stages 0–6 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 done (2026-11-18):** design foundation (ADR 0011), breakdown, caveats, my bank vs best, and two plain-SVG charts (ADR 0012): cost by amount and the reference rate over time (`/v1/history`). **Stage 7 done (2026-11-19):** 7a security headers and request limit, 7b language URLs, 7c methodology and privacy pages (no imprint, owner's choice), logs without full IP addresses (ADR 0013), 7d the OpenAPI description and the API page (ADR 0014), 7e the README for reviewers and a favicon. **Next:** stage 8 (backlog) is open; the owner chooses what comes first. Collector fix for windows starting on a weekend merged. Open for the owner: Revolut's weekend markup.
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
@@ -13,7 +13,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 4 | Mid-market + pipeline | ✅ Done (2026-11-13): 4a database ✅ · 4b collector ✅ · 4c hourly `collect` service ✅ · 4e old-rate warning ✅ · 4d one week ⏳ (verify 20 Nov) | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored (8 working days 3–12 Nov stored; 16–20 Nov to be collected live) |
 | 5 | Provider data | ✅ Done (2026-11-14): 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider ✅ · 5c EUR→CHF data ✅ · 5d manual rates at today's reference rate ✅ · 5e corridor choice ✅ | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ✅ Done (2026-11-18): 6a design foundation ✅ · 6b breakdown ✅ · 6c caveat codes ✅ · 6d my bank vs best ✅ · 6e charts ✅ (6e-1 cost by amount · 6e-2 rate history) | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
-| 7 | Polish | 🟡 **In progress**: 7a security headers + request limit ✅ · 7b language URLs ✅ · 7c methodology + privacy ✅ · 7d OpenAPI + API page (7d-1 description ✅ · 7d-2 API page ✅) · 7e README | README, methodology and legal texts in four languages, OpenAPI, ADRs, language URLs (World Bank comparison dropped: no CH⇄euro corridor) | A reviewer understands the project in 5 minutes |
+| 7 | Polish | ✅ Done (2026-11-19): 7a security headers + request limit ✅ · 7b language URLs ✅ · 7c methodology + privacy ✅ · 7d OpenAPI + API page (7d-1 description ✅ · 7d-2 API page ✅) · 7e README + favicon ✅ | README, methodology and legal texts in four languages, OpenAPI, ADRs, language URLs (World Bank comparison dropped: no CH⇄euro corridor) | A reviewer understands the project in 5 minutes |
 | 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts | — |
 
 Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
@@ -470,3 +470,19 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   which JSON Schema 2020-12 doesn't allow (test failed first). `pnpm check` green (489 tests).
   The IP-log change (`step-7/ip-logs`) and 7d-1 travel in this branch (`step-7/docs-page`), so one
   pull request brings all three to `dev`.
+- **2026-11-19:** **7e: README and favicon; stage 7 done.** The README is written for a reviewer
+  (the plan's "understands it in 5 minutes"): the problem, the cost formula with the Plan §3
+  example (a test recomputes it), where the numbers come from and the guards, an architecture
+  diagram (Mermaid), the stack, security and privacy, the 14 ADRs, quick start. Two screenshots
+  (`docs/images/`, 273 KB, not in the Docker images): the comparison in English on a desktop (light)
+  and in German on a phone (dark), taken from the local stack after a fresh collector run. Every
+  claim checked against the code; five corrected on review (CSP also allows `data:` for fonts and
+  images; only the API and page images run as non-root; Prisma queries plus tagged SQL; no claim
+  about providers' advertising; ADR 0003 is about Wise data). Every relative link exists; the
+  quick-start `curl` answers; the live methodology, privacy and API pages answer 200. Favicon:
+  `apps/web/public/favicon.svg` (ink square, lime ⇄, paths only, with a `<title>`), linked from
+  `index.html`; nginx serves it as `image/svg+xml` with the security headers; tests check the link
+  and that the SVG has no script, text or outside reference. `/favicon.ico` stays a 404 for clients
+  that ignore the link. Noticed: in English, euro amounts are grouped with a comma (€1,081.90) and
+  franc amounts with an apostrophe (CHF 1'250.00), as `Intl`'s en-CH does; left as is.
+  `pnpm check` green (492 tests).
