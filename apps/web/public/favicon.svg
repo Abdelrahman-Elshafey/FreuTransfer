@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>FreuTransfer</title>
+  <!-- FreuTransfer: money going both ways (CHF ⇄ EUR). Ink and the lime accent of the page (ADR 0011);
+       paths only, so no font is needed. -->
+  <rect width="32" height="32" rx="7" fill="#131314"/>
+  <path d="M8 12h14m-4-4 4 4-4 4M24 20H10m4-4-4 4 4 4" fill="none" stroke="#befc65" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
