@@ -202,10 +202,11 @@ describe("collectFrankfurter: one run", () => {
       "https://api.frankfurter.dev/v2/rates?base=CHF&quotes=EUR&providers=ECB&from=2026-11-02&to=2026-11-12",
       "https://api.frankfurter.dev/v2/rates?base=EUR&quotes=CHF&providers=ECB&from=2026-11-02&to=2026-11-12",
     ]);
-    expect([...store.rates.values()].map((r) => `${r.source} ${r.rate.toString()}`)).toEqual([
-      "ecb 1 CHF = 1.0832 EUR",
-      "ecb 1 EUR = 0.9233 CHF",
-    ]);
+    expect(
+      [...store.rates.values()].map(
+        (r) => `${r.source} 1 ${r.rate.base} = ${r.rate.value.toString()} ${r.rate.quote}`,
+      ),
+    ).toEqual(["ecb 1 CHF = 1.0832 EUR", "ecb 1 EUR = 0.9233 CHF"]);
   });
 
   it("stores the raw answer before reading it, and finishes the run as succeeded", async () => {

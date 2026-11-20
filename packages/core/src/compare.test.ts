@@ -266,8 +266,8 @@ describe("markup tier (Revolut-style allowance: 0% up to 1,250 CHF, 1% above)", 
     });
     for (const amount of ["100", "1250", "5000"]) {
       expect(
-        costFor(amount, tiered)?.received.equals(costFor(amount, single)?.received as Money),
-      ).toBe(true);
+        costFor(amount, tiered)?.received.compareTo(costFor(amount, single)?.received as Money),
+      ).toBe(0);
     }
   });
 });
@@ -528,12 +528,12 @@ describe("vsCheapest", () => {
     );
     const [best, bank] = ranked;
     if (!best || !bank?.vsCheapest) throw new Error("expected two ranked rows");
-    expect(best.cost.totalCost.plus(bank.vsCheapest.extraCost).equals(bank.cost.totalCost)).toBe(
-      true,
+    expect(best.cost.totalCost.plus(bank.vsCheapest.extraCost).compareTo(bank.cost.totalCost)).toBe(
+      0,
     );
-    expect(bank.quote.received.plus(bank.vsCheapest.lessReceived).equals(best.quote.received)).toBe(
-      true,
-    );
+    expect(
+      bank.quote.received.plus(bank.vsCheapest.lessReceived).compareTo(best.quote.received),
+    ).toBe(0);
   });
 
   it("rule 1: rows tied with the cheapest show zero", () => {

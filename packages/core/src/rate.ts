@@ -54,8 +54,4 @@ export class Rate {
     }
     return new Rate(this.base, this.quote, this.value.times(new Decimal(1).minus(m)));
   }
-
-  toString(): string {
-    return `1 ${this.base} = ${this.value.toString()} ${this.quote}`;
-  }
 }

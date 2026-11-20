@@ -78,6 +78,74 @@ Add an entry to the log below and to `docs/progress.md`.
 
 ## Review log
 
+### 2026-11-20, full review (branch `step-7/full-review` from `dev` at c6d1144, after stage 7)
+Asked by the owner before stage 8: the whole codebase and the rules, for bugs, unneeded or
+over-built code and security problems. All code read in dependency order (core → db → collectors
+→ api → web → nginx, Docker, Compose, CI, scripts → README, runbook, ADRs). Machines: `pnpm check`
+green before (492 tests) and after (497); `pnpm audit` 2 moderate (Testcontainers, tests only) and
+1 **high**, new: `effect` (GHSA-7589-6fvf-x4pw, ReDoS) pinned at 3.20.0 by Prisma 7.10.1's
+`@prisma/config`; outdated past the 7-day gate: Biome 2.6.7, Vite 8.3.8, plugin-react 6.3.0, knip
+6.45.1 (Biome 2.6.8 and knip 6.46 too young, Prisma 8 an RC); no leftovers. Real thing: the
+production stack in a throwaway project (`-p freutransfer-review`, own password file, then
+`down -v`): migrate, seed, collector (8 days per direction) and health checks; repeated, bracketed,
+exponent, `__proto__`, too-long, same-currency and wrong-method queries all 400/404, never a 500;
+a second seed changes nothing; API stopped → 502 while the page still loads; the rebuilt page
+renders `/de/api` from the real API in headless Chrome. The API image holds neither the Prisma
+CLI nor `effect` (listed inside the image).
+
+**Fixed**
+1. **A connection that broke while an answer arrived left the page without a message**
+   (`apps/web/src/api.ts`): only the request was guarded; reading the body rejects with a
+   `TypeError` too, which escaped. The comparison then showed no error (the previous results
+   stayed under the new amount) and the API page stayed on "loading" for good. Now "can't be
+   reached" (test with a body stream that breaks, failed first).
+2. **A provider, corridor or reference rate listed twice passed the loader** (rule 2, *repeated*).
+   A provider's second entry won silently (another name on the site); a corridor or rate listed
+   twice stopped the seed with a message blaming the database. The loader now refuses a repeated
+   key in every file, with one helper that also does the fee schedules' existing check (3 tests,
+   failed first).
+3. **A second copy without a guard** (rule 5): the OpenAPI description repeats nginx's request
+   limit ("10 a second, bursts of 20"). `deploy/versions.test.ts` now reads both (fails when one
+   changes, tried once).
+4. **Unneeded code** (rule 9): `Money.equals` and `Rate.toString` were read only by tests; removed,
+   the tests use `compareTo` (which also refuses a currency mismatch) and the rate's fields.
+5. A comment in `contract.ts` named a `contract.test.ts` that doesn't exist (the check is in
+   `openapi.test.ts`).
+
+**For the owner (not changed)**
+1. **`effect` (high):** reached only by the Prisma CLI reading our own `prisma.config.ts`, in
+   development and the `migrate` image; never by a visitor's input, not in the API image. No
+   Prisma 7 release with a newer `effect` yet. Proposal: accept it with this reason; a pnpm
+   override to `effect` 3.22.2 (9 Sep, past the gate) would be the alternative, at the risk of
+   breaking Prisma's config loading.
+2. **Updates past the gate** (Biome, Vite, plugin-react, knip; list above): one small upgrade
+   branch.
+3. **Built for cases no data has** (over-engineering, a schema and core change, so not done here):
+   no provider uses a minimum or maximum fee (`minFee`/`maxFee`: loader, two columns, repository,
+   core's clamp), and the `tiered` fee model handles any number of tiers and an open last tier
+   while the database only ever builds one tier from `max_amount` (also item 5 of the last
+   review). Proposal: a `maxAmount` on the fee model instead of tiers, and the min/max fee removed
+   until a provider needs it (Project Plan §6 names both, so it's the owner's call).
+4. **Data that goes stale:** PostFinance EUR→CHF on 5 Dec; PostFinance CHF→EUR and Yuh on 6 Dec;
+   Revolut on 10 Dec; Wise and Western Union on 13 Dec.
+5. **4d:** the live `/v1/history` (read 20 Nov, 07:24 UTC) has every working day 16–19 Nov in both
+   directions; 20 Nov's rate appears after about 16:00 CET (one look left, or on the server).
+6. Still open from earlier reviews: the log limit lives only in the server's `daemon.json`; the
+   bundle size; optional hardening (`no-new-privileges`, `cap_drop`, the deploy lock in `/tmp`,
+   no limit on `/health`); no alert when the collector or a backup fails; Revolut's weekend markup.
+
+**Checked and fine:** money stays Decimal from file to screen (`maxAmount` and `markupTier`
+followed through every layer); every SQL tagged `$queryRaw` or Prisma; append-only triggers incl.
+TRUNCATE; errors caught by type only (the collector, the page, the API's one `NoMidRateError`);
+links from data https only and escaped by React; CSP, HSTS, request limit and shortened IPs in
+nginx; no published ports; only `dev` commits deployable; CI actions pinned, PR builds can't push;
+no `x-powered-by`, no request body parsed; every ADR (0001–0014) against the code and docs (no
+CDN viewer, no imprint, `/de/xyz` 404); README numbers (about 490 tests, CSP wording) match.
+
+**Not done:** the half-way deploy and rollback drill (step 13) was not repeated: `deploy.sh`,
+`compose.prod.yml` and the API Dockerfile are unchanged since it ran on 13 Nov. The broken
+connection was simulated in the test, not provoked in a real browser.
+
 ### 2026-11-18, full review (branch `step-7/methodology-legal`, after 7a–7c)
 Asked by the owner: the whole codebase, for bugs, unneeded code and security problems. All code
 read in dependency order (core → db → collectors → api → web → Docker, Compose, CI, scripts); the

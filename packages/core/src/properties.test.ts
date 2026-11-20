@@ -40,7 +40,7 @@ describe("properties (fast-check)", () => {
     fc.assert(
       fc.property(amountArb, feeModelArb, (total, model) => {
         const s = splitPayment(total, model);
-        expect(s.fee.plus(s.converted).equals(total)).toBe(true);
+        expect(s.fee.plus(s.converted).compareTo(total)).toBe(0);
         expect(s.fee.isNegative()).toBe(false);
       }),
     );
@@ -55,7 +55,7 @@ describe("properties (fast-check)", () => {
           providerRate: mid.withMarkup(markup),
         });
         const cost = computeCost(quote, mid);
-        expect(cost.visibleFee.plus(cost.fxMarkup).equals(cost.totalCost)).toBe(true);
+        expect(cost.visibleFee.plus(cost.fxMarkup).compareTo(cost.totalCost)).toBe(0);
       }),
     );
   });

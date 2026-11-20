@@ -57,10 +57,6 @@ export class Money {
     return this.amount.comparedTo(other.amount) as -1 | 0 | 1;
   }
 
-  equals(other: Money): boolean {
-    return this.currency === other.currency && this.amount.equals(other.amount);
-  }
-
   isNegative(): boolean {
     return this.amount.isNegative() && !this.amount.isZero();
   }

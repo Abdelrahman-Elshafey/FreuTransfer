@@ -82,6 +82,26 @@ describe("fetchComparison", () => {
     });
   });
 
+  // The headers arrived, then the connection broke (a phone losing its signal): reading the body
+  // rejects with a TypeError, as fetch itself does. Thrown instead, it left the page with no message
+  // (and the API page on "loading" for good).
+  it("explains a connection that breaks while the answer arrives", async () => {
+    const broken = (async () =>
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode('{"results":['));
+            controller.error(new TypeError("network error"));
+          },
+        }),
+        { status: 200 },
+      )) as typeof fetch;
+    expect(await fetchComparison(CHF_EUR, "1", broken)).toEqual({
+      ok: false,
+      error: { kind: "unreachable" },
+    });
+  });
+
   it("explains a 200 that isn't JSON (e.g. a proxy serving index.html) instead of throwing", async () => {
     const page = (async () => new Response("<!doctype html>", { status: 200 })) as typeof fetch;
     expect(await fetchComparison(CHF_EUR, "1", page)).toEqual({

@@ -486,3 +486,12 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   that ignore the link. Noticed: in English, euro amounts are grouped with a comma (€1,081.90) and
   franc amounts with an apostrophe (CHF 1'250.00), as `Intl`'s en-CH does; left as is.
   `pnpm check` green (492 tests).
+- **2026-11-20:** **Full review after stage 7** (owner, before stage 8; `review.md`, log entry of
+  today). Fixed: a connection breaking while an answer arrived left the page without a message
+  (the API page stayed on "loading"); the loader now refuses a provider, corridor or reference
+  rate listed twice (a provider's second entry used to win silently); a test keeps the API
+  description's request limit equal to nginx's; `Money.equals` and `Rate.toString` removed (read
+  only by tests). For the owner: `effect` (high, inside the Prisma CLI only, not in the API image),
+  four updates past the gate, the unused min/max fee and multi-tier fee model, data stale from
+  5 Dec. 4d: 16–19 Nov collected in both directions (live `/v1/history`); 20 Nov after 16:00 CET.
+  `pnpm check` green (497 tests); production stack run in a throwaway project.

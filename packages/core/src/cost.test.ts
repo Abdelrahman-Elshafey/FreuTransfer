@@ -74,7 +74,7 @@ describe("computeCost", () => {
       received: Money.of("1044.756", "EUR"),
     };
     const cost = computeCost(quote, mid);
-    expect(cost.visibleFee.plus(cost.fxMarkup).equals(cost.totalCost)).toBe(true);
+    expect(cost.visibleFee.plus(cost.fxMarkup).compareTo(cost.totalCost)).toBe(0);
   });
 
   it("refuses a mid rate in the wrong currencies", () => {

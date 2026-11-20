@@ -33,14 +33,16 @@ export type Outcome<T> =
  */
 async function getJson<T>(path: string, fetchFn: typeof fetch): Promise<Outcome<T>> {
   let res: Response;
+  let body: unknown;
   try {
     res = await fetchFn(path);
+    // Inside the try: the connection can also break while the body arrives.
+    body = await readJson(res);
   } catch (error) {
-    // fetch rejects with a TypeError when the network or the server can't be reached.
+    // fetch, and reading its body, reject with a TypeError when the network or the server fails.
     if (!(error instanceof TypeError)) throw error;
     return failed({ kind: "unreachable" });
   }
-  const body = await readJson(res);
   if (body === NOT_JSON) {
     return failed(
       res.ok ? { kind: "notJson", status: res.status } : { kind: "http", status: res.status },
