@@ -3,7 +3,7 @@
  * page imports it (`@freu-transfer/api/contract`). The response types come from the Zod schemas in
  * schemas.ts (which also make the OpenAPI document), through type-only imports: at runtime this
  * file imports nothing, so the page's bundle gets no Zod and nothing else from the API
- * (contract.test.ts checks it).
+ * (openapi.test.ts checks it).
  *
  * Language-neutral (docs/adr/0005): codes, money and dates only; the page writes the sentences.
  */

@@ -55,6 +55,7 @@ const commonProblems = {
   "400": problem(
     `The query is invalid (type ${PROBLEM_TYPES.invalidQuery}); \`errors\` lists every field.`,
   ),
+  // nginx's limit (apps/web/nginx.conf); deploy/versions.test.ts keeps the two equal.
   "429": problem("More than 10 requests a second from one visitor (bursts of 20)."),
   "500": problem("An unexpected error; no details are given."),
 };

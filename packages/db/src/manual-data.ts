@@ -128,23 +128,64 @@ const filesSchema = z.object({
 
 export type ManualData = z.infer<typeof filesSchema>;
 
+/**
+ * Refuses an entry whose database key an earlier entry of the same file already has: the seed
+ * looks rows up by that key, so the second one would be skipped, win silently, or be reported as an
+ * edit of a stored row.
+ */
+function refuseRepeats<T>(
+  ctx: z.core.$RefinementCtx<ManualData>,
+  file: keyof ManualData,
+  entries: readonly T[],
+  keyOf: (entry: T) => string,
+  name: (entry: T) => string,
+): void {
+  const keys = new Set<string>();
+  entries.forEach((entry, i) => {
+    const key = keyOf(entry);
+    if (keys.has(key)) {
+      ctx.addIssue({ code: "custom", path: [file, i], message: `${name(entry)} appears twice` });
+    }
+    keys.add(key);
+  });
+}
+
 /** The rules that look across entries, or need the current time. */
 const manualDataSchema = (now: Date) =>
   filesSchema.superRefine((data, ctx) => {
+    refuseRepeats(
+      ctx,
+      "providers",
+      data.providers,
+      (p) => p.id,
+      (p) => `provider ${p.id}`,
+    );
+    refuseRepeats(
+      ctx,
+      "corridors",
+      data.corridors,
+      (c) => c.id,
+      (c) => `corridor ${c.id}`,
+    );
+    refuseRepeats(
+      ctx,
+      "midRates",
+      data.midRates,
+      (r) => `${r.base}|${r.quote}|${r.source}|${r.asOf}`,
+      (r) => `${r.base}→${r.quote} ${r.source} rate of ${r.asOf}`,
+    );
+    // Check times compared as instants: "…:00Z" and "…:00.000Z" are the same row.
+    refuseRepeats(
+      ctx,
+      "feeSchedules",
+      data.feeSchedules,
+      (fs) => `${fs.corridorId}|${fs.providerId}|${Date.parse(fs.checkedAt)}`,
+      (fs) => `${fs.providerId} ${fs.corridorId} checked at ${fs.checkedAt}`,
+    );
+
     const providers = new Set(data.providers.map((p) => p.id));
     const corridors = new Set(data.corridors.map((c) => c.id));
-    // The database's key for a fee schedule (seed.ts looks rows up by it), compared as instants.
-    const keys = new Set<string>();
     data.feeSchedules.forEach((fs, i) => {
-      const key = `${fs.corridorId}|${fs.providerId}|${Date.parse(fs.checkedAt)}`;
-      if (keys.has(key)) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["feeSchedules", i, "checkedAt"],
-          message: `${fs.providerId} ${fs.corridorId} checked at ${fs.checkedAt} appears twice`,
-        });
-      }
-      keys.add(key);
       if (!providers.has(fs.providerId)) {
         ctx.addIssue({
           code: "custom",

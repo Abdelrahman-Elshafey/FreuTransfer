@@ -65,6 +65,44 @@ describe("manual data files", () => {
     expect(() => parseManualData(data)).toThrow(/checked at .* appears twice/);
   });
 
+  // The same for the other files' keys. Before, a provider listed twice was loaded silently (the
+  // second name won), and a corridor or reference rate listed twice stopped the seed with a message
+  // that blamed the database.
+  it.each([
+    [
+      "a provider",
+      (d: ReturnType<typeof valid>) =>
+        d.providers.push({ id: "yuh", name: "Yuh 2", kind: "fintech", website: "https://yuh.com" }),
+      /provider yuh appears twice/,
+    ],
+    [
+      "a corridor",
+      (d: ReturnType<typeof valid>) =>
+        d.corridors.push({ id: "CHF-EUR", sourceCurrency: "CHF", targetCurrency: "EUR" }),
+      /corridor CHF-EUR appears twice/,
+    ],
+    [
+      "a reference rate (same pair, source and day)",
+      (d: ReturnType<typeof valid>) => {
+        const rate = {
+          base: "CHF",
+          quote: "EUR",
+          rate: "1.0893",
+          source: "ecb",
+          asOf: "2026-11-05",
+          fetchedAt: "2026-11-05T16:00:00Z",
+          sourceUrl: "https://www.ecb.europa.eu/",
+        };
+        d.midRates.push(rate, { ...rate, rate: "1.0894", fetchedAt: "2026-11-05T17:00:00Z" });
+      },
+      /CHF→EUR ecb rate of 2026-11-05 appears twice/,
+    ],
+  ])("rejects %s listed twice", (_name, duplicate, message) => {
+    const data = valid();
+    duplicate(data);
+    expect(() => parseManualData(data, new Date("2026-11-20T00:00:00Z"))).toThrow(message);
+  });
+
   it("accepts a second check of the same provider at another time", () => {
     const data = valid();
     data.feeSchedules.push({ ...data.feeSchedules[0], checkedAt: "2026-11-06T17:30:00Z" });

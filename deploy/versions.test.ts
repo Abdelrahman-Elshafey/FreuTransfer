@@ -2,6 +2,7 @@
 // from another file), so these tests keep the copies equal (CLAUDE.md rule 5).
 import { readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { openApiDocument } from "../apps/api/src/openapi.ts";
 import { LOCALE_CODES } from "../apps/web/src/i18n/locales.ts";
 import { composeImages, readRepoFile } from "./repo-file.ts";
 
@@ -52,6 +53,18 @@ describe("deploy versions", () => {
       ...LOCALE_CODES.map((code) => [code, `${site}/${code}/`]),
       ["x-default", `${site}/`],
     ]);
+  });
+
+  it("the API description states the request limit nginx applies", () => {
+    const nginx = readRepoFile("apps/web/nginx.conf");
+    const perSecond = nginx.match(/limit_req_zone .* rate=(\d+)r\/s;/)?.[1];
+    const burst = nginx.match(/limit_req zone=api burst=(\d+) /)?.[1];
+    expect(perSecond).toBeDefined();
+    expect(burst).toBeDefined();
+    const tooMany = openApiDocument().paths["/v1/compare"].get.responses["429"].description;
+    expect(tooMany).toBe(
+      `More than ${perSecond} requests a second from one visitor (bursts of ${burst}).`,
+    );
   });
 
   it.each(["apps/api/Dockerfile", "apps/web/Dockerfile"])(

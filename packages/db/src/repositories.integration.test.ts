@@ -127,7 +127,8 @@ describe("PrismaOfferRepository", () => {
     const pf = offers.find((o) => o.providerId === "postfinance");
     expect(pf?.sourceKind).toBe("manual");
     expect(pf?.sourceCurrency).toBe("CHF");
-    expect(pf?.pricing.kind === "rate" && pf.pricing.rate.toString()).toBe("1 CHF = 1.0512 EUR");
+    const rate = pf?.pricing.kind === "rate" ? pf.pricing.rate : null;
+    expect([rate?.base, rate?.quote, rate?.value.toString()]).toEqual(["CHF", "EUR", "1.0512"]);
     expect(pf?.fees.kind).toBe("deducted");
   });
 
