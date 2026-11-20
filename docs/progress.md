@@ -495,3 +495,18 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   four updates past the gate, the unused min/max fee and multi-tier fee model, data stale from
   5 Dec. 4d: 16–19 Nov collected in both directions (live `/v1/history`); 20 Nov after 16:00 CET.
   `pnpm check` green (497 tests); production stack run in a throwaway project.
+- **2026-11-20:** **Owner's answers to the review, built on `step-8/simplify-upgrades`.**
+  (A) The `effect` advisory is accepted with its reason in `pnpm-workspace.yaml`
+  (`auditConfig.ignoreGhsas`; `pnpm audit` shows it as ignored). (B) Biome 2.6.7, Vite 8.3.8,
+  plugin-react 6.3.0 and knip 6.45.1 (all past the 7-day gate; only Prisma's 8.0 RC left in
+  `pnpm outdated`). (C) ADR 0015: the fee model is `deducted`/`on_top` with an optional
+  `maxAmount`; the minimum/maximum fee and the fee tiers are gone from core, the repository, the
+  seed and the loader (which now refuses `minFee`/`maxFee` instead of dropping them silently);
+  migration `20261120120000_drop_min_max_fee` drops the two columns but stops if a stored row has
+  a value (checked against a throwaway Postgres: refused, columns kept). Applied to the local dev
+  database; `prisma migrate diff` against the schema is empty. `pnpm check` green (497 tests).
+  Owner's decision: deploys stay on `dev` until v1.0, then only `main` deploys; ADR 0006 lists what
+  changes at that release (CI, `deploy.sh`, runbook, README, CLAUDE.md, branch protection).
+  Production stack run in a throwaway project: the migration applied, Western Union served at
+  4,700.00 CHF with its limit caveat and "not available" at 4,700.01; pages built with Vite 8.3.8
+  render in headless Chrome under the CSP.

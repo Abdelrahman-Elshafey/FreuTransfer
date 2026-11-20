@@ -56,11 +56,12 @@ const feeBase = {
   withdrawn: z
     .never({ error: "a withdrawal has no prices: remove sourceKind, feeMode and the fees" })
     .optional(),
+  // Gone (ADR 0015): without these, an old entry's minimum or maximum fee would be dropped silently.
+  minFee: z.never({ error: "no minimum or maximum fee (ADR 0015)" }).optional(),
+  maxFee: z.never({ error: "no minimum or maximum fee (ADR 0015)" }).optional(),
   feeMode: z.enum(["deducted", "on_top"]),
   fixedFee: decimal,
   percentFee: decimal,
-  minFee: decimal.optional(),
-  maxFee: decimal.optional(),
   /** The most the provider accepts, in the source currency (e.g. Western Union online: 4,700 CHF). */
   maxAmount: decimal.refine((v) => /[1-9]/.test(v), "must be more than 0").optional(),
   sourceUrl: link,

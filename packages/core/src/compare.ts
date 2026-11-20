@@ -3,7 +3,6 @@ import type { CurrencyCode } from "./currency.ts";
 import { zurichDay } from "./day.ts";
 import { Decimal } from "./decimal.ts";
 import { AmountNotSupportedError } from "./errors.ts";
-import { maxAmount } from "./fees.ts";
 import type { Money } from "./money.ts";
 import type { MidRateObservation, ProviderOffer } from "./offer.ts";
 import type { MidRateRepository, OfferRepository } from "./ports.ts";
@@ -91,8 +90,7 @@ function caveatsFor(offer: ProviderOffer): Caveat[] {
   if (offer.pricing.kind === "markup" && offer.pricing.tier) {
     caveats.push({ code: "monthly_allowance", allowance: offer.pricing.tier.upTo });
   }
-  const max = maxAmount(offer.fees);
-  if (max) caveats.push({ code: "amount_limit", max });
+  if (offer.fees.maxAmount) caveats.push({ code: "amount_limit", max: offer.fees.maxAmount });
   return caveats;
 }
 

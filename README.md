@@ -122,6 +122,7 @@ Each significant choice is an Architecture Decision Record in [`docs/adr`](docs/
 | [0012](docs/adr/0012-charts-as-plain-svg.md) | Charts as plain SVG |
 | [0013](docs/adr/0013-logs-without-full-ip-addresses.md) | Logs without full IP addresses |
 | [0014](docs/adr/0014-openapi-from-zod-schemas.md) | OpenAPI generated from the Zod schemas |
+| [0015](docs/adr/0015-fee-model-without-min-max-and-tiers.md) | Fee model without minimum/maximum fees and fee tiers |
 
 ## Quick start
 

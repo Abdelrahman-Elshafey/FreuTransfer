@@ -95,8 +95,6 @@ model FeeSchedule {
   /// Fee amounts are in the corridor's source currency; percentages are fractions (0.005 = 0.5%).
   fixedFee             Decimal     @default(0) @map("fixed_fee") @db.Decimal(20, 10)
   percentFee           Decimal     @default(0) @map("percent_fee") @db.Decimal(20, 10)
-  minFee               Decimal?    @map("min_fee") @db.Decimal(20, 10)
-  maxFee               Decimal?    @map("max_fee") @db.Decimal(20, 10)
   /// The most the provider accepts, in the source currency (e.g. Western Union online: 4,700 CHF).
   /// Above it the offer is "not available for this amount". Empty = no limit.
   maxAmount            Decimal?    @map("max_amount") @db.Decimal(20, 10)

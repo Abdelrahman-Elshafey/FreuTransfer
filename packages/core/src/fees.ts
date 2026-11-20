@@ -1,31 +1,30 @@
 import type { CurrencyCode } from "./currency.ts";
 import { Decimal, type DecimalInput, toDecimal } from "./decimal.ts";
 import { AmountNotSupportedError, CurrencyMismatchError, MoneyError } from "./errors.ts";
-import { Money, maxMoney, minMoney } from "./money.ts";
+import { Money } from "./money.ts";
 
 /**
- * How a provider computes its fee: `fixed + percent × base`, then kept between `min` and `max`.
- * `percent` is a fraction: "0.005" means 0.5%. All amounts are in the sender's currency.
+ * How a provider computes its fee: `fixed + percent × base`. `percent` is a fraction: "0.005"
+ * means 0.5%. Amounts are in the sender's currency.
  */
 export type FeeRule = {
   readonly fixed: Money;
   readonly percent: Decimal;
-  readonly min?: Money;
-  readonly max?: Money;
 };
 
-/** The three ways providers charge (Strategy pattern as data: one `kind` per strategy). */
-type SimpleFeeModel =
-  /** The fee is taken out of what you pay: converted = total − fee. */
-  | { readonly kind: "deducted"; readonly rule: FeeRule }
-  /** The fee is added on top of what's converted: total = converted + fee(converted). */
-  | { readonly kind: "on_top"; readonly rule: FeeRule };
-
-/** Different fee models by amount. A tier applies while total paid ≤ `upTo` (null = no limit). */
-type FeeTier = { readonly upTo: Money | null; readonly model: SimpleFeeModel };
-export type FeeModel =
-  | SimpleFeeModel
-  | { readonly kind: "tiered"; readonly tiers: readonly FeeTier[] };
+/**
+ * The two ways providers charge (Strategy pattern as data: one `kind` per strategy):
+ * - `deducted`: the fee is taken out of what you pay: converted = total − fee.
+ * - `on_top`: the fee is added on top of what's converted: total = converted + fee(converted).
+ * `maxAmount`: the most the provider accepts per transfer (total paid); above it the offer can't
+ * serve the amount (Western Union online: 4,700 CHF). No minimum or maximum fee and no fee tiers:
+ * no provider has them (ADR 0015).
+ */
+export type FeeModel = {
+  readonly kind: "deducted" | "on_top";
+  readonly rule: FeeRule;
+  readonly maxAmount?: Money;
+};
 
 /** What happens to the money you pay: part is the fee, the rest gets converted. */
 type PaymentSplit = {
@@ -33,30 +32,16 @@ type PaymentSplit = {
   readonly converted: Money;
 };
 
-type FeeRuleInput = {
-  readonly fixed?: DecimalInput;
-  readonly percent?: DecimalInput;
-  readonly min?: DecimalInput;
-  readonly max?: DecimalInput;
-};
-
-/** Convenience builder: feeRule("CHF", { fixed: "5", percent: "0.005", min: "10" }). */
-export function feeRule(currency: CurrencyCode, input: FeeRuleInput): FeeRule {
+/** Convenience builder: feeRule("CHF", { fixed: "5", percent: "0.005" }). */
+export function feeRule(
+  currency: CurrencyCode,
+  input: { readonly fixed?: DecimalInput; readonly percent?: DecimalInput },
+): FeeRule {
   const percent = toDecimal(input.percent ?? "0", "percent");
   if (percent.isNegative()) throw new MoneyError("Fee percent cannot be negative");
-  const rule: FeeRule = {
-    fixed: Money.of(input.fixed ?? "0", currency),
-    percent,
-    ...(input.min === undefined ? {} : { min: Money.of(input.min, currency) }),
-    ...(input.max === undefined ? {} : { max: Money.of(input.max, currency) }),
-  };
-  if (rule.fixed.isNegative()) throw new MoneyError("Fixed fee cannot be negative");
-  if (rule.min?.isNegative()) throw new MoneyError("Minimum fee cannot be negative");
-  if (rule.max?.isNegative()) throw new MoneyError("Maximum fee cannot be negative");
-  if (rule.min && rule.max && rule.min.compareTo(rule.max) > 0) {
-    throw new MoneyError("Minimum fee is larger than maximum fee");
-  }
-  return rule;
+  const fixed = Money.of(input.fixed ?? "0", currency);
+  if (fixed.isNegative()) throw new MoneyError("Fixed fee cannot be negative");
+  return { fixed, percent };
 }
 
 /**
@@ -68,14 +53,16 @@ export function feeRule(currency: CurrencyCode, input: FeeRuleInput): FeeRule {
  */
 export function splitPayment(totalPaid: Money, model: FeeModel): PaymentSplit {
   if (!totalPaid.amount.gt(0)) throw new MoneyError("Total paid must be positive");
-  const simple = model.kind === "tiered" ? pickTier(totalPaid, model.tiers) : model;
-  assertRuleCurrency(simple.rule, totalPaid);
+  assertRuleCurrency(model.rule, totalPaid);
+  if (model.maxAmount && totalPaid.compareTo(model.maxAmount) > 0) {
+    throw new AmountNotSupportedError(
+      `${totalPaid.toString()} is more than the most accepted, ${model.maxAmount.toString()}`,
+    );
+  }
 
-  const rawFee =
-    simple.kind === "deducted"
-      ? deductedFee(totalPaid, simple.rule)
-      : onTopFee(totalPaid, simple.rule);
-  const fee = clamp(rawFee, simple.rule).round();
+  const fee = (
+    model.kind === "deducted" ? deductedFee(totalPaid, model.rule) : onTopFee(totalPaid, model.rule)
+  ).round();
 
   if (fee.compareTo(totalPaid) >= 0) {
     throw new AmountNotSupportedError(
@@ -93,31 +80,10 @@ function deductedFee(totalPaid: Money, rule: FeeRule): Money {
 /**
  * On top: the fee is computed on the converted amount c, and total = c + fixed + percent × c.
  * Solving for c: c = (total − fixed) / (1 + percent); the fee is what's left.
- * If that fee is below min (or above max), the clamped fee applies instead; this is consistent
- * because the fee grows with c.
  */
 function onTopFee(totalPaid: Money, rule: FeeRule): Money {
   const converted = totalPaid.minus(rule.fixed).dividedBy(new Decimal(1).plus(rule.percent));
   return totalPaid.minus(converted);
-}
-
-function clamp(fee: Money, rule: FeeRule): Money {
-  let result = fee;
-  if (rule.min) result = maxMoney(result, rule.min);
-  if (rule.max) result = minMoney(result, rule.max);
-  return result;
-}
-
-/** The most a provider accepts per transfer: the last tier's limit, or null when there is none. */
-export function maxAmount(model: FeeModel): Money | null {
-  return model.kind === "tiered" ? (model.tiers.at(-1)?.upTo ?? null) : null;
-}
-
-function pickTier(totalPaid: Money, tiers: readonly FeeTier[]): SimpleFeeModel {
-  for (const tier of tiers) {
-    if (tier.upTo === null || totalPaid.compareTo(tier.upTo) <= 0) return tier.model;
-  }
-  throw new AmountNotSupportedError(`No fee tier covers ${totalPaid.toString()}`);
 }
 
 function assertRuleCurrency(rule: FeeRule, totalPaid: Money): void {

@@ -116,12 +116,7 @@ describe("GET /v1/compare", () => {
       ...yuh,
       providerId: "wu",
       providerName: "WU",
-      fees: {
-        kind: "tiered",
-        tiers: [
-          { upTo: Money.of("4700", "CHF"), model: { kind: "deducted", rule: feeRule("CHF", {}) } },
-        ],
-      },
+      fees: { kind: "deducted", rule: feeRule("CHF", {}), maxAmount: Money.of("4700", "CHF") },
     };
     const app = createApp(deps({ offers: { latestOffers: async () => [yuh, revolut, limited] } }));
     const res = await request(app).get("/v1/compare?from=CHF&to=EUR&amount=1000");
@@ -432,12 +427,7 @@ describe("every answer matches its documented schema", () => {
     const limited: ProviderOffer = {
       ...yuh,
       providerId: "limited",
-      fees: {
-        kind: "tiered",
-        tiers: [
-          { upTo: Money.of("4700", "CHF"), model: { kind: "deducted", rule: feeRule("CHF", {}) } },
-        ],
-      },
+      fees: { kind: "deducted", rule: feeRule("CHF", {}), maxAmount: Money.of("4700", "CHF") },
     };
     const stale: ProviderOffer = {
       ...yuh,

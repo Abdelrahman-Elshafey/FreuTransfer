@@ -113,14 +113,14 @@ CLI nor `effect` (listed inside the image).
    `openapi.test.ts`).
 
 **For the owner (not changed)**
-1. **`effect` (high):** reached only by the Prisma CLI reading our own `prisma.config.ts`, in
+1. *(Resolved 2026-11-20, owner: accepted; reason in `pnpm-workspace.yaml`, `auditConfig.ignoreGhsas`.)* **`effect` (high):** reached only by the Prisma CLI reading our own `prisma.config.ts`, in
    development and the `migrate` image; never by a visitor's input, not in the API image. No
    Prisma 7 release with a newer `effect` yet. Proposal: accept it with this reason; a pnpm
    override to `effect` 3.22.2 (9 Sep, past the gate) would be the alternative, at the risk of
    breaking Prisma's config loading.
-2. **Updates past the gate** (Biome, Vite, plugin-react, knip; list above): one small upgrade
+2. *(Resolved 2026-11-20: updated on `step-8/simplify-upgrades`.)* **Updates past the gate** (Biome, Vite, plugin-react, knip; list above): one small upgrade
    branch.
-3. **Built for cases no data has** (over-engineering, a schema and core change, so not done here):
+3. *(Resolved 2026-11-20, owner: simplified, ADR 0015.)* **Built for cases no data has** (over-engineering, a schema and core change, so not done here):
    no provider uses a minimum or maximum fee (`minFee`/`maxFee`: loader, two columns, repository,
    core's clamp), and the `tiered` fee model handles any number of tiers and an open last tier
    while the database only ever builds one tier from `max_amount` (also item 5 of the last
