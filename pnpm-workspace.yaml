@@ -12,3 +12,12 @@ allowBuilds:
   prisma: true
   protobufjs: false
   ssh2: false
+# Accepted audit findings, each with its reason (CLAUDE.md rule 13; owner, 2026-11-20):
+# - GHSA-7589-6fvf-x4pw (high, ReDoS in effect's Schema.TemplateLiteral): effect 3.20.0 is pinned by
+#   Prisma 7.10.1's @prisma/config and only parses our own prisma.config.ts, in development and the
+#   `migrate` image. Not in the API image, never reached by a visitor's input. No Prisma 7 release
+#   takes a fixed effect yet; forcing one could break Prisma's config loading. Drop this line when
+#   Prisma updates it (review.md, 2026-11-20).
+auditConfig:
+  ignoreGhsas:
+    - GHSA-7589-6fvf-x4pw

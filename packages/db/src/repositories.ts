@@ -31,8 +31,6 @@ type OfferRow = {
   fee_mode: string;
   fixed_fee: DbDecimal;
   percent_fee: DbDecimal;
-  min_fee: DbDecimal | null;
-  max_fee: DbDecimal | null;
   max_amount: DbDecimal | null;
   fx_markup: DbDecimal | null;
   fx_markup_tier_up_to: DbDecimal | null;
@@ -61,7 +59,7 @@ export class PrismaOfferRepository implements OfferRepository {
           fs.withdrawn, fs.provider_id, p.name AS provider_name, p.kind::text AS provider_kind,
           c.source_currency, c.target_currency,
           fs.source_kind::text AS source_kind, fs.fee_mode::text AS fee_mode,
-          fs.fixed_fee, fs.percent_fee, fs.min_fee, fs.max_fee, fs.max_amount,
+          fs.fixed_fee, fs.percent_fee, fs.max_amount,
           fs.fx_markup, fs.fx_markup_tier_up_to, fs.fx_markup_above, fs.fx_markup_tier_currency,
           fs.provider_rate, fs.rate_captured_at,
           fs.source_url, fs.checked_at
@@ -155,21 +153,16 @@ function toOffer(row: OfferRow): ProviderOffer {
 }
 
 function toFeeModel(row: OfferRow, currency: CurrencyCode): FeeModel {
-  const rule = feeRule(currency, {
-    fixed: dec(row.fixed_fee),
-    percent: dec(row.percent_fee),
-    ...(row.min_fee === null ? {} : { min: dec(row.min_fee) }),
-    ...(row.max_fee === null ? {} : { max: dec(row.max_fee) }),
-  });
+  const rule = feeRule(currency, { fixed: dec(row.fixed_fee), percent: dec(row.percent_fee) });
   if (row.fee_mode !== "deducted" && row.fee_mode !== "on_top") {
     throw new Error(`Unknown fee mode "${row.fee_mode}"`);
   }
-  const model: Extract<FeeModel, { kind: "deducted" | "on_top" }> =
-    row.fee_mode === "deducted" ? { kind: "deducted", rule } : { kind: "on_top", rule };
-  // A maximum amount is a single fee tier: above it no tier applies, so core reports the offer as
-  // "not available for this amount" (AmountNotSupportedError).
-  if (row.max_amount === null) return model;
-  return { kind: "tiered", tiers: [{ upTo: Money.of(dec(row.max_amount), currency), model }] };
+  // Above a maximum amount core reports the offer as "not available for this amount".
+  return {
+    kind: row.fee_mode,
+    rule,
+    ...(row.max_amount === null ? {} : { maxAmount: Money.of(dec(row.max_amount), currency) }),
+  };
 }
 
 function toPricing(row: OfferRow, source: CurrencyCode, target: CurrencyCode): Pricing {

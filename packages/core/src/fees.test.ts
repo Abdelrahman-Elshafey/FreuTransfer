@@ -16,18 +16,10 @@ describe("splitPayment", () => {
     expect(split("1000", model)).toEqual({ fee: "5.00", converted: "995.00" });
   });
 
-  it("deducted percentage with min and max", () => {
-    const withMin: FeeModel = {
-      kind: "deducted",
-      rule: feeRule("CHF", { percent: "0.001", min: "3" }),
-    };
-    expect(split("1000", withMin)).toEqual({ fee: "3.00", converted: "997.00" });
-
-    const withMax: FeeModel = {
-      kind: "deducted",
-      rule: feeRule("CHF", { percent: "0.02", max: "15" }),
-    };
-    expect(split("1000", withMax)).toEqual({ fee: "15.00", converted: "985.00" });
+  it("deducted percentage: the fee is computed on the total paid", () => {
+    const model: FeeModel = { kind: "deducted", rule: feeRule("CHF", { percent: "0.0125" }) };
+    // 1000 × 0.0125 = 12.50; converted = 1000 − 12.50 = 987.50
+    expect(split("1000", model)).toEqual({ fee: "12.50", converted: "987.50" });
   });
 
   it("fee on top: total = converted + fixed + percent × converted", () => {
@@ -39,34 +31,23 @@ describe("splitPayment", () => {
     expect(split("1000", model)).toEqual({ fee: "6.97", converted: "993.03" });
   });
 
-  it("fee on top with a minimum fee", () => {
+  it("maximum amount: served up to and including it, not a cent above", () => {
     const model: FeeModel = {
-      kind: "on_top",
-      rule: feeRule("CHF", { percent: "0.001", min: "5" }),
+      kind: "deducted",
+      rule: feeRule("CHF", { fixed: "3" }),
+      maxAmount: chf("500"),
     };
-    expect(split("1000", model)).toEqual({ fee: "5.00", converted: "995.00" });
-  });
-
-  it("tiered: picks the first tier that covers the amount", () => {
-    const model: FeeModel = {
-      kind: "tiered",
-      tiers: [
-        { upTo: chf("500"), model: { kind: "deducted", rule: feeRule("CHF", { fixed: "3" }) } },
-        { upTo: null, model: { kind: "deducted", rule: feeRule("CHF", { percent: "0.01" }) } },
-      ],
-    };
-    expect(split("500", model).fee).toBe("3.00");
-    expect(split("1000", model).fee).toBe("10.00");
-  });
-
-  it("tiered: an amount above the last tier can't be served", () => {
-    const model: FeeModel = {
-      kind: "tiered",
-      tiers: [
-        { upTo: chf("500"), model: { kind: "deducted", rule: feeRule("CHF", { fixed: "3" }) } },
-      ],
-    };
+    expect(split("500", model)).toEqual({ fee: "3.00", converted: "497.00" });
     expect(() => splitPayment(chf("500.01"), model)).toThrow(AmountNotSupportedError);
+  });
+
+  it("maximum amount: one in another currency is a data error, not 'not available'", () => {
+    const model: FeeModel = {
+      kind: "deducted",
+      rule: feeRule("CHF", {}),
+      maxAmount: Money.of("500", "EUR"),
+    };
+    expect(() => splitPayment(chf("100"), model)).toThrow(CurrencyMismatchError);
   });
 
   it("rejects a fee that eats the whole amount, and non-positive amounts", () => {
@@ -83,8 +64,5 @@ describe("splitPayment", () => {
   it("validates fee rules", () => {
     expect(() => feeRule("CHF", { fixed: "-1" })).toThrow(/negative/);
     expect(() => feeRule("CHF", { percent: "-0.1" })).toThrow(/negative/);
-    expect(() => feeRule("CHF", { min: "10", max: "5" })).toThrow(/Minimum/);
-    expect(() => feeRule("CHF", { min: "-5" })).toThrow(/Minimum fee cannot be negative/);
-    expect(() => feeRule("CHF", { max: "-5" })).toThrow(/Maximum fee cannot be negative/);
   });
 });

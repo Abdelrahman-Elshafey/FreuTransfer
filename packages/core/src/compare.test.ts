@@ -438,18 +438,10 @@ describe("caveats", () => {
   });
 
   it("rule 2: a maximum amount is a limit per transfer, with its amount", () => {
-    // Western Union-style: no fee up to 4,700 CHF, nothing above (a single fee tier).
+    // Western Union-style: no fee up to 4,700 CHF, nothing above.
     const limited: ProviderOffer = {
       ...offer("wu", markup("0.02")),
-      fees: {
-        kind: "tiered",
-        tiers: [
-          {
-            upTo: Money.of("4700", "CHF"),
-            model: { kind: "deducted", rule: feeRule("CHF", {}) },
-          },
-        ],
-      },
+      fees: { kind: "deducted", rule: feeRule("CHF", {}), maxAmount: Money.of("4700", "CHF") },
     };
     expect(rowFor(limited)?.caveats).toEqual([
       { code: "amount_limit", max: Money.of("4700", "CHF") },
@@ -457,20 +449,6 @@ describe("caveats", () => {
     // Above the limit it stays "not available", not a ranked row with a caveat.
     const above = rankOffers([limited], mid, Money.of("4700.01", "CHF"), now);
     expect(above.unavailable).toEqual([{ offer: limited, reason: "amount_not_supported" }]);
-  });
-
-  it("rule 2: fee tiers whose last one has no limit are not a limit", () => {
-    const open: ProviderOffer = {
-      ...offer("bank", markup("0.01")),
-      fees: {
-        kind: "tiered",
-        tiers: [
-          { upTo: Money.of("1000", "CHF"), model: { kind: "deducted", rule: feeRule("CHF", {}) } },
-          { upTo: null, model: { kind: "deducted", rule: feeRule("CHF", { fixed: "5" }) } },
-        ],
-      },
-    };
-    expect(rowFor(open, "2000")?.caveats).toEqual([]);
   });
 
   it("an offer without tier or limit has no caveats; stale rows keep theirs", () => {

@@ -96,7 +96,7 @@ EN / DE / FR / IT. Rules for every stage from now on, so no language work piles 
 ## 6. Testing
 | Layer | What |
 |---|---|
-| core | every fee mode, tiers, rounding; golden provider examples; property tests (received ≤ ideal, fee + markup = total) |
+| core | every fee mode, maximum amounts, markup tiers, rounding; golden provider examples; property tests (received ≤ ideal, fee + markup = total) |
 | collectors | adapters parse saved real responses, no network |
 | db | migrations and queries on real Postgres (Testcontainers) |
 | api | `/v1/compare` end to end (supertest) |
@@ -142,6 +142,9 @@ Decided by the owner (2026-11-06):
   area (7c explains it in the methodology).
 - (2026-11-18) No imprint page: the privacy page names the operator with name and e-mail only, no
   postal address (ADR 0005, stage 7c). An address under a language that names no page answers 404.
+- (2026-11-20) Fee model simplified: no minimum/maximum fee and no fee tiers, which no provider has;
+  a maximum amount per transfer stays (ADR 0015).
+- (2026-11-20) Deploys stay on `dev` until v1.0; from v1.0 only `main` deploys (ADR 0006).
 
 Still open:
 - Whether to automate any bank rate page later.

@@ -90,11 +90,3 @@ function assertSameCurrency(a: Money, b: Money, operation: string): void {
     throw new CurrencyMismatchError(`${operation}: ${a.currency} vs ${b.currency}`);
   }
 }
-
-export function maxMoney(a: Money, b: Money): Money {
-  return a.compareTo(b) >= 0 ? a : b;
-}
-
-export function minMoney(a: Money, b: Money): Money {
-  return a.compareTo(b) <= 0 ? a : b;
-}

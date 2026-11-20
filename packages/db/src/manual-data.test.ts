@@ -103,6 +103,13 @@ describe("manual data files", () => {
     expect(() => parseManualData(data, new Date("2026-11-20T00:00:00Z"))).toThrow(message);
   });
 
+  // ADR 0015: no minimum or maximum fee any more. A file entry with one must not lose it silently.
+  it.each(["minFee", "maxFee"])("refuses %s (no provider has one; ADR 0015)", (field) => {
+    const data = valid();
+    (data.feeSchedules[0] as Record<string, unknown>)[field] = "5";
+    expect(() => parseManualData(data)).toThrow(/no minimum or maximum fee/);
+  });
+
   it("accepts a second check of the same provider at another time", () => {
     const data = valid();
     data.feeSchedules.push({ ...data.feeSchedules[0], checkedAt: "2026-11-06T17:30:00Z" });

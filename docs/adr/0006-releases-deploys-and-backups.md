@@ -23,6 +23,11 @@ from GitHub's registry (GHCR) and keeps off-site backups in Cloudflare R2.
   `scripts/deploy.sh <commit>` on the server over SSH. The SSH key may run only that script (forced
   command), as for UrConnections. The first deploy is run by hand with the same script, to see
   every step. `main` gets its first release, v1.0, at the end of the project.
+- **From v1.0, deploys come only from `main`** (owner, 2026-11-20): `dev` is merged into `main` once
+  as v1.0, and from then on a merge into `main` is what deploys. To change at that release, in one
+  branch: the CI condition (`refs/heads/dev` → `refs/heads/main` for pushing images and the deploy
+  job), `scripts/deploy.sh` (accept only commits on `origin/main`), `docs/deploy.md`, README,
+  CLAUDE.md's git workflow, and the branch protection on GitHub (owner). Until then nothing changes.
 - **Every start** runs `migrate` (schema) and `seed` (verified provider data from git) before the API,
   so a data change reaches production with the next deploy. A deploy also runs both once before it
   replaces anything (since 2026-11-13): a failed migration or seed then stops the deploy while the

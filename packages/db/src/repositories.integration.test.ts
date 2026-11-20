@@ -432,7 +432,7 @@ describe("collector pipeline rules (stage 4)", () => {
 describe("limits (stage 5a)", () => {
   const checkedAt = new Date("2026-11-13T08:25:00Z");
 
-  it("turns a maximum amount into the offer's only fee tier, in the source currency", async () => {
+  it("turns a maximum amount into the fee model's maxAmount, in the source currency", async () => {
     await db.provider.create({
       data: {
         id: "wu",
@@ -457,10 +457,8 @@ describe("limits (stage 5a)", () => {
     const wu = (await new PrismaOfferRepository(db).latestOffers("CHF", "EUR")).find(
       (o) => o.providerId === "wu",
     );
-    expect(wu?.fees.kind).toBe("tiered");
-    const tier = wu?.fees.kind === "tiered" ? wu.fees.tiers[0] : undefined;
-    expect(tier?.upTo?.toString()).toBe("4700.00 CHF");
-    expect(tier?.model.kind).toBe("deducted");
+    expect(wu?.fees.kind).toBe("deducted");
+    expect(wu?.fees.maxAmount?.toString()).toBe("4700.00 CHF");
   });
 
   it("reads a tier limit in its own currency (Revolut EUR→CHF: CHF 1'250)", async () => {
