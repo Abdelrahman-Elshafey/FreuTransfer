@@ -130,14 +130,10 @@ export const de: PagesText = {
         ],
       },
       {
-        heading: "Offene Methode",
+        heading: "Unabhängig",
         blocks: [
           {
-            p: [
-              "Die Berechnung, die Daten und ihre Geschichte sind öffentlich: ",
-              { text: "Quellcode auf GitHub", href: v.sourceUrl },
-              ". Die Ergebnisse sind Schätzungen zur Information, keine Finanzberatung.",
-            ],
+            p: ["Die Ergebnisse sind Schätzungen zur Information, keine Finanzberatung."],
           },
           {
             p: [

@@ -25,7 +25,6 @@ export type MethodologyValues = {
   readonly maxAgeDays: number;
   /** The sanity limit, formatted ("10%"). */
   readonly maxCost: string;
-  readonly sourceUrl: string;
   /** The worked example, every amount formatted for the locale. */
   readonly example: {
     readonly paid: string;

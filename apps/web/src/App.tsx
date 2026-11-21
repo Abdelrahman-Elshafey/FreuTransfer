@@ -23,11 +23,11 @@ import { LOCALE_CODES, type Locale, localeInfo } from "./i18n/locales.ts";
 import { PAGES } from "./i18n/pages/index.ts";
 import type { LegalValues, MethodologyValues } from "./i18n/pages/types.ts";
 import { METHODOLOGY } from "./methodology-values.ts";
-import { PAGE_IDS, type PageId, pageFromPath, pagePath } from "./pages.ts";
+import { type PageId, pageFromPath, pagePath } from "./pages.ts";
 import { RateChart } from "./RateChart.tsx";
 import { cheapestIds } from "./results.ts";
 import { Link, usePathname } from "./router.tsx";
-import { HOSTING_REGION, OPERATOR, RATES_URL, SOURCE_URL } from "./site.ts";
+import { HOSTING_REGION, OPERATOR, RATES_URL } from "./site.ts";
 import { readSaved, save } from "./storage.ts";
 import { TextPage } from "./TextPage.tsx";
 import { card, h1, h2, note } from "./ui.ts";
@@ -545,7 +545,6 @@ function methodologyValues(f: Formatter): MethodologyValues {
     recheckDays: METHODOLOGY.recheckDays,
     maxAgeDays: METHODOLOGY.maxAgeDays,
     maxCost: f.percent(METHODOLOGY.maxCostPercent),
-    sourceUrl: SOURCE_URL,
     example: {
       paid: from(e.paid),
       fee: from(e.fee),
@@ -605,13 +604,13 @@ export function App() {
       {/* Stays at the top while the page scrolls; what passes under it is blurred. */}
       <header className="sticky top-0 z-30 border-b border-line/70 bg-page/75 backdrop-blur-lg">
         <div
-          className={`${frame} flex h-16 items-center justify-between gap-4 lg:grid lg:grid-cols-[1fr_auto_1fr]`}
+          className={`${frame} flex h-16 items-center justify-between gap-4 md:grid md:grid-cols-[1fr_auto_1fr]`}
         >
           <Logo />
-          {/* From 1024px up (French needs the room); narrower, the same links are in the footer. */}
-          <nav className="hidden lg:block">
+          {/* From 768px up; on phones the logo leads home and "How it works" is in the footer. */}
+          <nav className="hidden md:block">
             <ul className="flex items-center gap-1 rounded-full border border-line bg-card/60 p-1 text-sm">
-              {PAGE_IDS.map((p) => (
+              {HEADER_PAGES.map((p) => (
                 <li key={p}>
                   <Link
                     to={pagePath(locale, p)}
@@ -644,6 +643,14 @@ export function App() {
   );
 }
 
+/**
+ * What a customer needs (owner, 2026-11-21: a site for customers, not for recruiters). The header
+ * has the comparison and how it works; the footer adds the privacy page. The API page has no link
+ * on the site: it is for developers, reached from the README.
+ */
+const HEADER_PAGES = ["home", "methodology"] as const satisfies readonly PageId[];
+const FOOTER_PAGES = ["methodology", "privacy"] as const satisfies readonly PageId[];
+
 /** The content's width and side margins: the header, the page and the footer line up. */
 const frame = "mx-auto w-full max-w-5xl px-4 sm:px-6";
 
@@ -667,50 +674,36 @@ function Logo() {
   );
 }
 
+/** Small and plain: the two pages a customer may look for, then the fine print. */
 function SiteFooter({ page }: { page: PageId | null }) {
   const { t, locale } = useI18n();
-  const item = "text-muted no-underline hover:text-ink";
   return (
-    <footer className="mt-24 border-t border-line text-sm">
-      <div className={`${frame} grid gap-10 py-12 sm:grid-cols-[1.5fr_1fr_1fr]`}>
-        <div>
+    <footer className="mt-20 border-t border-line text-sm text-muted">
+      <div className={`${frame} flex flex-col gap-4 py-8`}>
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <Logo />
-          <p className="mt-3 max-w-xs text-muted">{t.headline}</p>
+          <nav>
+            <ul className="flex gap-6">
+              {FOOTER_PAGES.map((p) => (
+                <li key={p}>
+                  <Link
+                    to={pagePath(locale, p)}
+                    current={page === p}
+                    className="text-muted no-underline hover:text-ink"
+                  >
+                    {t.nav[p]}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
-        <nav aria-labelledby="footer-pages">
-          <p id="footer-pages">
-            <Label>{t.site.pages}</Label>
-          </p>
-          <ul className="mt-3 space-y-2">
-            {PAGE_IDS.map((p) => (
-              <li key={p}>
-                <Link to={pagePath(locale, p)} current={page === p} className={item}>
-                  {t.nav[p]}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <div>
-          <p>
-            <Label>{t.site.data}</Label>
-          </p>
-          <ul className="mt-3 space-y-2">
-            <li>
-              <a href={RATES_URL} target="_blank" rel="noreferrer" className={item}>
-                {t.site.rates(bankName(t, "ecb"))}
-              </a>
-            </li>
-            <li>
-              <a href={SOURCE_URL} target="_blank" rel="noreferrer" className={item}>
-                {t.site.sourceCode}
-              </a>
-            </li>
-          </ul>
-        </div>
-      </div>
-      <div className={frame}>
-        <p className="border-t border-line py-6 text-muted">{t.disclaimer}</p>
+        <p className="text-xs">
+          {t.disclaimer}{" "}
+          <a href={RATES_URL} target="_blank" rel="noreferrer" className="text-muted">
+            {t.site.rates(bankName(t, "ecb"))}
+          </a>
+        </p>
       </div>
     </footer>
   );

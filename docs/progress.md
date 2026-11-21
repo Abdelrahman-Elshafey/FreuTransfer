@@ -534,5 +534,9 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   (pages, data source, source code), all form controls 48px high with a CSS chevron on native
   selects, bigger headlines and section spacing, shared classes in `apps/web/src/ui.ts`. The
   Frankfurter link is one constant (`RATES_URL`) for the footer and the four methodology pages.
+  Owner's follow-up: a site for customers, not recruiters. Header: Comparison and "How it works"
+  (the methodology page's new link label); small footer: How it works, Privacy, one line of fine
+  print. No API or source-code links on the site (the API page stays, linked from the README); the
+  methodology's "open method" section is now "Independent", without the GitHub link.
   Checked in headless Chrome (desktop light/dark, phone dark, nav, hover, reduced motion, no
   horizontal scroll); README screenshots retaken.

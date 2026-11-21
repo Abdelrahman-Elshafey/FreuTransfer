@@ -134,14 +134,10 @@ export const en: PagesText = {
         ],
       },
       {
-        heading: "Open method",
+        heading: "Independent",
         blocks: [
           {
-            p: [
-              "The calculation, the data and their history are public: ",
-              { text: "source code on GitHub", href: v.sourceUrl },
-              ". The results are estimates for information only, not financial advice.",
-            ],
+            p: ["The results are estimates for information only, not financial advice."],
           },
           {
             p: [

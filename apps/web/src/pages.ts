@@ -6,7 +6,7 @@ import { type Locale, localeFromPath } from "./i18n/locales.ts";
  * in every language ("API" is the same word in all four).
  */
 
-/** Every page; after the home page, in the footer's order. */
+/** Every page the site serves (the header and footer link a few of them: App.tsx). */
 export const PAGE_IDS = ["home", "methodology", "privacy", "api"] as const;
 export type PageId = (typeof PAGE_IDS)[number];
 

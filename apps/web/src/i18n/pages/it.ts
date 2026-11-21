@@ -130,14 +130,10 @@ export const it: PagesText = {
         ],
       },
       {
-        heading: "Un metodo aperto",
+        heading: "Indipendente",
         blocks: [
           {
-            p: [
-              "Il calcolo, i dati e la loro storia sono pubblici: ",
-              { text: "codice sorgente su GitHub", href: v.sourceUrl },
-              ". I risultati sono stime a solo scopo informativo, non consulenza finanziaria.",
-            ],
+            p: ["I risultati sono stime a solo scopo informativo, non consulenza finanziaria."],
           },
           {
             p: [
