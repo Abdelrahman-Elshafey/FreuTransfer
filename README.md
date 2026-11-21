@@ -87,7 +87,7 @@ flowchart LR
 | Data | PostgreSQL 18, Prisma 7 (no SQL built from strings) |
 | Page | React 19, Vite 8, Tailwind 4, plain-SVG charts (ADR 0012) |
 | Quality | Vitest (about 490 tests; real Postgres and real nginx in Docker via Testcontainers), Biome, knip |
-| Production | Docker Compose on a VPS, Cloudflare Tunnel, GitHub Actions → GHCR, daily backups copied to Cloudflare R2 |
+| Production | Docker Compose on a VPS, Cloudflare Tunnel, GitHub Actions → GHCR, daily backups copied to Cloudflare R2, a daily check from outside that e-mails on any problem |
 
 ## Security and privacy
 
@@ -97,7 +97,8 @@ flowchart LR
 - Content-Security-Policy `'self'` (plus `data:` for fonts and images), HSTS and other headers on every response; 10 API
   requests a second per visitor (nginx, keyed by Cloudflare's client address).
 - No open port: the server is reached only through an outbound Cloudflare Tunnel (ADR 0004);
-  the API and the page run as non-root users; Postgres isn't published.
+  the API and the page run as non-root users; every container runs without Linux capabilities
+  (Postgres keeps the five it needs to start) and with `no-new-privileges`; Postgres isn't published.
 - Supply chain: every GitHub Action pinned to a commit; pnpm refuses any package version younger
   than 7 days. Deploys need the owner's approval, and the deploy key can only run one script, for
   commits on `dev` (ADR 0006).

@@ -96,6 +96,8 @@ Each rule names the mistake it prevents.
   ports (ADR 0004; UrConnections' Caddy owns 80/443 on that server). No Vercel/Neon.
   Stack: `compose.prod.yml` (images from `apps/*/Dockerfile`), runbook `docs/deploy.md`, releases
   and backups ADR 0006. Versions copied into Docker files are kept equal by `deploy/versions.test.ts`.
+  Every service has the log limit the privacy page states and runs hardened (`deploy/compose.test.ts`);
+  a daily check from outside (`.github/workflows/monitor.yml`) e-mails the owner on any problem.
 - Append-only data: never update or delete observations, rates or quotes (database triggers enforce
   it). The one exception: a `collector_runs` row is finished exactly once (status, finish time,
   error), so a run that crashes stays visible as `running`. A provider is taken off the site with a

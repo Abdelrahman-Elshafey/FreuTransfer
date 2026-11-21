@@ -33,9 +33,12 @@ describe("deploy versions", () => {
     expect(testContainer).toBe(development);
   });
 
-  it("the collector names the same public address as CI's deploy check", () => {
-    const site = readRepoFile(".github/workflows/ci.yml").match(/^ {2}SITE_URL: (\S+)$/m)?.[1];
+  it("the collector and the daily check name the same public address as CI's deploy check", () => {
+    const siteIn = (workflow: string) =>
+      readRepoFile(`.github/workflows/${workflow}`).match(/^ {2}SITE_URL: (\S+)$/m)?.[1];
+    const site = siteIn("ci.yml");
     expect(site).toMatch(/^https:\/\//);
+    expect(siteIn("monitor.yml")).toBe(site);
     const agent = readRepoFile("packages/collectors/src/frankfurter.ts").match(
       /const USER_AGENT = "[^"]*\(\+([^)]+)\)"/,
     )?.[1];
@@ -84,10 +87,14 @@ describe("deploy versions", () => {
 
   // SECURITY: a tag can be moved to other code; a commit can't. The images job may write to GHCR,
   // and what it pushes is deployed, so every action runs a fixed commit, named with its version.
-  it("CI runs every GitHub Action at a pinned commit, the same commit wherever it is used", () => {
-    const uses = [
-      ...readRepoFile(".github/workflows/ci.yml").matchAll(/^\s*(?:- )?uses: (\S+)(.*)$/gm),
-    ].map((m) => ({ ref: m[1] ?? "", comment: m[2] ?? "" }));
+  it("every workflow runs every GitHub Action at a pinned commit, the same commit wherever it is used", () => {
+    const workflows = readdirSync(new URL("../.github/workflows/", import.meta.url)).sort();
+    expect(workflows).toEqual(["ci.yml", "monitor.yml"]);
+    const uses = workflows.flatMap((workflow) =>
+      [
+        ...readRepoFile(`.github/workflows/${workflow}`).matchAll(/^\s*(?:- )?uses: (\S+)(.*)$/gm),
+      ].map((m) => ({ ref: m[1] ?? "", comment: m[2] ?? "" })),
+    );
     expect(uses.length).toBeGreaterThan(0);
     const commitOf = new Map<string, string>();
     for (const { ref, comment } of uses) {
