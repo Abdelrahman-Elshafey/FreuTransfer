@@ -9,7 +9,6 @@ const methodology: MethodologyValues = {
   recheckDays: 31,
   maxAgeDays: 6,
   maxCost: "<maxCost>",
-  sourceUrl: "https://example.org/source",
   example: {
     paid: "<paid>",
     fee: "<fee>",
@@ -47,13 +46,7 @@ describe("long pages", () => {
 
   it.each(LOCALE_CODES)("%s uses every value it is given", (code) => {
     const [m, p] = render(code).map(allText);
-    for (const value of [
-      ...Object.values(methodology.example),
-      "31 ",
-      "6 ",
-      "<maxCost>",
-      methodology.sourceUrl,
-    ])
+    for (const value of [...Object.values(methodology.example), "31 ", "6 ", "<maxCost>"])
       expect(m).toContain(value);
     for (const value of Object.values(legal)) expect(p).toContain(value);
   });

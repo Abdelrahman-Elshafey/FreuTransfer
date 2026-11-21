@@ -108,5 +108,6 @@ These make the site recognisable. Borrow the ideas, not the exact look.
 ## 9. Decided (stage 8c, ADR 0016)
 - Motion: one easing curve (ease-out-expo), a fade-up entry for pages and result rows, off under
   reduced motion. Hover states on rows, links, fields and the button.
-- A sticky, blurred header with the page links as pills; a footer with columns, like §5's
-  "minimal header" and numbered footer, in our own form.
+- A site for customers, not for recruiters (owner): a sticky, blurred header with two links
+  (Comparison, How it works) and a small footer (How it works, Privacy, the fine print). No API or
+  source-code links on the site.

@@ -77,12 +77,9 @@ export const it: Messages = {
     keyboard: "Tasso di riferimento per giorno: frecce sinistra e destra",
     unavailable: "Il grafico del tasso di riferimento non può essere mostrato al momento.",
   },
-  nav: { home: "Confronto", methodology: "Metodologia", privacy: "Privacy", api: "API" },
+  nav: { home: "Confronto", methodology: "Come funziona", privacy: "Privacy" },
   site: {
-    pages: "Pagine",
-    data: "Dati",
     rates: (bank) => `Tasso di riferimento: ${bank} tramite Frankfurter`,
-    sourceCode: "Codice sorgente",
   },
   notFound: {
     title: "Pagina non trovata",

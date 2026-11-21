@@ -77,12 +77,9 @@ export const fr: Messages = {
     keyboard: "Taux de référence par jour : flèches gauche et droite",
     unavailable: "Le graphique du taux de référence ne peut pas être affiché pour le moment.",
   },
-  nav: { home: "Comparaison", methodology: "Méthodologie", privacy: "Confidentialité", api: "API" },
+  nav: { home: "Comparaison", methodology: "Comment ça marche", privacy: "Confidentialité" },
   site: {
-    pages: "Pages",
-    data: "Données",
     rates: (bank) => `Taux de référence : ${bank} via Frankfurter`,
-    sourceCode: "Code source",
   },
   notFound: {
     title: "Page introuvable",

@@ -1,4 +1,4 @@
-# ADR 0016: Motion, a sticky header and a footer with columns
+# ADR 0016: Motion, a sticky header and a small footer
 
 - **Status:** accepted (owner asked for it, 2026-11-21; built in stage 8c)
 - **Date:** 2026-11-21
@@ -20,12 +20,17 @@ animations, hover states, better proportions between the elements, and a real he
 - **Hover:** table rows tint (a new token `--hover`, checked for contrast in both themes by
   `tokens.test.ts`), links fade their underline in, fields darken their border, the button's arrow
   moves right, the logo's arrows turn once.
-- **Header:** sticky, translucent with a blur behind it, a hairline border; logo, the page links in
-  one pill group (the current page filled, `aria-current="page"`), the language as a compact pill with
-  a globe. The links show from 1024px up (at 768px the French ones covered the logo); narrower,
-  they are in the footer. `scroll-padding-top` keeps anchor jumps below the header.
-- **Footer:** three columns (logo and headline, "(Pages)", "(Data)": the reference rate's source and
-  the source code), then the disclaimer.
+- **For customers, not developers** (owner, 2026-11-21): the site should read like a calm consumer
+  finance site. No source-code or API links on the pages; the API page stays at its address for
+  developers and is linked from the README only. The methodology page's "open method" section
+  became "Independent" (no commissions, no advertising), without the GitHub link.
+- **Header:** sticky, translucent with a blur behind it, a hairline border; logo, two links in one pill
+  group, "Comparison" and "How it works" (the methodology page; the current page filled,
+  `aria-current="page"`), the language as a compact pill with a globe. The links show from 768px up;
+  on phones the logo leads home and "How it works" is in the footer. `scroll-padding-top` keeps
+  anchor jumps below the header.
+- **Footer:** small: the logo and "How it works · Privacy" on one line, then one line of fine print
+  (the disclaimer and the reference rate's source).
 - **Proportions:** every form control is 48px high, like the button; selects stay native (keyboard,
   phone pickers, screen readers) with a CSS chevron in `--muted` (a `data:` image; `tokens.test.ts`
   keeps its colour equal to the token). Headlines are bigger (up to 72px, `text-balance`), section
