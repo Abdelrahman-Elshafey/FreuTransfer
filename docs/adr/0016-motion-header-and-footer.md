@@ -14,6 +14,11 @@ animations, hover states, better proportions between the elements, and a real he
   land. One entry animation, `animate-enter` (fade up by 0.5rem, 600 ms). Pages fade in when shown;
   result rows and cards enter one after another (60 ms apart, set with React's `style`, which the CSP
   allows because React sets it through the CSSOM); a new answer plays the entry again.
+- **Scroll reveal** (owner, 2026-11-21: "things should appear as you go down"): result rows and
+  cards, the "my provider" card, the charts and the text pages' sections wait faded out until they
+  scroll into view, then play the entry (`reveal.ts`, one IntersectionObserver per element, shown
+  once). Its watched area reaches far above the window, so an element the reader jumped past (End
+  key, a fast fling) is shown too; without IntersectionObserver everything shows at once.
 - **Less motion when asked:** under `prefers-reduced-motion: reduce` the entry animation is `none`
   (the `--animate-enter` variable), and movements on hover and the spinner are `motion-safe:` only.
   Colour fades stay: they move nothing.
@@ -26,11 +31,19 @@ animations, hover states, better proportions between the elements, and a real he
   became "Independent" (no commissions, no advertising), without the GitHub link.
 - **Header:** sticky, translucent with a blur behind it, a hairline border; logo, two links in one pill
   group, "Comparison" and "How it works" (the methodology page; the current page filled,
-  `aria-current="page"`), the language as a compact pill with a globe. The links show from 768px up;
+  `aria-current="page"`). The language is our own menu (`LanguageMenu.tsx`), not a native select:
+  a pill button opens a small frosted panel (translucent, blurred) that fades and scales in, the
+  current language checked. A disclosure: arrow keys move through the languages, Escape, Tab or a
+  click outside closes it. The links show from 768px up;
   on phones the logo leads home and "How it works" is in the footer. `scroll-padding-top` keeps
   anchor jumps below the header.
 - **Footer:** small: the logo and "How it works · Privacy" on one line, then one line of fine print
   (the disclaimer and the reference rate's source).
+- **Width and hero** (owner, 2026-11-21: everything centred in a narrow column looked unnatural):
+  the frame is up to 1280px wide (it was 1024px), so the logo (now bigger) sits at the page's left
+  edge. From 1024px up the home page opens in two columns, the way transfer services do: the
+  headline (up to 88px) and intro on the left, the calculator on the right, with a soft lime glow
+  behind it (decoration; the card is opaque, so no text sits on the glow).
 - **Proportions:** every form control is 48px high, like the button; selects stay native (keyboard,
   phone pickers, screen readers) with a CSS chevron in `--muted` (a `data:` image; `tokens.test.ts`
   keeps its colour equal to the token). Headlines are bigger (up to 72px, `text-balance`), section

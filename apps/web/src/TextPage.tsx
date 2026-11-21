@@ -1,4 +1,5 @@
 import type { Block, Inline, PageText } from "./i18n/pages/types.ts";
+import { reveal } from "./reveal.ts";
 import { h1, h2 } from "./ui.ts";
 
 // A long text page (methodology, privacy) from its structured text (i18n/pages).
@@ -54,7 +55,7 @@ export function TextPage({ text }: { text: PageText }) {
       <h1 className={`${h1} sm:text-5xl`}>{text.title}</h1>
       <p className="mt-5 max-w-2xl text-lg text-pretty text-muted">{text.intro}</p>
       {text.sections.map((section) => (
-        <section key={section.heading} className="mt-14">
+        <section key={section.heading} ref={reveal} data-reveal className="mt-14">
           <h2 className={h2}>{section.heading}</h2>
           {section.blocks.map((block, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: a section's blocks are fixed text

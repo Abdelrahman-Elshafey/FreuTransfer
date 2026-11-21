@@ -111,3 +111,5 @@ These make the site recognisable. Borrow the ideas, not the exact look.
 - A site for customers, not for recruiters (owner): a sticky, blurred header with two links
   (Comparison, How it works) and a small footer (How it works, Privacy, the fine print). No API or
   source-code links on the site.
+- Wider frame (1280px) with the hero in two columns (headline left, calculator right), a frosted
+  language menu, and sections that appear as they scroll into view.
