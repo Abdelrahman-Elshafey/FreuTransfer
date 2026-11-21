@@ -112,7 +112,7 @@
   /*
    * Native selects (keyboard, phones' pickers and screen readers as usual) with our own chevron,
    * drawn in --muted (an image can't read a CSS variable, so the dark theme repeats it). Each
-   * select leaves room for it on the right (pr-9 / pr-10). data: images are allowed by the CSP.
+   * select leaves room for it on the right (pr-10). data: images are allowed by the CSP.
    */
   select {
     @apply cursor-pointer appearance-none bg-size-[1rem] bg-position-[right_0.875rem_center] bg-no-repeat;
@@ -122,6 +122,20 @@
     select {
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a3a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     }
+  }
+}
+
+/*
+ * Scroll reveal (reveal.ts): an element with data-reveal waits faded out until it scrolls into
+ * view, then plays the entry. Only for readers who don't ask for less motion: for them nothing is
+ * ever hidden.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  [data-reveal]:not([data-shown]) {
+    opacity: 0;
+  }
+  [data-reveal][data-shown] {
+    animation: var(--animate-enter);
   }
 }
 

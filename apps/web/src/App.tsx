@@ -15,17 +15,19 @@ import {
 } from "./api.ts";
 import { CostChart } from "./CostChart.tsx";
 import { CHART_AMOUNTS } from "./chart-data.ts";
+import { ARROW, Icon } from "./Icon.tsx";
 import { bankName } from "./i18n/bank.ts";
 import { useI18n } from "./i18n/context.tsx";
 import type { Messages } from "./i18n/en.ts";
 import { type Formatter, parseAmount } from "./i18n/format.ts";
-import { LOCALE_CODES, type Locale, localeInfo } from "./i18n/locales.ts";
 import { PAGES } from "./i18n/pages/index.ts";
 import type { LegalValues, MethodologyValues } from "./i18n/pages/types.ts";
+import { LanguageMenu } from "./LanguageMenu.tsx";
 import { METHODOLOGY } from "./methodology-values.ts";
 import { type PageId, pageFromPath, pagePath } from "./pages.ts";
 import { RateChart } from "./RateChart.tsx";
 import { cheapestIds } from "./results.ts";
+import { reveal } from "./reveal.ts";
 import { Link, usePathname } from "./router.tsx";
 import { HOSTING_REGION, OPERATOR, RATES_URL } from "./site.ts";
 import { readSaved, save } from "./storage.ts";
@@ -66,29 +68,11 @@ function caveatText(t: Messages, f: Formatter, caveat: CaveatDto): string {
   }
 }
 
-/** A list item's entry animation starts a little after the one above it (docs/adr/0016). */
-const stagger = (index: number) => ({ animationDelay: `${index * 60}ms` });
-
-/** Icons are decoration: the text next to them says what they mean. */
-function Icon({ d, className }: { d: string; className: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={`shrink-0 ${className}`}
-    >
-      <path d={d} />
-    </svg>
-  );
-}
-const ARROW = "M5 12h14m-6-6 6 6-6 6";
-const GLOBE =
-  "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z";
+/**
+ * A list item's entry starts a little after the one above it (docs/adr/0016); capped, so a long
+ * list doesn't keep its last rows waiting.
+ */
+const stagger = (index: number) => ({ animationDelay: `${Math.min(index, 6) * 70}ms` });
 
 /** A form field's frame: 48px high, like the button next to it, so a row of controls lines up. */
 const field =
@@ -179,8 +163,10 @@ function ResultsTable({ rows, ranked, cheapest }: ListProps) {
           {rows.map((r, i) => (
             <tr
               key={r.providerId}
+              ref={reveal}
+              data-reveal
               style={stagger(i)}
-              className="animate-enter transition-colors duration-200 hover:bg-hover"
+              className="transition-colors duration-200 hover:bg-hover"
             >
               {ranked && <td className={`${td} text-muted tabular-nums`}>{r.rank}</td>}
               <td className={td}>
@@ -215,7 +201,7 @@ function ResultCards({ rows, ranked, cheapest }: ListProps) {
   return (
     <ol className="space-y-3 md:hidden">
       {rows.map((r, i) => (
-        <li key={r.providerId} style={stagger(i)} className={`${card} animate-enter`}>
+        <li key={r.providerId} ref={reveal} data-reveal style={stagger(i)} className={card}>
           <div className="flex items-center justify-between gap-3">
             <span className="font-medium">
               {ranked && <span className="mr-2 text-muted tabular-nums">{r.rank}</span>}
@@ -292,7 +278,11 @@ function MyProvider({ ranked }: { ranked: ComparisonDto["results"] }) {
         });
   }
   return (
-    <div className={`${card} mb-4 flex flex-col sm:flex-row sm:items-center sm:gap-6`}>
+    <div
+      ref={reveal}
+      data-reveal
+      className={`${card} mb-4 flex flex-col sm:flex-row sm:items-center sm:gap-6`}
+    >
       <label className="flex shrink-0 flex-col gap-1.5 text-sm text-muted sm:w-56">
         {t.myProvider.label}
         <select
@@ -362,7 +352,7 @@ function Results({ data }: { data: ComparisonDto }) {
       {data.unavailable.length > 0 && (
         <>
           <h2 className={heading}>{t.results.unavailableHeading}</h2>
-          <ul className={`${card} animate-enter space-y-1`}>
+          <ul ref={reveal} data-reveal className={`${card} space-y-1`}>
             {data.unavailable.map((u) => (
               <li key={u.providerId}>
                 <span className="font-medium">{u.providerName}</span>
@@ -373,29 +363,6 @@ function Results({ data }: { data: ComparisonDto }) {
         </>
       )}
     </section>
-  );
-}
-
-/** A compact pill in the header: a globe and the language's name; "Language" for screen readers. */
-function LanguageSwitcher() {
-  const { locale, setLocale, t } = useI18n();
-  return (
-    <label className="relative flex items-center text-sm">
-      <span className="sr-only">{t.language}</span>
-      <Icon d={GLOBE} className="pointer-events-none absolute left-3 z-10 size-4 text-muted" />
-      <select
-        value={locale}
-        onChange={(e) => setLocale(e.target.value as Locale)}
-        className="h-9 rounded-full border border-line bg-card pr-9 pl-9 text-ink transition-colors duration-200 hover:border-muted/60"
-      >
-        {LOCALE_CODES.map((code) => (
-          // The language's own name, so readers find theirs whatever is selected now.
-          <option key={code} value={code} lang={code}>
-            {localeInfo(code).name}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }
 
@@ -445,68 +412,83 @@ function ComparePage() {
   const label = "flex flex-col gap-1.5 text-sm text-muted";
   return (
     <>
-      <h1 className={`${h1} sm:text-6xl lg:text-7xl`}>{t.headline}</h1>
-      <p className="mt-5 max-w-xl text-lg text-pretty text-muted sm:text-xl">{t.intro}</p>
+      {/*
+        The hero: from 1024px up the headline on the left and the calculator on the right, the way
+        transfer services show it; narrower, one above the other.
+      */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-center lg:gap-16 lg:pt-6">
+        <div>
+          <h1 className={`${h1} sm:text-6xl lg:text-7xl xl:text-[5.5rem]`}>{t.headline}</h1>
+          <p className="mt-6 max-w-xl text-lg text-pretty text-muted sm:text-xl">{t.intro}</p>
+        </div>
 
-      <form
-        onSubmit={compare}
-        className={`${card} mt-10 flex flex-col gap-4 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_8px_24px_-12px_rgb(0_0_0/0.08)] sm:flex-row sm:items-end`}
-      >
-        <label className={`${label} sm:w-40`}>
-          {t.form.direction}
-          <select
-            value={directionIndex}
-            disabled={loading} // an answer still on its way is for the direction it asked
-            onChange={(e) => {
-              setDirectionIndex(Number(e.target.value));
-              // results of the other direction must not stay under the new choice
-              setData(null);
-              setChart(null);
-              setHistory(null);
-            }}
-            className={select}
+        {/* A soft lime glow behind the calculator: decoration only, the card itself is opaque. */}
+        <div className="relative isolate mt-10 lg:mt-20">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-6 -z-10 rounded-[3rem] bg-accent/40 blur-3xl dark:bg-accent/15"
+          />
+          <form
+            onSubmit={compare}
+            className={`${card} flex flex-col gap-4 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_8px_24px_-12px_rgb(0_0_0/0.08)] sm:flex-row sm:items-end lg:flex-col lg:items-stretch lg:gap-5 lg:p-8`}
           >
-            {DIRECTIONS.map((d, i) => (
-              <option key={`${d.from}-${d.to}`} value={i}>
-                {d.from} → {d.to}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={`${label} sm:flex-1`}>
-          {t.form.iPay}
-          <span
-            className={`${field} flex items-center gap-2 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ink`}
-          >
-            <input
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              inputMode="decimal"
-              aria-label={t.form.amountLabel(direction.from)}
-              className="w-full min-w-0 bg-transparent text-lg tabular-nums outline-none"
-            />
-            <span className="text-muted">{direction.from}</span>
-          </span>
-        </label>
-        <button
-          type="submit"
-          disabled={loading}
-          className="group flex h-12 items-center justify-center gap-2 rounded-full bg-ink px-7 font-medium text-page transition duration-200 ease-out-expo hover:bg-ink/85 active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
-        >
-          {loading ? t.form.comparing : t.form.compare}
-          {loading ? (
-            <span
-              aria-hidden="true"
-              className="size-4 motion-safe:animate-spin rounded-full border-2 border-current border-r-transparent"
-            />
-          ) : (
-            <Icon
-              d={ARROW}
-              className="size-4 transition-transform duration-300 ease-out-expo motion-safe:group-hover:translate-x-1"
-            />
-          )}
-        </button>
-      </form>
+            <label className={`${label} sm:w-40 lg:w-auto`}>
+              {t.form.direction}
+              <select
+                value={directionIndex}
+                disabled={loading} // an answer still on its way is for the direction it asked
+                onChange={(e) => {
+                  setDirectionIndex(Number(e.target.value));
+                  // results of the other direction must not stay under the new choice
+                  setData(null);
+                  setChart(null);
+                  setHistory(null);
+                }}
+                className={select}
+              >
+                {DIRECTIONS.map((d, i) => (
+                  <option key={`${d.from}-${d.to}`} value={i}>
+                    {d.from} → {d.to}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={`${label} sm:flex-1 lg:flex-none`}>
+              {t.form.iPay}
+              <span
+                className={`${field} flex items-center gap-2 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ink`}
+              >
+                <input
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  inputMode="decimal"
+                  aria-label={t.form.amountLabel(direction.from)}
+                  className="w-full min-w-0 bg-transparent text-lg tabular-nums outline-none"
+                />
+                <span className="text-muted">{direction.from}</span>
+              </span>
+            </label>
+            <button
+              type="submit"
+              disabled={loading}
+              className="group flex h-12 items-center justify-center gap-2 rounded-full bg-ink px-7 font-medium text-page transition duration-200 ease-out-expo hover:bg-ink/85 active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
+            >
+              {loading ? t.form.comparing : t.form.compare}
+              {loading ? (
+                <span
+                  aria-hidden="true"
+                  className="size-4 motion-safe:animate-spin rounded-full border-2 border-current border-r-transparent"
+                />
+              ) : (
+                <Icon
+                  d={ARROW}
+                  className="size-4 transition-transform duration-300 ease-out-expo motion-safe:group-hover:translate-x-1"
+                />
+              )}
+            </button>
+          </form>
+        </div>
+      </div>
 
       {error && (
         <p className="mt-4 animate-enter text-danger" role="alert">
@@ -624,7 +606,7 @@ export function App() {
             </ul>
           </nav>
           <div className="justify-self-end">
-            <LanguageSwitcher />
+            <LanguageMenu />
           </div>
         </div>
       </header>
@@ -652,22 +634,22 @@ const HEADER_PAGES = ["home", "methodology"] as const satisfies readonly PageId[
 const FOOTER_PAGES = ["methodology", "privacy"] as const satisfies readonly PageId[];
 
 /** The content's width and side margins: the header, the page and the footer line up. */
-const frame = "mx-auto w-full max-w-5xl px-4 sm:px-6";
+const frame = "mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-12";
 
 function Logo() {
   const { locale } = useI18n();
   return (
     <Link
       to={pagePath(locale, "home")}
-      className="group flex shrink-0 items-center gap-2.5 text-lg font-semibold whitespace-nowrap tracking-tight text-ink no-underline"
+      className="group flex shrink-0 items-center gap-3 text-xl font-semibold whitespace-nowrap tracking-[-0.02em] text-ink no-underline"
     >
       {/* The favicon's two arrows; they turn once on hover. Decoration: the name follows. */}
       <img
         src="/favicon.svg"
         alt=""
-        width="28"
-        height="28"
-        className="size-7 rounded-md ring-1 ring-line transition-transform duration-700 ease-out-expo motion-safe:group-hover:rotate-180"
+        width="32"
+        height="32"
+        className="size-8 rounded-lg ring-1 ring-line transition-transform duration-700 ease-out-expo motion-safe:group-hover:rotate-180"
       />
       FreuTransfer
     </Link>

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { CHART_AMOUNTS, costSeries, percentTicks, type Series, seriesSlot } from "./chart-data.ts";
 import { linePath, useWidth } from "./chart-svg.ts";
 import { useI18n } from "./i18n/context.tsx";
+import { reveal } from "./reveal.ts";
 import { h2, section } from "./ui.ts";
 
 // "Cost by amount" (Project Plan §1, "cheapest provider by amount"): plain SVG (docs/adr/0012),
@@ -46,7 +47,7 @@ export function CostChart({
   const column = plotWidth / (CHART_AMOUNTS.length - 1);
 
   return (
-    <section className={section}>
+    <section ref={reveal} data-reveal className={section}>
       <h2 className={h2}>{t.chart.costTitle}</h2>
       <p className="mt-1 text-sm text-muted">
         {t.chart.costSubtitle(amount(CHART_AMOUNTS[0]), amount(CHART_AMOUNTS[4]))}

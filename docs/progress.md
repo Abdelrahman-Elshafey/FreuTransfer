@@ -538,5 +538,11 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   (the methodology page's new link label); small footer: How it works, Privacy, one line of fine
   print. No API or source-code links on the site (the API page stays, linked from the README); the
   methodology's "open method" section is now "Independent", without the GitHub link.
+- **2026-11-21 (3):** owner's next round on `step-8/menu-layout`: a frosted language menu of our own
+  (keyboard: arrows, Escape, Tab), a wider frame (1280px) with the logo at the edge and bigger, the
+  hero in two columns (headline left, calculator right, lime glow), and sections that fade up as they
+  scroll into view (`reveal.ts`, tested; elements jumped past are shown too). Two bugs found in the
+  browser and fixed: the menu's current language didn't take the focus on opening, and rows the
+  reader jumped past stayed hidden.
   Checked in headless Chrome (desktop light/dark, phone dark, nav, hover, reduced motion, no
   horizontal scroll); README screenshots retaken.

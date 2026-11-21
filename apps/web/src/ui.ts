@@ -18,4 +18,4 @@ export const h1 =
 export const h2 = "text-2xl font-medium tracking-[-0.02em] text-balance";
 
 /** A section's spacing from the one above. */
-export const section = "mt-16 animate-enter";
+export const section = "mt-16";

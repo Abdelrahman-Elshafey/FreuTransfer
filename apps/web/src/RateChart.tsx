@@ -4,6 +4,7 @@ import { rateTicks } from "./chart-data.ts";
 import { linePath, useWidth } from "./chart-svg.ts";
 import { bankName } from "./i18n/bank.ts";
 import { useI18n } from "./i18n/context.tsx";
+import { reveal } from "./reveal.ts";
 import { h2, section } from "./ui.ts";
 
 // The reference rate over time (Project Plan §5, /v1/history): plain SVG (docs/adr/0012). One
@@ -28,7 +29,7 @@ export function RateChart({ history }: { history: HistoryDto }) {
   const heading = <h2 className={h2}>{t.rateChart.title(history.from, history.to)}</h2>;
   if (!first || !last) {
     return (
-      <section className={section}>
+      <section ref={reveal} data-reveal className={section}>
         {heading}
         <p className="mt-2 text-sm text-muted">{t.rateChart.none}</p>
       </section>
@@ -67,7 +68,7 @@ export function RateChart({ history }: { history: HistoryDto }) {
   };
 
   return (
-    <section className={section}>
+    <section ref={reveal} data-reveal className={section}>
       {heading}
       <p className="mt-1 text-sm text-muted">
         {t.rateChart.subtitle(bankName(t, last.source), f.day(first.asOf), f.day(last.asOf))}
