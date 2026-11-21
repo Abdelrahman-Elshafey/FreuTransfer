@@ -145,6 +145,8 @@ Decided by the owner (2026-11-06):
 - (2026-11-20) Fee model simplified: no minimum/maximum fee and no fee tiers, which no provider has;
   a maximum amount per transfer stays (ADR 0015).
 - (2026-11-20) Deploys stay on `dev` until v1.0; from v1.0 only `main` deploys (ADR 0006).
+- (2026-11-21) Moved up: `main` deploys from now on, `dev` is only for development; a release is a
+  pull request from `dev` into `main` (ADR 0017).
 
 Still open:
 - Whether to automate any bank rate page later.

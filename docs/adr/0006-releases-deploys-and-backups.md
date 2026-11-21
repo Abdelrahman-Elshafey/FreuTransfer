@@ -1,6 +1,7 @@
 # ADR 0006: Releases, deploys and backups
 
-- **Status:** accepted (decisions by the owner, 2026-11-10; built in stage 3e)
+- **Status:** accepted (decisions by the owner, 2026-11-10; built in stage 3e). Which branch
+  deploys: replaced by ADR 0017 (deploys from `main` since 2026-11-21).
 - **Date:** 2026-11-11
 
 ## Context
@@ -17,17 +18,14 @@ from GitHub's registry (GHCR) and keeps off-site backups in Cloudflare R2.
   two Dockerfiles: `api`, `migrate` (the Prisma CLI, kept out of the API image: ~230 MB of tools the
   running API never uses) and `web` (nginx with the built page). Public on GHCR, so the server pulls
   them without a password.
-- **Deploys from `dev` until v1.0** (owner, 2026-11-11): every PR builds the images (a broken
+- **Deploys from `dev`** (owner, 2026-11-11; until 2026-11-21, then from `main`, ADR 0017): every PR builds the images (a broken
   Dockerfile fails before the merge); a merge into `dev` pushes them to GHCR and starts a deploy job
   that waits for the owner's approval (GitHub environment `production`), then runs
   `scripts/deploy.sh <commit>` on the server over SSH. The SSH key may run only that script (forced
   command), as for UrConnections. The first deploy is run by hand with the same script, to see
   every step. `main` gets its first release, v1.0, at the end of the project.
-- **From v1.0, deploys come only from `main`** (owner, 2026-11-20): `dev` is merged into `main` once
-  as v1.0, and from then on a merge into `main` is what deploys. To change at that release, in one
-  branch: the CI condition (`refs/heads/dev` → `refs/heads/main` for pushing images and the deploy
-  job), `scripts/deploy.sh` (accept only commits on `origin/main`), `docs/deploy.md`, README,
-  CLAUDE.md's git workflow, and the branch protection on GitHub (owner). Until then nothing changes.
+- **Deploys come only from `main`** (owner, 2026-11-20, moved up from v1.0 to 2026-11-21): see
+  ADR 0017. The rest of this record (images, approval, forced command, backups) is unchanged.
 - **Every start** runs `migrate` (schema) and `seed` (verified provider data from git) before the API,
   so a data change reaches production with the next deploy. A deploy also runs both once before it
   replaces anything (since 2026-11-13): a failed migration or seed then stops the deploy while the
@@ -54,8 +52,8 @@ from GitHub's registry (GHCR) and keeps off-site backups in Cloudflare R2.
   company than the server.
 
 ## Consequences
-- A GitHub secret (the deploy key) can redeploy a commit that is part of `dev`'s history, nothing
-  more. `deploy.sh` checks this (added after the security review of 2026-11-12): it runs the
+- A GitHub secret (the deploy key) can redeploy a commit that is part of `main`'s history (`dev`'s
+  until 2026-11-21, ADR 0017), nothing more. `deploy.sh` checks this (added after the security review of 2026-11-12): it runs the
   checked-out commit's own copy of itself, so a commit from any other branch could run anything.
 - Migrations only move forward: rolling back past a schema change needs a new fixing migration.
 - Cloudflare holds both the public entry point (ADR 0004) and the backups: an account problem there

@@ -14,7 +14,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 5 | Provider data | ✅ Done (2026-11-14): 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider ✅ · 5c EUR→CHF data ✅ · 5d manual rates at today's reference rate ✅ · 5e corridor choice ✅ | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ✅ Done (2026-11-18): 6a design foundation ✅ · 6b breakdown ✅ · 6c caveat codes ✅ · 6d my bank vs best ✅ · 6e charts ✅ (6e-1 cost by amount · 6e-2 rate history) | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
 | 7 | Polish | ✅ Done (2026-11-19): 7a security headers + request limit ✅ · 7b language URLs ✅ · 7c methodology + privacy ✅ · 7d OpenAPI + API page (7d-1 description ✅ · 7d-2 API page ✅) · 7e README + favicon ✅ | README, methodology and legal texts in four languages, OpenAPI, ADRs, language URLs (World Bank comparison dropped: no CH⇄euro corridor) | A reviewer understands the project in 5 minutes |
-| 8 | Later | 🟡 In progress: 8a review answers (ADR 0015) ✅ · 8b operations: daily check, log limits, hardening ✅ · 8c motion, header and footer (ADR 0016) ✅ | Intraday rates, receive mode, more corridors, alerts | — |
+| 8 | Later | 🟡 In progress: 8a review answers (ADR 0015) ✅ · 8b operations: daily check, log limits, hardening ✅ · 8c motion, header and footer (ADR 0016) ✅ · deploys from `main` (ADR 0017) ✅ | Intraday rates, receive mode, more corridors, alerts | — |
 
 Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
 
@@ -546,3 +546,10 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   reader jumped past stayed hidden.
   Checked in headless Chrome (desktop light/dark, phone dark, nav, hover, reduced motion, no
   horizontal scroll); README screenshots retaken.
+- **2026-11-21 (4):** owner's decision: `main` deploys from now on, `dev` is only for development
+  (ADR 0017, moving up ADR 0006's v1.0 plan). CI pushes images and deploys only after a merge into
+  `main`; `scripts/deploy.sh` accepts only commits on `origin/main` (test: an unreleased `dev`
+  commit is refused); docs, README, CLAUDE.md and the Project Plan updated. The first release is a
+  fast-forward of `main` to `dev`, because the server's current script still accepts only `dev`
+  commits. All merged branches deleted (21, plus the obsolete `step-7/review-fixes`, whose
+  commits were all in `dev` already).
