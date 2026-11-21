@@ -36,6 +36,8 @@ const PAIRS = [
   ["ink", "card"],
   ["muted", "page"],
   ["muted", "card"],
+  ["ink", "hover"],
+  ["muted", "hover"],
   ["accent-ink", "accent"],
   ["danger", "page"],
   ["danger", "card"],
@@ -73,6 +75,15 @@ describe("colour tokens", () => {
     const card = light.get("card") ?? "";
     const ratios = [1, 2, 3, 4, 5].map((slot) => contrast(light.get(`series-${slot}`) ?? "", card));
     expect(ratios.map((r) => r >= 3)).toEqual([true, true, false, false, false]);
+  });
+
+  // The selects' chevron is a data: image, which can't read a CSS variable: each theme repeats
+  // its --muted colour in the image, and this keeps the copies equal to the token.
+  it("the select chevron is drawn in each theme's muted colour", () => {
+    const chevrons = [...css.matchAll(/select \{[^}]*stroke='%23([0-9a-f]{6})'/gi)].map(
+      (m) => `#${m[1]}`,
+    );
+    expect(chevrons).toEqual([light.get("muted"), dark.get("muted")]);
   });
 
   it("the contrast formula matches WCAG's known values", () => {

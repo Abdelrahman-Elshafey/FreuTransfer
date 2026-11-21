@@ -13,6 +13,8 @@
   --ink: #131314;
   --muted: #66646d;
   --line: #dfe3e6;
+  /* Behind a hovered table row or nav link: text on it must stay readable (tokens.test.ts). */
+  --hover: #f6f6f7;
   --accent: #befc65;
   --accent-ink: #131314;
   --danger: #b91c1c;
@@ -39,6 +41,7 @@
     --ink: #ededee;
     --muted: #a3a1aa;
     --line: #2e2e34;
+    --hover: #232327;
     --accent: #befc65;
     --accent-ink: #131314;
     --danger: #f87171;
@@ -59,6 +62,7 @@
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-line: var(--line);
+  --color-hover: var(--hover);
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-danger: var(--danger);
@@ -70,14 +74,63 @@
   --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
 }
 
+/*
+ * Motion (docs/adr/0016): one easing curve for everything, fast to start and soft to land; `enter`
+ * fades a page or a result up into place. Off for readers who ask for less motion (below).
+ */
+@theme {
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-enter: enter 0.6s var(--ease-out-expo) both;
+
+  @keyframes enter {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem);
+    }
+  }
+}
+
 @layer base {
+  html {
+    /* The scrollbar's room stays reserved: a short page doesn't shift sideways against a long one. */
+    scrollbar-gutter: stable;
+    /* A jump to an anchor (the API page's data types) stops below the sticky header, not under it. */
+    scroll-padding-top: 5rem;
+  }
   body {
     @apply bg-page font-sans text-ink antialiased;
   }
+  ::selection {
+    @apply bg-accent text-accent-ink;
+  }
   a {
-    @apply underline decoration-line underline-offset-2 hover:decoration-ink;
+    @apply underline decoration-line underline-offset-2 transition-colors duration-200 hover:decoration-ink;
   }
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ink;
+  }
+  /*
+   * Native selects (keyboard, phones' pickers and screen readers as usual) with our own chevron,
+   * drawn in --muted (an image can't read a CSS variable, so the dark theme repeats it). Each
+   * select leaves room for it on the right (pr-9 / pr-10). data: images are allowed by the CSP.
+   */
+  select {
+    @apply cursor-pointer appearance-none bg-size-[1rem] bg-position-[right_0.875rem_center] bg-no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2366646d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+  @media (prefers-color-scheme: dark) {
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a3a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    }
+  }
+}
+
+/*
+ * Less motion when the reader's system asks for it: nothing slides in. Colour fades stay (they
+ * don't move anything); hover movements and the spinner use Tailwind's `motion-safe:`.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --animate-enter: none;
   }
 }

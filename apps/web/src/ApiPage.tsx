@@ -10,12 +10,12 @@ import {
   type TypePart,
 } from "./api-docs.ts";
 import { useI18n } from "./i18n/context.tsx";
+import { card, h1, h2 } from "./ui.ts";
 
 // The API page (stage 7d-2, ADR 0014), made from GET /v1/openapi.json. The frame is in the reader's
 // language; what comes from the description (summaries, field descriptions) is the API's English,
 // marked lang="en" so screen readers read it as English.
 
-const card = "rounded-3xl bg-card p-5 sm:p-6";
 const th = "py-2 pr-4 text-left text-sm font-medium text-muted";
 const td = "border-t border-line py-2 pr-4 align-top";
 /** Descriptions hold long tag URIs (tag:aelshafey.com,2026:…): they may break anywhere on a phone. */
@@ -154,7 +154,7 @@ function EndpointCard({ endpoint: e }: { endpoint: Endpoint }) {
 function DataTypeCard({ type }: { type: DataType }) {
   const { t } = useI18n();
   return (
-    <section id={`type-${type.name}`} className={`${card} mt-4 scroll-mt-4`}>
+    <section id={`type-${type.name}`} className={`${card} mt-4`}>
       <h3 className="font-mono text-lg font-medium">{type.name}</h3>
       {type.description && (
         <p className="mt-1 text-muted">
@@ -191,13 +191,11 @@ export function ApiPage() {
     };
   }, []);
 
-  const heading = "mt-10 text-2xl font-medium tracking-tight";
+  const heading = `${h2} mt-16`;
   return (
-    <article>
-      <h1 className="mt-6 text-4xl leading-tight font-normal tracking-tight sm:mt-12 sm:text-5xl">
-        {t.apiPage.title}
-      </h1>
-      <p className="mt-4 max-w-2xl text-lg text-muted">
+    <article className="animate-enter">
+      <h1 className={`${h1} sm:text-5xl`}>{t.apiPage.title}</h1>
+      <p className="mt-5 max-w-2xl text-lg text-pretty text-muted">
         {t.apiPage.intro}{" "}
         <a href="/v1/openapi.json" className="font-mono">
           /v1/openapi.json

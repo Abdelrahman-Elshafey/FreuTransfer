@@ -17,3 +17,6 @@ export const HOSTING_REGION = "SG";
 
 /** The public source code. */
 export const SOURCE_URL = "https://github.com/Abdelrahman-Elshafey/FreuTransfer";
+
+/** Where the reference rates come from (the collector reads its API; docs/adr/0003). */
+export const RATES_URL = "https://frankfurter.dev";

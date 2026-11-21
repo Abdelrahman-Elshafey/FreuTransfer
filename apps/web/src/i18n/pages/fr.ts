@@ -1,3 +1,4 @@
+import { RATES_URL } from "../../site.ts";
 import type { PagesText } from "./types.ts";
 
 // French, translated from en.ts, which holds the sources.
@@ -34,7 +35,7 @@ export const fr: PagesText = {
                 href: "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html",
               },
               ". Il est fixé vers 14 h 10 HEC et publié vers 16 h 00 HEC chaque jour ouvrable, et c’est un taux moyen : à mi-chemin entre l’achat et la vente. Nous le récupérons toutes les heures via ",
-              { text: "Frankfurter", href: "https://frankfurter.dev" },
+              { text: "Frankfurter", href: RATES_URL },
               ", toujours avec la BCE comme source. La BCE le publie à titre d’information seulement ; aucun prestataire ne promet de changer à ce taux.",
             ],
           },

@@ -34,6 +34,8 @@ function navigate(path: string): void {
 export function Link(props: {
   readonly to: string;
   readonly className?: string;
+  /** The page shown now: told to screen readers, and styled with `aria-[current=page]:`. */
+  readonly current?: boolean;
   readonly children: ReactNode;
 }) {
   const follow = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -44,7 +46,12 @@ export function Link(props: {
     navigate(props.to);
   };
   return (
-    <a href={props.to} onClick={follow} className={props.className}>
+    <a
+      href={props.to}
+      onClick={follow}
+      aria-current={props.current ? "page" : undefined}
+      className={props.className}
+    >
       {props.children}
     </a>
   );

@@ -1,3 +1,4 @@
+import { RATES_URL } from "../../site.ts";
 import type { PagesText } from "./types.ts";
 
 // German (Swiss spelling: ss, never ß), translated from en.ts, which holds the sources.
@@ -34,7 +35,7 @@ export const de: PagesText = {
                 href: "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html",
               },
               ". Er wird an jedem Arbeitstag gegen 14:10 Uhr MEZ festgelegt und gegen 16:00 Uhr MEZ veröffentlicht, und er ist ein Mittelkurs: genau zwischen Kauf und Verkauf. Wir holen ihn stündlich über ",
-              { text: "Frankfurter", href: "https://frankfurter.dev" },
+              { text: "Frankfurter", href: RATES_URL },
               " ab, immer mit der EZB als Quelle. Die EZB veröffentlicht ihn nur zur Information; kein Anbieter verspricht, zu diesem Kurs zu wechseln.",
             ],
           },

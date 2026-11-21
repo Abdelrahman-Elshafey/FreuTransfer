@@ -4,6 +4,7 @@ import { rateTicks } from "./chart-data.ts";
 import { linePath, useWidth } from "./chart-svg.ts";
 import { bankName } from "./i18n/bank.ts";
 import { useI18n } from "./i18n/context.tsx";
+import { h2, section } from "./ui.ts";
 
 // The reference rate over time (Project Plan §5, /v1/history): plain SVG (docs/adr/0012). One
 // series, so no legend box: the title names it. The y-axis fits the rates (a rate chart shows how
@@ -24,14 +25,10 @@ export function RateChart({ history }: { history: HistoryDto }) {
   const first = rates[0];
   const last = rates.at(-1);
 
-  const heading = (
-    <h2 className="text-xl font-medium tracking-tight">
-      {t.rateChart.title(history.from, history.to)}
-    </h2>
-  );
+  const heading = <h2 className={h2}>{t.rateChart.title(history.from, history.to)}</h2>;
   if (!first || !last) {
     return (
-      <section className="mt-10">
+      <section className={section}>
         {heading}
         <p className="mt-2 text-sm text-muted">{t.rateChart.none}</p>
       </section>
@@ -70,7 +67,7 @@ export function RateChart({ history }: { history: HistoryDto }) {
   };
 
   return (
-    <section className="mt-10">
+    <section className={section}>
       {heading}
       <p className="mt-1 text-sm text-muted">
         {t.rateChart.subtitle(bankName(t, last.source), f.day(first.asOf), f.day(last.asOf))}
@@ -165,7 +162,7 @@ export function RateChart({ history }: { history: HistoryDto }) {
           </svg>
           {shown && active !== null && (
             <div
-              className="pointer-events-none absolute top-0 rounded-lg border border-line bg-card p-3 text-sm shadow-sm"
+              className="pointer-events-none absolute top-0 rounded-xl border border-line bg-card p-3 text-sm shadow-lg shadow-black/5"
               style={{
                 left: Math.min(
                   Math.max((points[active]?.[0] ?? 0) - 70, 0),
@@ -180,7 +177,9 @@ export function RateChart({ history }: { history: HistoryDto }) {
           )}
         </div>
         <details className="mt-3 text-sm">
-          <summary className="cursor-pointer text-muted">{t.chart.showTable}</summary>
+          <summary className="cursor-pointer text-muted transition-colors duration-200 hover:text-ink">
+            {t.chart.showTable}
+          </summary>
           <div className="mt-2 max-h-72 overflow-y-auto">
             <table className="w-full tabular-nums">
               <thead>

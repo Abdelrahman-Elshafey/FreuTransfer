@@ -23,15 +23,16 @@ import { LOCALE_CODES, type Locale, localeInfo } from "./i18n/locales.ts";
 import { PAGES } from "./i18n/pages/index.ts";
 import type { LegalValues, MethodologyValues } from "./i18n/pages/types.ts";
 import { METHODOLOGY } from "./methodology-values.ts";
-import { PAGE_IDS, pageFromPath, pagePath } from "./pages.ts";
+import { PAGE_IDS, type PageId, pageFromPath, pagePath } from "./pages.ts";
 import { RateChart } from "./RateChart.tsx";
 import { cheapestIds } from "./results.ts";
 import { Link, usePathname } from "./router.tsx";
-import { HOSTING_REGION, OPERATOR, SOURCE_URL } from "./site.ts";
+import { HOSTING_REGION, OPERATOR, RATES_URL, SOURCE_URL } from "./site.ts";
 import { readSaved, save } from "./storage.ts";
 import { TextPage } from "./TextPage.tsx";
+import { card, h1, h2, note } from "./ui.ts";
 
-// Design: docs/adr/0011 and docs/design-inspiration.md §7 (tokens in styles.css).
+// Design: docs/adr/0011, docs/adr/0016 and docs/design-inspiration.md §7 (tokens in styles.css).
 // Every visible word comes from the catalogs in ./i18n (docs/adr/0005).
 
 /** Errors are kept as codes, so switching the language also translates a message already shown. */
@@ -65,8 +66,36 @@ function caveatText(t: Messages, f: Formatter, caveat: CaveatDto): string {
   }
 }
 
-const card = "rounded-3xl bg-card p-5 sm:p-6";
-const note = "text-sm text-muted";
+/** A list item's entry animation starts a little after the one above it (docs/adr/0016). */
+const stagger = (index: number) => ({ animationDelay: `${index * 60}ms` });
+
+/** Icons are decoration: the text next to them says what they mean. */
+function Icon({ d, className }: { d: string; className: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={`shrink-0 ${className}`}
+    >
+      <path d={d} />
+    </svg>
+  );
+}
+const ARROW = "M5 12h14m-6-6 6 6-6 6";
+const GLOBE =
+  "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z";
+
+/** A form field's frame: 48px high, like the button next to it, so a row of controls lines up. */
+const field =
+  "h-12 rounded-xl border border-line bg-card px-3.5 text-ink transition-colors duration-200 hover:border-muted/60";
+
+/** A select in the same frame; its chevron (styles.css) needs the room on the right. */
+const select = `${field} pr-10`;
 
 /** A small label in brackets, "(Fee)" (docs/design-inspiration.md §7). Brackets in every language. */
 function Label({ children }: { children: string }) {
@@ -147,9 +176,13 @@ function ResultsTable({ rows, ranked, cheapest }: ListProps) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
-            <tr key={r.providerId}>
-              {ranked && <td className={`${td} tabular-nums`}>{r.rank}</td>}
+          {rows.map((r, i) => (
+            <tr
+              key={r.providerId}
+              style={stagger(i)}
+              className="animate-enter transition-colors duration-200 hover:bg-hover"
+            >
+              {ranked && <td className={`${td} text-muted tabular-nums`}>{r.rank}</td>}
               <td className={td}>
                 <div className="font-medium">{r.providerName}</div>
                 {cheapest.has(r.providerId) && (
@@ -181,8 +214,8 @@ function ResultCards({ rows, ranked, cheapest }: ListProps) {
   const { t, f } = useI18n();
   return (
     <ol className="space-y-3 md:hidden">
-      {rows.map((r) => (
-        <li key={r.providerId} className={card}>
+      {rows.map((r, i) => (
+        <li key={r.providerId} style={stagger(i)} className={`${card} animate-enter`}>
           <div className="flex items-center justify-between gap-3">
             <span className="font-medium">
               {ranked && <span className="mr-2 text-muted tabular-nums">{r.rank}</span>}
@@ -259,8 +292,8 @@ function MyProvider({ ranked }: { ranked: ComparisonDto["results"] }) {
         });
   }
   return (
-    <div className={`${card} mb-4 flex flex-col gap-3 sm:flex-row sm:items-center`}>
-      <label className="flex shrink-0 flex-col gap-1.5 text-sm text-muted">
+    <div className={`${card} mb-4 flex flex-col sm:flex-row sm:items-center sm:gap-6`}>
+      <label className="flex shrink-0 flex-col gap-1.5 text-sm text-muted sm:w-56">
         {t.myProvider.label}
         <select
           value={row ? mine : ""}
@@ -268,7 +301,7 @@ function MyProvider({ ranked }: { ranked: ComparisonDto["results"] }) {
             setMine(e.target.value);
             save(MY_PROVIDER_KEY, e.target.value);
           }}
-          className={`${field} text-ink`}
+          className={select}
         >
           <option value="">{t.myProvider.choose}</option>
           {ranked.map((r) => (
@@ -278,23 +311,27 @@ function MyProvider({ ranked }: { ranked: ComparisonDto["results"] }) {
           ))}
         </select>
       </label>
-      {sentence && (
-        <p className="text-lg" aria-live="polite">
-          {sentence}
-        </p>
-      )}
+      <p className="text-lg text-pretty" aria-live="polite">
+        {/* A new sentence fades in; the live region itself stays, so screen readers hear it. */}
+        {sentence && (
+          // the space above it only when there is a sentence: an empty region takes no room
+          <span key={sentence} className="mt-4 block animate-enter sm:mt-0">
+            {sentence}
+          </span>
+        )}
+      </p>
     </div>
   );
 }
 
 function Results({ data }: { data: ComparisonDto }) {
   const { t, f } = useI18n();
-  const heading = "mt-10 mb-3 text-xl font-medium tracking-tight";
+  const heading = `${h2} mt-16 mb-4`;
   return (
-    <section className="mt-8">
+    <section className="mt-10">
       {data.midRateTooOld && (
         <p
-          className="mb-4 rounded-lg border-l-4 border-warn-line bg-warn-bg px-4 py-3 text-warn-ink"
+          className="mb-4 animate-enter rounded-xl border-l-4 border-warn-line bg-warn-bg px-4 py-3 text-warn-ink"
           role="alert"
         >
           {t.results.midRateTooOld({ day: f.day(data.midRate.asOf), days: data.midRateMaxAgeDays })}
@@ -325,7 +362,7 @@ function Results({ data }: { data: ComparisonDto }) {
       {data.unavailable.length > 0 && (
         <>
           <h2 className={heading}>{t.results.unavailableHeading}</h2>
-          <ul className={`${card} space-y-1`}>
+          <ul className={`${card} animate-enter space-y-1`}>
             {data.unavailable.map((u) => (
               <li key={u.providerId}>
                 <span className="font-medium">{u.providerName}</span>
@@ -339,17 +376,17 @@ function Results({ data }: { data: ComparisonDto }) {
   );
 }
 
-const field = "rounded-lg border border-line bg-card px-3 py-2.5";
-
+/** A compact pill in the header: a globe and the language's name; "Language" for screen readers. */
 function LanguageSwitcher() {
   const { locale, setLocale, t } = useI18n();
   return (
-    <label className="flex items-center gap-2 text-sm text-muted">
-      {t.language}
+    <label className="relative flex items-center text-sm">
+      <span className="sr-only">{t.language}</span>
+      <Icon d={GLOBE} className="pointer-events-none absolute left-3 z-10 size-4 text-muted" />
       <select
         value={locale}
         onChange={(e) => setLocale(e.target.value as Locale)}
-        className={`${field} py-1.5 text-ink`}
+        className="h-9 rounded-full border border-line bg-card pr-9 pl-9 text-ink transition-colors duration-200 hover:border-muted/60"
       >
         {LOCALE_CODES.map((code) => (
           // The language's own name, so readers find theirs whatever is selected now.
@@ -375,6 +412,8 @@ function ComparePage() {
   const [chart, setChart] = useState<readonly ComparisonDto[] | "failed" | null>(null);
   /** The reference rate over time, or "failed" (shown as a note). */
   const [history, setHistory] = useState<HistoryDto | "failed" | null>(null);
+  /** How many answers arrived: a new one remounts the results, so they play their entry again. */
+  const [answers, setAnswers] = useState(0);
 
   async function compare(event: FormEvent) {
     event.preventDefault();
@@ -397,6 +436,7 @@ function ComparePage() {
       setError(outcome.ok ? null : outcome.error);
       setChart(byAmount.ok ? byAmount.data : "failed");
       setHistory(rates.ok ? rates.data : "failed");
+      setAnswers((n) => n + 1);
     } finally {
       setLoading(false); // also after an unexpected error, so the button never stays disabled
     }
@@ -405,16 +445,14 @@ function ComparePage() {
   const label = "flex flex-col gap-1.5 text-sm text-muted";
   return (
     <>
-      <h1 className="mt-6 max-w-3xl text-4xl leading-tight font-normal tracking-tight sm:mt-12 sm:text-6xl">
-        {t.headline}
-      </h1>
-      <p className="mt-4 max-w-xl text-lg text-muted">{t.intro}</p>
+      <h1 className={`${h1} sm:text-6xl lg:text-7xl`}>{t.headline}</h1>
+      <p className="mt-5 max-w-xl text-lg text-pretty text-muted sm:text-xl">{t.intro}</p>
 
       <form
         onSubmit={compare}
-        className={`${card} mt-8 flex flex-col gap-4 sm:flex-row sm:items-end`}
+        className={`${card} mt-10 flex flex-col gap-4 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_8px_24px_-12px_rgb(0_0_0/0.08)] sm:flex-row sm:items-end`}
       >
-        <label className={label}>
+        <label className={`${label} sm:w-40`}>
           {t.form.direction}
           <select
             value={directionIndex}
@@ -426,7 +464,7 @@ function ComparePage() {
               setChart(null);
               setHistory(null);
             }}
-            className={`${field} text-ink`}
+            className={select}
           >
             {DIRECTIONS.map((d, i) => (
               <option key={`${d.from}-${d.to}`} value={i}>
@@ -438,7 +476,7 @@ function ComparePage() {
         <label className={`${label} sm:flex-1`}>
           {t.form.iPay}
           <span
-            className={`${field} flex items-center gap-2 text-ink focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ink`}
+            className={`${field} flex items-center gap-2 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ink`}
           >
             <input
               value={amount}
@@ -453,30 +491,48 @@ function ComparePage() {
         <button
           type="submit"
           disabled={loading}
-          className="h-12 rounded-full bg-ink px-8 font-medium text-page transition active:scale-[0.98] disabled:opacity-60"
+          className="group flex h-12 items-center justify-center gap-2 rounded-full bg-ink px-7 font-medium text-page transition duration-200 ease-out-expo hover:bg-ink/85 active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
         >
           {loading ? t.form.comparing : t.form.compare}
+          {loading ? (
+            <span
+              aria-hidden="true"
+              className="size-4 motion-safe:animate-spin rounded-full border-2 border-current border-r-transparent"
+            />
+          ) : (
+            <Icon
+              d={ARROW}
+              className="size-4 transition-transform duration-300 ease-out-expo motion-safe:group-hover:translate-x-1"
+            />
+          )}
         </button>
       </form>
 
       {error && (
-        <p className="mt-4 text-danger" role="alert">
+        <p className="mt-4 animate-enter text-danger" role="alert">
           {errorText(t, error, f.decimal("1000.50"))}
         </p>
       )}
-      {data && <Results data={data} />}
-      {data &&
-        (chart === "failed" ? (
-          <p className={`${note} mt-10`}>{t.chart.unavailable}</p>
-        ) : (
-          chart && <CostChart comparisons={chart} currency={direction.from} />
-        ))}
-      {data &&
-        (history === "failed" ? (
-          <p className={`${note} mt-10`}>{t.rateChart.unavailable}</p>
-        ) : (
-          history && <RateChart history={history} />
-        ))}
+      {/* Each answer enters anew (key); the one shown fades back while the next is on its way. */}
+      <div
+        key={answers}
+        aria-busy={loading}
+        className={`transition-opacity duration-300 ${loading ? "opacity-50" : ""}`}
+      >
+        {data && <Results data={data} />}
+        {data &&
+          (chart === "failed" ? (
+            <p className={`${note} mt-16`}>{t.chart.unavailable}</p>
+          ) : (
+            chart && <CostChart comparisons={chart} currency={direction.from} />
+          ))}
+        {data &&
+          (history === "failed" ? (
+            <p className={`${note} mt-16`}>{t.rateChart.unavailable}</p>
+          ) : (
+            history && <RateChart history={history} />
+          ))}
+      </div>
     </>
   );
 }
@@ -514,11 +570,9 @@ const legalValues = (f: Formatter): LegalValues => ({
 function NotFound() {
   const { t, locale } = useI18n();
   return (
-    <article>
-      <h1 className="mt-6 text-4xl leading-tight font-normal tracking-tight sm:mt-12 sm:text-5xl">
-        {t.notFound.title}
-      </h1>
-      <p className="mt-4 text-lg text-muted">{t.notFound.text}</p>
+    <article className="animate-enter">
+      <h1 className={`${h1} sm:text-5xl`}>{t.notFound.title}</h1>
+      <p className="mt-5 text-lg text-muted">{t.notFound.text}</p>
       <p className="mt-6">
         <Link to={pagePath(locale, "home")}>{t.notFound.home}</Link>
       </p>
@@ -547,19 +601,37 @@ export function App() {
   }, [title, t.title]);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
-      <header className="flex items-center justify-between gap-4 py-5">
-        <Link
-          to={pagePath(locale, "home")}
-          className="text-lg font-semibold tracking-tight text-ink no-underline"
+    <div className="flex min-h-dvh flex-col">
+      {/* Stays at the top while the page scrolls; what passes under it is blurred. */}
+      <header className="sticky top-0 z-30 border-b border-line/70 bg-page/75 backdrop-blur-lg">
+        <div
+          className={`${frame} flex h-16 items-center justify-between gap-4 lg:grid lg:grid-cols-[1fr_auto_1fr]`}
         >
-          FreuTransfer
-        </Link>
-        <LanguageSwitcher />
+          <Logo />
+          {/* From 1024px up (French needs the room); narrower, the same links are in the footer. */}
+          <nav className="hidden lg:block">
+            <ul className="flex items-center gap-1 rounded-full border border-line bg-card/60 p-1 text-sm">
+              {PAGE_IDS.map((p) => (
+                <li key={p}>
+                  <Link
+                    to={pagePath(locale, p)}
+                    current={page === p}
+                    className="block rounded-full px-3.5 py-1.5 text-muted no-underline transition-colors duration-200 hover:bg-hover hover:text-ink aria-[current=page]:bg-ink aria-[current=page]:text-page"
+                  >
+                    {t.nav[p]}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <div className="justify-self-end">
+            <LanguageSwitcher />
+          </div>
+        </div>
       </header>
 
-      <main>
-        <div hidden={page !== "home"}>
+      <main className={`${frame} flex-1`}>
+        <div hidden={page !== "home"} className="animate-enter">
           <ComparePage />
         </div>
         {text && <TextPage text={text} />}
@@ -567,16 +639,79 @@ export function App() {
         {page === null && <NotFound />}
       </main>
 
-      <footer className={`${note} mt-16 space-y-2`}>
-        <nav className="flex flex-wrap gap-x-4 gap-y-1">
-          {PAGE_IDS.filter((p) => p !== "home").map((p) => (
-            <Link key={p} to={pagePath(locale, p)} className="text-muted">
-              {t.nav[p]}
-            </Link>
-          ))}
-        </nav>
-        <p>{t.disclaimer}</p>
-      </footer>
+      <SiteFooter page={page} />
     </div>
+  );
+}
+
+/** The content's width and side margins: the header, the page and the footer line up. */
+const frame = "mx-auto w-full max-w-5xl px-4 sm:px-6";
+
+function Logo() {
+  const { locale } = useI18n();
+  return (
+    <Link
+      to={pagePath(locale, "home")}
+      className="group flex shrink-0 items-center gap-2.5 text-lg font-semibold whitespace-nowrap tracking-tight text-ink no-underline"
+    >
+      {/* The favicon's two arrows; they turn once on hover. Decoration: the name follows. */}
+      <img
+        src="/favicon.svg"
+        alt=""
+        width="28"
+        height="28"
+        className="size-7 rounded-md ring-1 ring-line transition-transform duration-700 ease-out-expo motion-safe:group-hover:rotate-180"
+      />
+      FreuTransfer
+    </Link>
+  );
+}
+
+function SiteFooter({ page }: { page: PageId | null }) {
+  const { t, locale } = useI18n();
+  const item = "text-muted no-underline hover:text-ink";
+  return (
+    <footer className="mt-24 border-t border-line text-sm">
+      <div className={`${frame} grid gap-10 py-12 sm:grid-cols-[1.5fr_1fr_1fr]`}>
+        <div>
+          <Logo />
+          <p className="mt-3 max-w-xs text-muted">{t.headline}</p>
+        </div>
+        <nav aria-labelledby="footer-pages">
+          <p id="footer-pages">
+            <Label>{t.site.pages}</Label>
+          </p>
+          <ul className="mt-3 space-y-2">
+            {PAGE_IDS.map((p) => (
+              <li key={p}>
+                <Link to={pagePath(locale, p)} current={page === p} className={item}>
+                  {t.nav[p]}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <div>
+          <p>
+            <Label>{t.site.data}</Label>
+          </p>
+          <ul className="mt-3 space-y-2">
+            <li>
+              <a href={RATES_URL} target="_blank" rel="noreferrer" className={item}>
+                {t.site.rates(bankName(t, "ecb"))}
+              </a>
+            </li>
+            <li>
+              <a href={SOURCE_URL} target="_blank" rel="noreferrer" className={item}>
+                {t.site.sourceCode}
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div className={frame}>
+        <p className="border-t border-line py-6 text-muted">{t.disclaimer}</p>
+      </div>
+    </footer>
   );
 }

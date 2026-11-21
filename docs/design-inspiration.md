@@ -104,3 +104,9 @@ These make the site recognisable. Borrow the ideas, not the exact look.
   the "best" badge background with dark text; dark mode follows the system setting, checked for
   WCAG AA contrast by `apps/web/src/tokens.test.ts`.
 - Mobile layout: one card per provider on phones, a table from 768px up.
+
+## 9. Decided (stage 8c, ADR 0016)
+- Motion: one easing curve (ease-out-expo), a fade-up entry for pages and result rows, off under
+  reduced motion. Hover states on rows, links, fields and the button.
+- A sticky, blurred header with the page links as pills; a footer with columns, like §5's
+  "minimal header" and numbered footer, in our own form.

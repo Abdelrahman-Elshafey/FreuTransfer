@@ -90,7 +90,14 @@ export const en = {
     keyboard: "Reference rate by day: use the left and right arrow keys",
     unavailable: "The reference-rate chart can't be shown right now.",
   },
-  nav: { methodology: "Methodology", privacy: "Privacy", api: "API" },
+  nav: { home: "Comparison", methodology: "Methodology", privacy: "Privacy", api: "API" },
+  /** The header and footer: the footer's two column labels, the rate's source, the code's link. */
+  site: {
+    pages: "Pages",
+    data: "Data",
+    rates: (bank: string) => `Reference rate: ${bank} via Frankfurter`,
+    sourceCode: "Source code",
+  },
   notFound: {
     title: "Page not found",
     text: "This address doesn't exist (any more).",

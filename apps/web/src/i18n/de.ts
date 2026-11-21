@@ -77,7 +77,13 @@ export const de: Messages = {
     keyboard: "Referenzkurs nach Tag: mit den Pfeiltasten links und rechts",
     unavailable: "Die Grafik zum Referenzkurs kann gerade nicht angezeigt werden.",
   },
-  nav: { methodology: "Methodik", privacy: "Datenschutz", api: "API" },
+  nav: { home: "Vergleich", methodology: "Methodik", privacy: "Datenschutz", api: "API" },
+  site: {
+    pages: "Seiten",
+    data: "Daten",
+    rates: (bank) => `Referenzkurs: ${bank} über Frankfurter`,
+    sourceCode: "Quellcode",
+  },
   notFound: {
     title: "Seite nicht gefunden",
     text: "Diese Adresse gibt es nicht (mehr).",
