@@ -85,7 +85,7 @@ flowchart LR
 | Domain | decimal.js, fast-check property tests |
 | API | Express 5, Zod 4, OpenAPI 3.1 |
 | Data | PostgreSQL 18, Prisma 7 (no SQL built from strings) |
-| Page | React 19, Vite 8, Tailwind 4, plain-SVG charts (ADR 0012) |
+| Page | React 19, Vite 8, Tailwind 4, plain-SVG charts (ADR 0012), CSS-only motion (ADR 0016) |
 | Quality | Vitest (about 490 tests; real Postgres and real nginx in Docker via Testcontainers), Biome, knip |
 | Production | Docker Compose on a VPS, Cloudflare Tunnel, GitHub Actions → GHCR, daily backups copied to Cloudflare R2, a daily check from outside that e-mails on any problem |
 

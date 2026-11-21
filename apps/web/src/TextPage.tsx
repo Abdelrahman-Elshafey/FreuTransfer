@@ -1,4 +1,5 @@
 import type { Block, Inline, PageText } from "./i18n/pages/types.ts";
+import { h1, h2 } from "./ui.ts";
 
 // A long text page (methodology, privacy) from its structured text (i18n/pages).
 
@@ -41,7 +42,7 @@ function BlockView({ block }: { block: Block }) {
     );
   }
   return (
-    <pre className="mt-3 max-w-2xl overflow-x-auto rounded-lg bg-card p-4 font-mono text-sm leading-relaxed">
+    <pre className="mt-3 max-w-2xl overflow-x-auto rounded-xl bg-card p-4 font-mono text-sm leading-relaxed">
       {block.formula.join("\n")}
     </pre>
   );
@@ -49,14 +50,12 @@ function BlockView({ block }: { block: Block }) {
 
 export function TextPage({ text }: { text: PageText }) {
   return (
-    <article>
-      <h1 className="mt-6 max-w-3xl text-4xl leading-tight font-normal tracking-tight sm:mt-12 sm:text-5xl">
-        {text.title}
-      </h1>
-      <p className="mt-4 max-w-2xl text-lg text-muted">{text.intro}</p>
+    <article className="animate-enter">
+      <h1 className={`${h1} sm:text-5xl`}>{text.title}</h1>
+      <p className="mt-5 max-w-2xl text-lg text-pretty text-muted">{text.intro}</p>
       {text.sections.map((section) => (
-        <section key={section.heading} className="mt-10">
-          <h2 className="text-xl font-medium tracking-tight">{section.heading}</h2>
+        <section key={section.heading} className="mt-14">
+          <h2 className={h2}>{section.heading}</h2>
           {section.blocks.map((block, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: a section's blocks are fixed text
             <BlockView key={i} block={block} />

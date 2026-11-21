@@ -3,6 +3,7 @@ import { useState } from "react";
 import { CHART_AMOUNTS, costSeries, percentTicks, type Series, seriesSlot } from "./chart-data.ts";
 import { linePath, useWidth } from "./chart-svg.ts";
 import { useI18n } from "./i18n/context.tsx";
+import { h2, section } from "./ui.ts";
 
 // "Cost by amount" (Project Plan §1, "cheapest provider by amount"): plain SVG (docs/adr/0012),
 // following the dataviz rules: 2px lines, 8px markers with a surface ring, hairline grid, one
@@ -45,8 +46,8 @@ export function CostChart({
   const column = plotWidth / (CHART_AMOUNTS.length - 1);
 
   return (
-    <section className="mt-10">
-      <h2 className="text-xl font-medium tracking-tight">{t.chart.costTitle}</h2>
+    <section className={section}>
+      <h2 className={h2}>{t.chart.costTitle}</h2>
       <p className="mt-1 text-sm text-muted">
         {t.chart.costSubtitle(amount(CHART_AMOUNTS[0]), amount(CHART_AMOUNTS[4]))}
       </p>
@@ -169,7 +170,9 @@ export function CostChart({
           )}
         </div>
         <details className="mt-3 text-sm">
-          <summary className="cursor-pointer text-muted">{t.chart.showTable}</summary>
+          <summary className="cursor-pointer text-muted transition-colors duration-200 hover:text-ink">
+            {t.chart.showTable}
+          </summary>
           <div className="mt-2 overflow-x-auto">
             <table className="w-full tabular-nums">
               <thead>
@@ -210,7 +213,7 @@ function Readout(props: { series: readonly Series[]; index: number; title: strin
   const { t, f } = useI18n();
   return (
     <div
-      className="pointer-events-none absolute top-0 rounded-lg border border-line bg-card p-3 text-sm shadow-sm"
+      className="pointer-events-none absolute top-0 rounded-xl border border-line bg-card p-3 text-sm shadow-lg shadow-black/5"
       style={{ left: props.left, width: READOUT_WIDTH }}
     >
       <div className="mb-1 text-muted tabular-nums">{props.title}</div>

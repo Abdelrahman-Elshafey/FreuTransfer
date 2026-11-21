@@ -14,7 +14,7 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 5 | Provider data | ✅ Done (2026-11-14): 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider ✅ · 5c EUR→CHF data ✅ · 5d manual rates at today's reference rate ✅ · 5e corridor choice ✅ | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ✅ Done (2026-11-18): 6a design foundation ✅ · 6b breakdown ✅ · 6c caveat codes ✅ · 6d my bank vs best ✅ · 6e charts ✅ (6e-1 cost by amount · 6e-2 rate history) | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
 | 7 | Polish | ✅ Done (2026-11-19): 7a security headers + request limit ✅ · 7b language URLs ✅ · 7c methodology + privacy ✅ · 7d OpenAPI + API page (7d-1 description ✅ · 7d-2 API page ✅) · 7e README + favicon ✅ | README, methodology and legal texts in four languages, OpenAPI, ADRs, language URLs (World Bank comparison dropped: no CH⇄euro corridor) | A reviewer understands the project in 5 minutes |
-| 8 | Later | 🟡 In progress: 8a review answers (ADR 0015) ✅ · 8b operations: daily check, log limits, hardening ✅ | Intraday rates, receive mode, more corridors, alerts | — |
+| 8 | Later | 🟡 In progress: 8a review answers (ADR 0015) ✅ · 8b operations: daily check, log limits, hardening ✅ · 8c motion, header and footer (ADR 0016) ✅ | Intraday rates, receive mode, more corridors, alerts | — |
 
 Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
 
@@ -527,4 +527,12 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   blocked for me by the permission settings: the owner runs it. `pnpm check` green (510 tests).
   Owner setup needed for the monitor: a read-only R2 key and four GitHub settings (`docs/deploy.md`,
   "Monitoring").
-
+- **2026-11-21 (2):** 8c design polish (owner's request, ADR 0016) on `step-8/design-polish`: one
+  easing curve and an entry animation (pages fade in, result rows one after another, replayed on each
+  answer; off under reduced motion), hovers (rows, links, fields, button arrow, logo), a sticky
+  blurred header with the page links as pills and a compact language pill, a three-column footer
+  (pages, data source, source code), all form controls 48px high with a CSS chevron on native
+  selects, bigger headlines and section spacing, shared classes in `apps/web/src/ui.ts`. The
+  Frankfurter link is one constant (`RATES_URL`) for the footer and the four methodology pages.
+  Checked in headless Chrome (desktop light/dark, phone dark, nav, hover, reduced motion, no
+  horizontal scroll); README screenshots retaken.

@@ -1,3 +1,4 @@
+import { RATES_URL } from "../../site.ts";
 import type { PagesText } from "./types.ts";
 
 // English, the source text for the long pages; de/fr/it follow it (typed against PagesText).
@@ -40,7 +41,7 @@ export const en: PagesText = {
                 href: "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html",
               },
               ". It is set around 14:10 CET and published around 16:00 CET on every working day, and it is a mid-market rate: halfway between buying and selling. We collect it every hour through ",
-              { text: "Frankfurter", href: "https://frankfurter.dev" },
+              { text: "Frankfurter", href: RATES_URL },
               ", always pinned to the ECB. The ECB publishes it for information only; no provider promises to exchange at it.",
             ],
           },
