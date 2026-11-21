@@ -4,7 +4,7 @@
 # `backup` and the `offsite` service run). A problem fails the run, and GitHub e-mails the owner
 # (scheduled runs notify the user who last changed the cron line; Settings → Notifications →
 # Actions). From outside on purpose: it also alerts when the whole server is down.
-# Scheduled runs use the default branch (dev until v1.0, ADR 0006). Run it by hand: Actions tab →
+# Scheduled runs use the default branch (`dev`). Run it by hand: Actions tab →
 # Monitor → Run workflow.
 # SECURITY: actions pinned to the same commits as ci.yml (deploy/versions.test.ts checks both).
 name: Monitor

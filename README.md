@@ -101,7 +101,7 @@ flowchart LR
   (Postgres keeps the five it needs to start) and with `no-new-privileges`; Postgres isn't published.
 - Supply chain: every GitHub Action pinned to a commit; pnpm refuses any package version younger
   than 7 days. Deploys need the owner's approval, and the deploy key can only run one script, for
-  commits on `dev` (ADR 0006).
+  commits on `main` (ADR 0006, ADR 0017).
 
 ## Decisions
 
@@ -161,9 +161,9 @@ curl "http://localhost:3000/v1/compare?from=CHF&to=EUR&amount=1000"
 ## How work is done
 
 Work happens on short-lived `step-<n>/<name>` branches, merged into `dev` by pull request once CI
-passes. Until v1.0, `dev` is what runs in production: a merge builds the images and, after the
-owner's approval, deploys them ([`docs/deploy.md`](docs/deploy.md)). `main` receives `dev` once,
-as v1.0. The project rules are in [`CLAUDE.md`](CLAUDE.md), the scope in
+passes. `main` is what runs in production: a release is a pull request from `dev` into `main`,
+whose merge builds the images and, after the owner's approval, deploys them
+([`docs/deploy.md`](docs/deploy.md), ADR 0017). The project rules are in [`CLAUDE.md`](CLAUDE.md), the scope in
 [`Project Plan.md`](Project%20Plan.md), each stage's log in [`docs/progress.md`](docs/progress.md),
 and the review method and its findings in [`review.md`](review.md).
 

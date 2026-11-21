@@ -56,8 +56,8 @@ Notes:
 ## How a deploy works
 
 `scripts/deploy.sh <commit id>`, on the server, in a copy of this (public) repository:
-1. accepts only a 40-character commit id of a commit on `dev` (the newest or an older one, for a
-   rollback; never another branch), and only one deploy at a time;
+1. accepts only a 40-character commit id of a commit on `main` (the newest or an older one, for a
+   rollback; never `dev` or another branch, ADR 0017), and only one deploy at a time;
 2. checks that commit out (the server always equals one commit of the repo; `.env.prod` is
    git-ignored and never touched);
 3. pulls that commit's images from GHCR (built by CI, never on the server);
@@ -73,7 +73,8 @@ Notes:
 It refuses to run unless `.env.prod` has `IMAGE_PREFIX=ghcr.io/…` and
 `COMPOSE_PROFILES=tunnel,offsite`.
 
-After a merge into `dev`, CI builds and pushes the images and the `deploy` job waits for the owner's
+After a merge into `main` (a release: a pull request from `dev` into `main`), CI builds and pushes
+the images and the `deploy` job waits for the owner's
 approval; then GitHub runs that script over SSH and checks `/health` from outside (ADR 0006).
 
 ## First deploy (stage 3e-3)
@@ -87,7 +88,7 @@ approval; then GitHub runs that script over SSH and checks `/health` from outsid
    subdomain `freutransfer`, domain `aelshafey.com`, path empty, service type **HTTP**, URL
    **`web:8080`**. Cloudflare creates the DNS record itself.
 
-### 2. Owner: make the images public (once, after the first merge into `dev` with this workflow)
+### 2. Owner: make the images public (once, after the first deploy with this workflow)
 GitHub → your profile → **Packages** → `freutransfer-api`, `freutransfer-migrate`,
 `freutransfer-web` → **Package settings** → **Change visibility** → **Public**. GitHub creates
 packages as private even for a public repository; public ones need no password on the server.
@@ -110,7 +111,7 @@ The password and the token stay on the server; never in git or a chat.
 ### 5. Claude (with the owner's OK): deploy by hand
 ```sh
 cd ~/apps/freutransfer
-sh scripts/deploy.sh <commit id of the newest dev merge>
+sh scripts/deploy.sh <commit id of the newest main merge>
 dc() { docker compose -f compose.prod.yml --env-file .env.prod "$@"; }
 dc ps -a                                       # migrate and seed: Exited (0); the rest: healthy
 dc exec web wget -qO- http://127.0.0.1:8080/health
@@ -131,7 +132,7 @@ Then check the page in all four languages, and that UrConnections is still healt
    ```
 3. **GitHub → repository → Settings → Environments → New environment** `production`:
    - **Required reviewers:** yourself (every deploy waits for your click);
-   - **Deployment branches and tags:** selected branches → `dev`;
+   - **Deployment branches and tags:** selected branches → `main` (until 2026-11-21: `dev`);
    - **Environment secret** `DEPLOY_SSH_KEY`: the whole content of the *private* key file
      `freutransfer_deploy` (never share it anywhere else).
 4. **Settings → Secrets and variables → Actions → Variables** (repository variables):
@@ -142,7 +143,9 @@ Then check the page in all four languages, and that UrConnections is still healt
 
 ## Update, roll back, look around
 
-- **Update:** merge a PR into `dev`, then approve the deploy in the Actions tab (or run
+- **Update:** merge the work into `dev` as usual; to release it, open a pull request from `dev`
+  into `main` ([compare link](https://github.com/Abdelrahman-Elshafey/FreuTransfer/compare/main...dev)),
+  merge it once CI passes, then approve the deploy in the Actions tab (or run
   `sh scripts/deploy.sh <commit id>` on the server).
 - **Roll back:** Actions → an older successful run → **Re-run jobs** (or the script with the older
   commit id). Two limits, because the database only moves forward:
@@ -301,7 +304,7 @@ notices when the whole server is down. It runs `deploy/monitor/monitor-cli.ts` a
   bucket can't be listed.
 
 A failed run e-mails you, with each problem in the run's summary. Run it any time: Actions tab →
-**Monitor** → **Run workflow**. It runs from the default branch (`dev` until v1.0, ADR 0006).
+**Monitor** → **Run workflow**. It runs from the default branch (`dev`).
 
 ### Owner: set it up (once, about 10 minutes)
 1. **A read-only key for the bucket.** Cloudflare dashboard → R2 → **Manage API tokens** →

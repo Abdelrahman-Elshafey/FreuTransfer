@@ -1,5 +1,5 @@
 // scripts/deploy.sh, run in a container against a throwaway git repository shaped like GitHub: a
-// `dev` branch and another branch.
+// `main` (what is released, ADR 0017) and `dev` (work not released yet).
 // - Phase 1 (which commit may be deployed): without .env.prod, reaching phase 2's first check
 //   ("set IMAGE_PREFIX") shows phase 1 let the commit through.
 // - Phase 2 (the order of the deploy): with .env.prod and a stand-in `docker` that records every
@@ -14,25 +14,25 @@ const deployScript = fileURLToPath(new URL("../scripts/deploy.sh", import.meta.u
 const GIT_IMAGE = "alpine/git:2.52.0";
 
 /**
- * /origin.git plays GitHub; /server is the copy on the server, cloned while dev had only `base`.
- *   base ── dev2        (dev; dev2 pushed after the server's clone: needs the fetch)
- *     └──── other       (another branch, never merged)
+ * /origin.git plays GitHub; /server is the copy on the server, cloned while main had only `base`.
+ *   base ── main2       (main; main2 pushed after the server's clone: needs the fetch)
+ *     └──── unreleased  (dev: merged work not yet released into main)
  */
 const FIXTURE = `set -e
 git config --global user.email test@example.com
 git config --global user.name test
-git config --global init.defaultBranch dev
+git config --global init.defaultBranch main
 git config --global advice.detachedHead false
 git init -q --bare /origin.git
 git clone -q /origin.git /work && cd /work
 mkdir scripts && cp /deploy.sh scripts/deploy.sh
-git add . && git commit -qm base && git push -q origin dev
+git add . && git commit -qm base && git push -q origin main
 git rev-parse HEAD > /base
 git clone -q /origin.git /server
-git checkout -qb other && echo other > other.txt && git add . && git commit -qm other && git push -q origin other
-git rev-parse HEAD > /other
-git checkout -q dev && echo dev2 > dev2.txt && git add . && git commit -qm dev2 && git push -q origin dev
-git rev-parse HEAD > /dev2`;
+git checkout -qb dev && echo unreleased > unreleased.txt && git add . && git commit -qm unreleased && git push -q origin dev
+git rev-parse HEAD > /unreleased
+git checkout -q main && echo main2 > main2.txt && git add . && git commit -qm main2 && git push -q origin main
+git rev-parse HEAD > /main2`;
 
 /**
  * Stands in for `docker` in phase 2: appends its arguments to /docker.log, says the database is
@@ -48,7 +48,11 @@ exit 0`;
 
 describe("deploy.sh", () => {
   let git: StartedTestContainer;
-  const sha: Record<"base" | "other" | "dev2", string> = { base: "", other: "", dev2: "" };
+  const sha: Record<"base" | "unreleased" | "main2", string> = {
+    base: "",
+    unreleased: "",
+    main2: "",
+  };
 
   const run = (command: string) => git.exec(["sh", "-c", command]);
   /** Runs the server's deploy.sh for a commit, the way the forced SSH command does. */
@@ -64,7 +68,7 @@ describe("deploy.sh", () => {
       .start();
     const fixture = await run(FIXTURE);
     expect(fixture.exitCode, fixture.output).toBe(0);
-    for (const name of ["base", "other", "dev2"] as const) {
+    for (const name of ["base", "unreleased", "main2"] as const) {
       sha[name] = (await run(`cat /${name}`)).stdout.trim();
       expect(sha[name]).toMatch(/^[0-9a-f]{40}$/);
     }
@@ -74,26 +78,26 @@ describe("deploy.sh", () => {
     await git?.stop();
   });
 
-  it("refuses a commit that is only on another branch, and stays where it was", async () => {
+  it("refuses a commit that is on dev but not released into main, and stays where it was", async () => {
     const before = await serverHead();
 
-    const result = await deploy(sha.other);
+    const result = await deploy(sha.unreleased);
 
     expect(result.exitCode).toBe(2);
-    expect(result.stderr).toContain(`deploy: ${sha.other} is not a commit on dev`);
+    expect(result.stderr).toContain(`deploy: ${sha.unreleased} is not a commit on main`);
     expect(await serverHead()).toBe(before);
     // Its version of the script never ran: phase 2 was not reached.
     expect(result.output).not.toContain("set IMAGE_PREFIX");
   });
 
-  it("deploys the newest dev commit, fetched from GitHub", async () => {
-    const result = await deploy(sha.dev2);
+  it("deploys the newest main commit, fetched from GitHub", async () => {
+    const result = await deploy(sha.main2);
 
-    expect(await serverHead()).toBe(sha.dev2);
+    expect(await serverHead()).toBe(sha.main2);
     expect(result.stderr).toContain("deploy: set IMAGE_PREFIX in .env.prod"); // phase 2 reached
   });
 
-  it("deploys an older dev commit (a rollback)", async () => {
+  it("deploys an older main commit (a rollback)", async () => {
     const result = await deploy(sha.base);
 
     expect(await serverHead()).toBe(sha.base);
@@ -107,7 +111,7 @@ describe("deploy.sh", () => {
     const result = await deploy(unknown);
 
     expect(result.exitCode).toBe(2);
-    expect(result.stderr).toContain(`deploy: ${unknown} is not a commit on dev`);
+    expect(result.stderr).toContain(`deploy: ${unknown} is not a commit on main`);
     expect(await serverHead()).toBe(before);
   });
 
@@ -133,7 +137,7 @@ printf 'IMAGE_PREFIX=ghcr.io/owner/\\nCOMPOSE_PROFILES=tunnel,offsite\\nIMAGE_TA
     it("stops before replacing anything when the seed fails: the old version keeps running", async () => {
       await run("touch /fail-seed && rm -f /docker.log");
 
-      const result = await deploy(sha.dev2);
+      const result = await deploy(sha.main2);
 
       expect(result.exitCode).not.toBe(0);
       const calls = await dockerCalls();
@@ -147,7 +151,7 @@ printf 'IMAGE_PREFIX=ghcr.io/owner/\\nCOMPOSE_PROFILES=tunnel,offsite\\nIMAGE_TA
     it("backs up, migrates and seeds first, then records the commit and starts the new version", async () => {
       await run("rm -f /fail-seed /docker.log");
 
-      const result = await deploy(sha.dev2);
+      const result = await deploy(sha.main2);
 
       expect(result.exitCode, result.output).toBe(0);
       expect(await dockerCalls()).toEqual([
@@ -159,8 +163,8 @@ printf 'IMAGE_PREFIX=ghcr.io/owner/\\nCOMPOSE_PROFILES=tunnel,offsite\\nIMAGE_TA
         "up -d --no-build --wait",
         "image ls --format {{.Repository}}:{{.Tag}}",
       ]);
-      expect(await envProd()).toContain(`IMAGE_TAG=${sha.dev2}`);
-      expect(result.stdout).toContain(`deploy: ${sha.dev2} is live`);
+      expect(await envProd()).toContain(`IMAGE_TAG=${sha.main2}`);
+      expect(result.stdout).toContain(`deploy: ${sha.main2} is live`);
     });
   });
 });
