@@ -3,11 +3,17 @@
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { LOCALE_CODES } from "../apps/web/src/i18n/locales.ts";
+import { PAGES } from "../apps/web/src/i18n/pages/index.ts";
 
 type Service = {
   image?: string;
   restart?: string;
   healthcheck?: { disable?: boolean };
+  logging?: { driver?: string; options?: Record<string, string> };
+  security_opt?: string[];
+  cap_drop?: string[];
+  cap_add?: string[];
 };
 
 const composeFile = fileURLToPath(new URL("../compose.prod.yml", import.meta.url));
@@ -30,5 +36,40 @@ describe("compose.prod.yml", () => {
     );
     expect(others.map(([name]) => name)).toEqual(["collect"]);
     for (const [, service] of others) expect(service.healthcheck?.disable).toBe(true);
+  });
+
+  // The privacy page promises a limit on the logs; Docker keeps them forever unless told. Set here,
+  // not only in the server's daemon.json, so the promise is in the code and on any server.
+  it("limits every service's logs to what the privacy page states, in every language", () => {
+    const mb = (size: string) => Number(size.replace(/m$/, ""));
+    const limits = new Set(
+      Object.values(config.services).map((s) => {
+        const options = s.logging?.options ?? {};
+        expect(s.logging?.driver).toBe("json-file");
+        return mb(options["max-size"] ?? "") * Number(options["max-file"]);
+      }),
+    );
+    expect(limits.size).toBe(1);
+    const [total] = limits;
+    expect(total).toBeGreaterThan(0);
+    const legal = { name: "n", email: "e", hostingCountry: "c" };
+    for (const code of LOCALE_CODES) {
+      const text = JSON.stringify(PAGES[code].privacy(legal));
+      // "30 MB" (fr: "30 Mo"), with a plain or a non-breaking space, not part of a longer number.
+      expect(text, code).toMatch(new RegExp(String.raw`(?<!\d)${total}[\s  ]M[Bo]\b`));
+    }
+  });
+
+  // SECURITY: a process that is taken over can't gain privileges (setuid programs) and holds no
+  // Linux capabilities. Only Postgres's start script needs some, to hand its files to the postgres
+  // user and switch to it; it then drops them itself.
+  it("runs every service without new privileges and without capabilities (the database: only its own)", () => {
+    for (const [name, s] of Object.entries(config.services)) {
+      expect(s.security_opt, name).toContain("no-new-privileges:true");
+      expect(s.cap_drop, name).toEqual(["ALL"]);
+      expect(s.cap_add ?? [], name).toEqual(
+        name === "db" ? ["CHOWN", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"] : [],
+      );
+    }
   });
 });

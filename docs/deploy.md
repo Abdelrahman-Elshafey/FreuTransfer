@@ -180,9 +180,9 @@ dc exec collect node packages/collectors/src/collect-cli.ts      # one run now
 ```
 
 - **A failed run** (`collect: FAILED …`, status `failed` with the reason) changes nothing that was
-  stored and is retried the next hour. Nothing alerts you by message, but once the newest rate is
-  more than 5 days old the page shows every visitor a warning (`MID_RATE_MAX_AGE_DAYS`): look at
-  the `collect` logs then.
+  stored and is retried the next hour. The daily check ("Monitoring" below) e-mails you once the
+  newest rate is more than 4 days old; at more than 5 the page also warns every visitor
+  (`MID_RATE_MAX_AGE_DAYS`). Look at the `collect` logs then.
 - **"the ecb rate of … changed from … to …"**: Frankfurter now reports a different value for a day
   already stored. The stored value is kept (append-only) and every run fails until someone looks:
   compare both raw responses (`raw_observations`) and decide.
@@ -217,8 +217,8 @@ down in 2021):
   delete old dumps is the time in the name, and the **newest dump is never deleted**, so if backups
   stop, the last good one stays (`deploy/backup/old-dumps.sh`).
 - A failed round is logged (`backup: FAILED`, `offsite: … FAILED`) and retried at the next round.
-  Nothing alerts yet (no roadmap stage covers it; open item in `docs/progress.md`): check
-  `dc logs --since 48h backup offsite` after each deploy.
+  The daily check ("Monitoring" below) e-mails you when the newest copy in R2 is more than 31
+  hours old; then look at `dc logs --since 48h backup offsite`.
 - The scripts are mounted as a folder and each round starts them anew, so a deploy that changes them
   needs no restart.
 - Tested in `deploy/backup.test.ts` with the production images: a dump restores to the same data, a
@@ -278,3 +278,48 @@ Deploy the stack, stop what writes (`dc stop api`), then restore the chosen dump
 dc exec -T offsite sh -c "rclone cat \"r2:\$OFFSITE_S3_BUCKET/$FILE\"" | dc exec -T db pg_restore -U freu --no-owner --clean --if-exists -d freu_transfer
 dc up -d --wait
 ```
+
+## Logs and hardening (every service, `compose.prod.yml`)
+- **Logs:** at most 3 files of 10 MB per service, the oldest overwritten. The privacy page states
+  this limit, and `deploy/compose.test.ts` keeps the two equal. It no longer depends on the
+  server's `/etc/docker/daemon.json` (UrConnections' runbook), which stays as it is.
+- **Hardening:** every service runs with `no-new-privileges` and without Linux capabilities. Only
+  `db` adds back the five its start script needs (CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID) to
+  hand the data folder to the postgres user. Checked on a fresh and an existing database, a backup,
+  rclone copying dumps and cloudflared starting.
+- If an image update ever needs a capability, the service fails at start and `up --wait` stops the
+  deploy: add only that capability to the service, with the reason.
+
+## Monitoring (daily check from outside)
+`.github/workflows/monitor.yml` runs every day at 07:00 UTC on GitHub, not on the server, so it also
+notices when the whole server is down. It runs `deploy/monitor/monitor-cli.ts` and fails when:
+- the site gives no comparison in a direction;
+- the newest reference rate is more than 4 days old (the collector has stopped);
+- a provider is listed as a data error (`implausible_cost`, `no_reference_rate`);
+- a price is no longer ranked, or will stop being ranked within 7 days (the re-check reminder);
+- the newest dump in R2 is more than 31 hours old (`backup` or `offsite` has stopped), or the
+  bucket can't be listed.
+
+A failed run e-mails you, with each problem in the run's summary. Run it any time: Actions tab →
+**Monitor** → **Run workflow**. It runs from the default branch (`dev` until v1.0, ADR 0006).
+
+### Owner: set it up (once, about 10 minutes)
+1. **A read-only key for the bucket.** Cloudflare dashboard → R2 → **Manage API tokens** →
+   **Create Account API token**: name `freutransfer-monitor`, permission **Object Read only**,
+   **only the bucket `freutransfer-backups`**, TTL forever. Keep the Access Key ID and the Secret
+   Access Key. (Not the backup key: this one can't change or delete anything.)
+2. **GitHub → the repository → Settings → Secrets and variables → Actions:**
+   - Secrets: `MONITOR_S3_ACCESS_KEY_ID`, `MONITOR_S3_SECRET_ACCESS_KEY`.
+   - Variables: `MONITOR_S3_ENDPOINT` = `https://<account id>.r2.cloudflarestorage.com` (the same as
+     `OFFSITE_S3_ENDPOINT`), `MONITOR_S3_BUCKET` = `freutransfer-backups`.
+3. **E-mail on failure:** your GitHub profile → Settings → **Notifications** → **Actions**: e-mail
+   on, "only notify for failed workflows". GitHub sends a scheduled run's failure to whoever last
+   changed its `cron` line, which is you (the commit's author).
+4. Actions tab → **Monitor** → **Run workflow**: it should end green ("monitor: all fine").
+
+GitHub pauses scheduled workflows in a public repository without activity for 60 days; a push wakes
+it. (GitHub docs, "Events that trigger workflows", section schedule: default branch only, the
+notification goes to who last changed the cron line, the 60 days; Cloudflare docs "R2 API tokens",
+modified 2026-10-01: "Object Read only" = read and list objects in specific buckets. Both read
+2026-11-21.)
+

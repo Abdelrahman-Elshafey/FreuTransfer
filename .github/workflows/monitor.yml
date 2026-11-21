@@ -1,0 +1,51 @@
+# The daily check from outside (deploy/monitor/checks.ts): the live site answers in both directions,
+# the reference rate is current (the collector runs), no data error, no price unranked or due for
+# re-checking within 7 days, and the newest off-site backup at most 31 hours old (so both the
+# `backup` and the `offsite` service run). A problem fails the run, and GitHub e-mails the owner
+# (scheduled runs notify the user who last changed the cron line; Settings → Notifications →
+# Actions). From outside on purpose: it also alerts when the whole server is down.
+# Scheduled runs use the default branch (dev until v1.0, ADR 0006). Run it by hand: Actions tab →
+# Monitor → Run workflow.
+# SECURITY: actions pinned to the same commits as ci.yml (deploy/versions.test.ts checks both).
+name: Monitor
+
+on:
+  schedule:
+    - cron: "0 7 * * *" # 07:00 UTC, before the working day in Zurich
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # The public address; equal to SITE_URL in ci.yml (deploy/versions.test.ts).
+  SITE_URL: https://freutransfer.aelshafey.com
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+
+      # The bucket's file names, with a key that may only READ it (docs/deploy.md, "Monitoring").
+      # The AWS CLI comes with GitHub's Ubuntu runner. Settings missing or the listing failed: no
+      # file, and the check reports that the backups could not be checked (never silently fine).
+      - name: List the off-site backups
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.MONITOR_S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.MONITOR_S3_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          ENDPOINT: ${{ vars.MONITOR_S3_ENDPOINT }}
+          BUCKET: ${{ vars.MONITOR_S3_BUCKET }}
+        run: |
+          if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$ENDPOINT" ] && [ -n "$BUCKET" ]; then
+            aws s3 ls "s3://$BUCKET/" --endpoint-url "$ENDPOINT" > listing.txt || rm -f listing.txt
+          fi
+
+      # Plain Node, nothing installed: the check has no dependencies.
+      - name: Check the site and the backups
+        run: node deploy/monitor/monitor-cli.ts listing.txt

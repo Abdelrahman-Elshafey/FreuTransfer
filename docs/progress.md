@@ -2,7 +2,7 @@
 
 Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 
-**Now:** stages 0–6 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). Open check: 4d, every working day of 16–20 Nov collected by itself (verify on 20 Nov). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 done (2026-11-18):** design foundation (ADR 0011), breakdown, caveats, my bank vs best, and two plain-SVG charts (ADR 0012): cost by amount and the reference rate over time (`/v1/history`). **Stage 7 done (2026-11-19):** 7a security headers and request limit, 7b language URLs, 7c methodology and privacy pages (no imprint, owner's choice), logs without full IP addresses (ADR 0013), 7d the OpenAPI description and the API page (ADR 0014), 7e the README for reviewers and a favicon. **Next:** stage 8 (backlog) is open; the owner chooses what comes first. Collector fix for windows starting on a weekend merged. Open for the owner: Revolut's weekend markup.
+**Now:** stages 0–6 done: v0.1 is live at https://freutransfer.aelshafey.com (four languages, automatic deploys after the owner's approval, backups with off-site copies in Cloudflare R2, the reference rate collected from Frankfurter every hour with a warning when it is older than 5 days; ADR 0006, ADR 0007, `docs/deploy.md`). **Stage 5 done (2026-11-14):** both directions CHF⇄EUR with Wise, Yuh, Revolut, PostFinance and Western Union (CHF→EUR), chosen on the page (ADR 0008–0010). **Stage 6 done (2026-11-18):** design foundation (ADR 0011), breakdown, caveats, my bank vs best, and two plain-SVG charts (ADR 0012): cost by amount and the reference rate over time (`/v1/history`). **Stage 7 done (2026-11-19):** 7a security headers and request limit, 7b language URLs, 7c methodology and privacy pages (no imprint, owner's choice), logs without full IP addresses (ADR 0013), 7d the OpenAPI description and the API page (ADR 0014), 7e the README for reviewers and a favicon. **Next:** stage 8 (backlog) is open; the owner chooses what comes first. Collector fix for windows starting on a weekend merged. Open for the owner: Revolut's weekend markup.
 
 | # | Stage | Status | What it delivers | Done when |
 |---|---|---|---|---|
@@ -10,11 +10,11 @@ Roadmap from `Project Plan.md` §7. Updated at the end of every stage.
 | 1 | Setup | ✅ Done (`d555741`) | Monorepo, Biome, TypeScript, Docker Postgres, CI, `CLAUDE.md`, ADR 0001; renamed to FreuTransfer + OVH hosting (ADR 0002) | CI green on GitHub ✅ |
 | 2 | Core engine | ✅ Done (2026-11-10) | `Money`/`Rate` value objects, fee strategies, `computeCost`, rounding, golden + property tests | 2 real calculator results reproduced to the cent ✅ (third skipped by the owner) |
 | 3 | v0.1 end-to-end | ✅ Done (2026-11-12): 3a DB ✅ · 3b data ✅ (4 of 4 verified) · 3c API ✅ · 3d page ✅ · 3f languages ✅ · 3e deploy ✅ (3e-1 images · 3e-2 CI · 3e-3 first deploy · 3e-4 backups) | Prisma schema + migrations, first manual provider data (Claude researches → you verify at the banks), `/v1/compare`, results table, page in EN/DE/FR/IT (ADR 0005), **first deploy to the OVH VPS** | Comparison with manual data live on your domain, in four languages |
-| 4 | Mid-market + pipeline | ✅ Done (2026-11-13): 4a database ✅ · 4b collector ✅ · 4c hourly `collect` service ✅ · 4e old-rate warning ✅ · 4d one week ⏳ (verify 20 Nov) | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored (8 working days 3–12 Nov stored; 16–20 Nov to be collected live) |
+| 4 | Mid-market + pipeline | ✅ Done (2026-11-13): 4a database ✅ · 4b collector ✅ · 4c hourly `collect` service ✅ · 4e old-rate warning ✅ · 4d one week ✅ (16–20 Nov) | Frankfurter adapter, raw → parse pipeline, `collector_runs`, hourly `collect` service on the VPS (ADR 0007) | A week of daily snapshots stored ✅ (16–20 Nov collected by itself, both directions) |
 | 5 | Provider data | ✅ Done (2026-11-14): 5-0 scope ✅ · 5a guard + limits ✅ · 5b withdrawing a provider ✅ · 5c EUR→CHF data ✅ · 5d manual rates at today's reference rate ✅ · 5e corridor choice ✅ | Full provider list: Claude researches fees/rates → you verify → entered as rule-based or manual data; sanity guards | All v1 providers collected; no negative hidden costs |
 | 6 | Frontend | ✅ Done (2026-11-18): 6a design foundation ✅ · 6b breakdown ✅ · 6c caveat codes ✅ · 6d my bank vs best ✅ · 6e charts ✅ (6e-1 cost by amount · 6e-2 rate history) | Breakdown table, cost %, freshness labels, charts, "my bank vs best", translated caveat codes | Usable on mobile; every number shows its source; every text in four languages |
 | 7 | Polish | ✅ Done (2026-11-19): 7a security headers + request limit ✅ · 7b language URLs ✅ · 7c methodology + privacy ✅ · 7d OpenAPI + API page (7d-1 description ✅ · 7d-2 API page ✅) · 7e README + favicon ✅ | README, methodology and legal texts in four languages, OpenAPI, ADRs, language URLs (World Bank comparison dropped: no CH⇄euro corridor) | A reviewer understands the project in 5 minutes |
-| 8 | Later | ⬜ Backlog | Intraday rates, receive mode, more corridors, alerts | — |
+| 8 | Later | 🟡 In progress: 8a review answers (ADR 0015) ✅ · 8b operations: daily check, log limits, hardening ✅ | Intraday rates, receive mode, more corridors, alerts | — |
 
 Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
 
@@ -510,3 +510,21 @@ Legend: ✅ done · 🟡 in progress · ⏭️ next · ⬜ not started
   Production stack run in a throwaway project: the migration applied, Western Union served at
   4,700.00 CHF with its limit caveat and "not available" at 4,700.01; pages built with Vite 8.3.8
   render in headless Chrome under the CSP.
+- **2026-11-21:** **4d done:** the live `/v1/history` has every working day 16–20 Nov in both
+  directions, collected by the hourly service alone. **8b: operations** (owner: "make it" for the
+  review's follow-ups 1–5; 6, Revolut's weekend markup, left for now). (1+2) A daily check from
+  outside, `.github/workflows/monitor.yml` at 07:00 UTC: the live comparison in both directions
+  (site answers; reference rate at most 4 days old; no data error; no unranked price; a reminder 7
+  days before a price stops being ranked) and the newest dump in R2 at most 31 hours old (listed
+  with a read-only key). A problem fails the run, and GitHub e-mails the owner. The logic is pure
+  (`deploy/monitor/checks.ts`, 11 tests, each boundary broken once to see it fail); the command
+  ran against the live site ("all fine" with a listing, the backup message without one, "no
+  comparison" for an unreachable address). (4) Every service's logs limited to 3 × 10 MB in
+  `compose.prod.yml`, as the privacy page states (a test keeps them equal in four languages). (5)
+  `no-new-privileges` and no capabilities for every service; `db` adds back five for its start
+  script. Run for real: fresh stack, a backup, a restart on the existing database, rclone copying
+  dumps and cloudflared starting, all under the restrictions. (3) Deleting the 19 merged branches was
+  blocked for me by the permission settings: the owner runs it. `pnpm check` green (510 tests).
+  Owner setup needed for the monitor: a read-only R2 key and four GitHub settings (`docs/deploy.md`,
+  "Monitoring").
+
